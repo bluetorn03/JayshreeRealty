@@ -3,6 +3,7 @@ import { SEOHead } from '../components/SEOHead';
 import { useLeads } from '../context/LeadContext';
 import { useData } from '../context/DataContext';
 import { PropertyItem, GoogleReviewItem } from '../types';
+import logo from '../assets/jayshree-realty-logo.png';
 import {
   LayoutDashboard, Users, Building2, Home as HomeIcon, Star, Image as ImageIcon, Settings, 
   BarChart3, Search, Download, Trash2, Phone, MessageSquare, 
@@ -158,7 +159,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="w-full max-w-md bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
           <div className="text-center mb-8">
             <img
-              src="/images/jayshree-realty-logo.png"
+              src={logo}
               alt="Jayshree Realty"
               className="h-14 mx-auto object-contain mb-3"
             />

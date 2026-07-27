@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, MessageSquare, CheckCircle2, ChevronRight } from 'lucide-react';
+import logo from '../assets/jayshree-realty-logo.png';
 
 export const Footer: React.FC = () => {
   return (
@@ -14,7 +15,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <Link to="/" className="inline-block">
               <img
-                src="/images/jayshree-realty-logo.png"
+                src={logo}
                 alt="Jayshree Realty"
                 className="h-14 w-auto object-contain mb-2"
               />

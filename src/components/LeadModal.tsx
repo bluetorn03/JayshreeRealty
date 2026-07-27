@@ -3,6 +3,7 @@ import { X, ShieldCheck, CheckCircle2, Phone, Mail, User, Building, MapPin, Spar
 import { useLeads } from '../context/LeadContext';
 import { useData } from '../context/DataContext';
 import { useLocation } from 'react-router-dom';
+import logo from '../assets/jayshree-realty-logo.png';
 
 export const LeadModal: React.FC = () => {
   const { isModalOpen, closeModal, addLead, modalCtaSource, modalRequirement } = useLeads();
@@ -89,7 +90,7 @@ export const LeadModal: React.FC = () => {
           <div className="relative z-10 space-y-6">
             <div className="inline-block">
               <img
-                src="/images/jayshree-realty-logo.png"
+                src={logo}
                 alt="Jayshree Realty"
                 className="h-12 w-auto object-contain mb-2"
               />

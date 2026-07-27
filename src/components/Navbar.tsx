@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Phone, Menu, X, ChevronDown, Building2, Home as HomeIcon, MapPin } from 'lucide-react';
 import { useLeads } from '../context/LeadContext';
+import logo from '../assets/jayshree-realty-logo.png';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,7 +38,7 @@ export const Navbar: React.FC = () => {
         {/* Brand Logo Area */}
         <Link to="/" className="flex items-center gap-3.5 shrink-0 group py-1">
           <img
-            src="/images/jayshree-realty-logo.png"
+            src={logo}
             alt="Jayshree Realty"
             className="h-11 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
