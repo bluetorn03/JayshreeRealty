@@ -20,7 +20,8 @@ export const FeaturedProjects: React.FC = () => {
   ];
 
   const displayedProjects = projects.filter((p) => {
-    if (p.published === false) return false;
+    if (p.published === false || p.archived === true) return false;
+    if (p.placements && p.placements.length > 0 && !p.placements.includes('featured') && !p.placements.includes('homepage') && !p.isFeatured) return false;
     if (activeGroup === 'All') return true;
     return p.category === activeGroup;
   });

@@ -12,7 +12,8 @@ export const BuyProperty: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const filteredProperties = projects.filter((p) => {
-    if (p.published === false) return false;
+    if (p.published === false || p.archived === true) return false;
+    if (p.placements && p.placements.length > 0 && !p.placements.includes('buy') && !p.placements.includes('homepage')) return false;
 
     const matchesSearch =
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

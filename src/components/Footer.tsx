@@ -27,7 +27,6 @@ export const Footer: React.FC = () => {
               <span className="badge-gold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#c5a059]" /> 100% Verified Deals
               </span>
-              <span className="badge-emerald">0% Brokerage Options</span>
             </div>
           </div>
 

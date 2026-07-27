@@ -47,7 +47,7 @@ export const About: React.FC = () => {
                   <CheckCircle2 className="w-4 h-4 text-[#99732b]" /> 100% Legal Title Search & CIDCO Paperwork
                 </div>
                 <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-900">
-                  <CheckCircle2 className="w-4 h-4 text-[#99732b]" /> Verified Builder Inventory with 0% Brokerage Options
+                  <CheckCircle2 className="w-4 h-4 text-[#99732b]" /> Verified Developer Inventory & Direct Pricing
                 </div>
                 <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-slate-900">
                   <CheckCircle2 className="w-4 h-4 text-[#99732b]" /> Complimentary Transport for Site Visits

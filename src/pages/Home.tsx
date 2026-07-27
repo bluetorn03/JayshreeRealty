@@ -47,7 +47,8 @@ export const Home: React.FC = () => {
   }, [currentText, isDeleting, keywordIndex, keywords]);
 
   const featuredProjects = projects.filter((p) => {
-    if (p.published === false) return false;
+    if (p.published === false || p.archived === true) return false;
+    if (p.placements && p.placements.length > 0 && !p.placements.includes('homepage') && !p.placements.includes('featured') && !p.isFeatured) return false;
     if (selectedCategory === 'All') return true;
     if (selectedCategory === 'Resale') return p.type === 'Resale';
     return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
@@ -126,7 +127,7 @@ export const Home: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Award className="w-5 h-5 text-[#c5a059] shrink-0" />
-                  <span>0% Brokerage Options</span>
+                  <span>Direct Developer Launch</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Star className="w-5 h-5 text-[#c5a059] fill-[#c5a059] shrink-0" />

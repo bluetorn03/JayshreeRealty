@@ -115,7 +115,7 @@ export const LeadModal: React.FC = () => {
           <div className="relative z-10 space-y-3 pt-6 border-t border-slate-800/80 text-xs text-slate-300 font-outfit">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#25d366] shrink-0" />
-              <span>0% Brokerage on Selected New Launches</span>
+              <span>Direct Developer Pricing & Launch Discounts</span>
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#25d366] shrink-0" />

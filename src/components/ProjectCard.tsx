@@ -46,8 +46,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
             {property.type}
           </span>
 
-          {/* Brokerage Badge ONLY if explicitly enabled in Admin / property.brokerageFree or '0% Brokerage' */}
-          {(property.brokerageFree || property.brokerage === '0% Brokerage') && (
+          {/* Brokerage Badge ONLY if explicitly enabled in Admin (property.brokerageFree === true) */}
+          {property.brokerageFree === true && (
             <span className="badge-emerald font-outfit shadow-md backdrop-blur-md text-[11px]">
               0% Brokerage
             </span>
