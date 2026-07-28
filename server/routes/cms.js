@@ -1,5 +1,5 @@
 import express from 'express';
-import { query, getOne, run } from '../db/database.js';
+import { supabase } from '../db/supabase.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,13 +7,17 @@ const router = express.Router();
 // GET /api/cms/all (Public - loads initial CMS settings for website frontend)
 router.get('/all', async (req, res) => {
   try {
-    const heroRow = await getOne(`SELECT * FROM hero_settings WHERE id = 1`);
-    const popupRow = await getOne(`SELECT * FROM popup_settings WHERE id = 1`);
-    const siteRow = await getOne(`SELECT * FROM site_settings WHERE id = 1`);
-    const counterRows = await query(`SELECT * FROM counters ORDER BY sort_order ASC`);
-    const locationRows = await query(`SELECT * FROM location_nodes ORDER BY sort_order ASC`);
-    const categoryRows = await query(`SELECT * FROM categories ORDER BY sort_order ASC`);
-    const reviewRows = await query(`SELECT * FROM reviews ORDER BY sort_order ASC`);
+    const { data: heroRows } = await supabase.from('hero_settings').select('*').eq('id', 1);
+    const { data: popupRows } = await supabase.from('popup_settings').select('*').eq('id', 1);
+    const { data: siteRows } = await supabase.from('site_settings').select('*').eq('id', 1);
+    const { data: counterRows } = await supabase.from('counters').select('*').order('sort_order', { ascending: true });
+    const { data: locationRows } = await supabase.from('location_nodes').select('*').order('sort_order', { ascending: true });
+    const { data: categoryRows } = await supabase.from('categories').select('*').order('sort_order', { ascending: true });
+    const { data: reviewRows } = await supabase.from('reviews').select('*').order('sort_order', { ascending: true });
+
+    const heroRow = heroRows && heroRows.length > 0 ? heroRows[0] : null;
+    const popupRow = popupRows && popupRows.length > 0 ? popupRows[0] : null;
+    const siteRow = siteRows && siteRows.length > 0 ? siteRows[0] : null;
 
     return res.json({
       success: true,
@@ -21,7 +25,7 @@ router.get('/all', async (req, res) => {
         headingPart1: heroRow.heading_part1,
         headingGold: heroRow.heading_gold,
         subtext: heroRow.subtext,
-        keywords: heroRow.keywords_json ? JSON.parse(heroRow.keywords_json) : [],
+        keywords: heroRow.keywords_json ? (typeof heroRow.keywords_json === 'string' ? JSON.parse(heroRow.keywords_json) : heroRow.keywords_json) : [],
         backgroundImage: heroRow.background_image
       } : null,
       popupSettings: popupRow ? {
@@ -66,21 +70,21 @@ router.get('/all', async (req, res) => {
         maintenanceMode: Boolean(siteRow.maintenance_mode),
         maintenanceMessage: siteRow.maintenance_message
       } : null,
-      counters: counterRows.map(c => ({
+      counters: (counterRows || []).map(c => ({
         id: c.id,
         label: c.label,
         value: c.value,
         suffix: c.suffix,
         iconName: c.icon_name
       })),
-      locations: locationRows.map(l => ({
+      locations: (locationRows || []).map(l => ({
         id: l.id,
         name: l.name,
         description: l.description,
         activeCount: l.active_count
       })),
-      categories: categoryRows.map(c => c.name),
-      reviews: reviewRows.map(r => ({
+      categories: (categoryRows || []).map(c => c.name),
+      reviews: (reviewRows || []).map(r => ({
         id: r.id,
         author: r.author,
         rating: r.rating,
@@ -103,16 +107,19 @@ router.get('/all', async (req, res) => {
 router.put('/hero', authenticateToken, async (req, res) => {
   try {
     const { headingPart1, headingGold, subtext, keywords, backgroundImage } = req.body;
-    await run(`UPDATE hero_settings SET
-      heading_part1 = ?, heading_gold = ?, subtext = ?, keywords_json = ?, background_image = ?
-      WHERE id = 1`, [
-      headingPart1,
-      headingGold,
-      subtext,
-      JSON.stringify(keywords || []),
-      backgroundImage
-    ]);
-    return res.json({ success: true, message: 'Hero settings updated successfully.' });
+    const heroRecord = {
+      id: 1,
+      heading_part1: headingPart1,
+      heading_gold: headingGold,
+      subtext: subtext,
+      keywords_json: JSON.stringify(keywords || []),
+      background_image: backgroundImage
+    };
+
+    const { error } = await supabase.from('hero_settings').upsert(heroRecord);
+    if (error) throw error;
+
+    return res.json({ success: true, message: 'Hero settings updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update hero settings' });
   }
@@ -121,147 +128,237 @@ router.put('/hero', authenticateToken, async (req, res) => {
 // PUT /api/cms/popup (Protected Admin)
 router.put('/popup', authenticateToken, async (req, res) => {
   try {
-    const { title, subtitle, badge, leftImage, privacyText, enabled, triggerDelay, scrollTriggerPercent, redirectUrl, successMessage } = req.body;
-    await run(`UPDATE popup_settings SET
-      title = ?, subtitle = ?, badge = ?, left_image = ?, privacy_text = ?,
-      enabled = ?, trigger_delay = ?, scroll_trigger_percent = ?, redirect_url = ?, success_message = ?
-      WHERE id = 1`, [
-      title, subtitle, badge, leftImage, privacyText,
-      enabled ? 1 : 0, triggerDelay || 3, scrollTriggerPercent || 25,
-      redirectUrl || '', successMessage || ''
-    ]);
-    return res.json({ success: true, message: 'Popup settings updated successfully.' });
+    const p = req.body;
+    const popupRecord = {
+      id: 1,
+      title: p.title,
+      subtitle: p.subtitle,
+      badge: p.badge,
+      left_image: p.leftImage,
+      privacy_text: p.privacyText,
+      enabled: p.enabled ? 1 : 0,
+      trigger_delay: p.triggerDelay || 3,
+      scroll_trigger_percent: p.scrollTriggerPercent || 25,
+      redirect_url: p.redirectUrl || '',
+      success_message: p.successMessage || 'Thank you! Our luxury real estate expert will contact you shortly.'
+    };
+
+    const { error } = await supabase.from('popup_settings').upsert(popupRecord);
+    if (error) throw error;
+
+    return res.json({ success: true, message: 'Popup settings updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update popup settings' });
   }
 });
 
-// PUT /api/cms/counters (Protected Admin - connected save/reset)
+// PUT /api/cms/site-settings (Protected Admin)
+router.put('/site-settings', authenticateToken, async (req, res) => {
+  try {
+    const s = req.body;
+    const siteRecord = {
+      id: 1,
+      company_name: s.companyName,
+      phone: s.phone,
+      phone_raw: s.phoneRaw,
+      email: s.email,
+      whatsapp: s.whatsapp,
+      whatsapp_raw: s.whatsappRaw,
+      address: s.address,
+      google_maps_embed_url: s.googleMapsEmbedUrl,
+      logo_url: s.logoUrl,
+      favicon_url: s.faviconUrl,
+      facebook_url: s.facebookUrl,
+      instagram_url: s.instagramUrl,
+      linkedin_url: s.linkedinUrl,
+      youtube_url: s.youtubeUrl,
+      seo_title_default: s.seoTitleDefault,
+      seo_description_default: s.seoDescriptionDefault,
+      seo_keywords_default: s.seoKeywordsDefault,
+      ga_measurement_id: s.gaMeasurementId,
+      gtm_container_id: s.gtmContainerId,
+      gsc_verification_meta: s.gscVerificationMeta,
+      robots_txt_content: s.robotsTxtContent,
+      sitemap_auto_generate: s.sitemapAutoGenerate ? 1 : 0,
+      smtp_host: s.smtpHost,
+      smtp_port: s.smtpPort,
+      smtp_user: s.smtpUser,
+      smtp_from_email: s.smtpFromEmail,
+      maintenance_mode: s.maintenanceMode ? 1 : 0,
+      maintenance_message: s.maintenanceMessage
+    };
+
+    const { error } = await supabase.from('site_settings').upsert(siteRecord);
+    if (error) throw error;
+
+    return res.json({ success: true, message: 'Site settings updated successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update site settings' });
+  }
+});
+
+// PUT /api/cms/counters (Protected Admin)
 router.put('/counters', authenticateToken, async (req, res) => {
   try {
     const { counters } = req.body;
-    if (!Array.isArray(counters)) {
-      return res.status(400).json({ success: false, message: 'Array of counters required.' });
+    if (!Array.isArray(counters)) return res.status(400).json({ success: false, message: 'Counters array required' });
+
+    for (let index = 0; index < counters.length; index++) {
+      const c = counters[index];
+      await supabase.from('counters').upsert({
+        id: c.id,
+        label: c.label,
+        value: c.value,
+        suffix: c.suffix || '',
+        icon_name: c.iconName || 'Building2',
+        sort_order: index
+      });
     }
-    await run(`DELETE FROM counters`);
-    for (let i = 0; i < counters.length; i++) {
-      const c = counters[i];
-      await run(`INSERT INTO counters (id, label, value, suffix, icon_name, sort_order) VALUES (?, ?, ?, ?, ?, ?)`, [
-        c.id || `cnt-${i + 1}`,
-        c.label,
-        c.value,
-        c.suffix || '',
-        c.iconName || 'TrendingUp',
-        i + 1
-      ]);
-    }
-    return res.json({ success: true, message: 'Counters updated successfully.' });
+
+    return res.json({ success: true, message: 'Counters updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update counters' });
   }
 });
 
-// Category endpoints
+// POST /api/cms/categories (Protected Admin)
 router.post('/categories', authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) return res.status(400).json({ success: false, message: 'Category name required' });
+
     const id = `cat-${Date.now()}`;
-    await run(`INSERT INTO categories (id, name, sort_order) VALUES (?, ?, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM categories))`, [id, name.trim()]);
-    return res.json({ success: true, message: 'Category added' });
+    await supabase.from('categories').insert([{ id, name: name.trim(), sort_order: 0 }]);
+    return res.json({ success: true, message: 'Category added successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Failed to add category' });
+    return res.status(500).json({ success: false, message: 'Category already exists or error' });
   }
 });
 
+// PUT /api/cms/categories/edit (Protected Admin)
 router.put('/categories/edit', authenticateToken, async (req, res) => {
   try {
     const { oldName, newName } = req.body;
-    if (!oldName || !newName) return res.status(400).json({ success: false, message: 'oldName and newName required' });
-    await run(`UPDATE categories SET name = ? WHERE name = ?`, [newName.trim(), oldName.trim()]);
-    await run(`UPDATE properties SET category = ? WHERE category = ?`, [newName.trim(), oldName.trim()]);
+    await supabase.from('categories').update({ name: newName.trim() }).eq('name', oldName);
     return res.json({ success: true, message: 'Category updated successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Failed to edit category' });
+    return res.status(500).json({ success: false, message: 'Failed to update category' });
   }
 });
 
+// DELETE /api/cms/categories/:name (Protected Admin)
 router.delete('/categories/:name', authenticateToken, async (req, res) => {
   try {
-    await run(`DELETE FROM categories WHERE name = ?`, [decodeURIComponent(req.params.name)]);
-    return res.json({ success: true, message: 'Category deleted' });
+    const name = decodeURIComponent(req.params.name);
+    await supabase.from('categories').delete().eq('name', name);
+    return res.json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete category' });
   }
 });
 
-// Reviews endpoints
+// POST /api/cms/reviews (Protected Admin)
 router.post('/reviews', authenticateToken, async (req, res) => {
   try {
     const r = req.body;
     const id = `rev-${Date.now()}`;
-    await run(`INSERT INTO reviews (id, author, rating, time_ago, content, avatar_color, verified, reviews_count, is_local_guide, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-      id, r.author, r.rating || 5, r.timeAgo || 'Recently', r.content, r.avatarColor || 'bg-amber-600',
-      r.verified ? 1 : 0, r.reviewsCount || '1 review', r.isLocalGuide ? 1 : 0, r.published !== false ? 1 : 0
-    ]);
-    return res.json({ success: true, message: 'Review created successfully' });
+    const newReview = {
+      id,
+      author: r.author,
+      rating: r.rating || 5,
+      time_ago: r.timeAgo || 'Recently',
+      content: r.content,
+      avatar_color: r.avatarColor || 'bg-amber-500',
+      verified: r.verified ? 1 : 0,
+      reviews_count: r.reviewsCount || '1 review',
+      is_local_guide: r.isLocalGuide ? 1 : 0,
+      published: r.published !== undefined ? (r.published ? 1 : 0) : 1,
+      sort_order: 0
+    };
+
+    await supabase.from('reviews').insert([newReview]);
+    return res.json({ success: true, review: { ...r, id }, message: 'Review created successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to add review' });
   }
 });
 
+// PUT /api/cms/reviews/:id (Protected Admin)
 router.put('/reviews/:id', authenticateToken, async (req, res) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
     const r = req.body;
-    await run(`UPDATE reviews SET author = ?, rating = ?, content = ?, published = ? WHERE id = ?`, [
-      r.author, r.rating, r.content, r.published ? 1 : 0, id
-    ]);
-    return res.json({ success: true, message: 'Review updated' });
+    const updates = {};
+
+    if (r.author !== undefined) updates.author = r.author;
+    if (r.rating !== undefined) updates.rating = r.rating;
+    if (r.timeAgo !== undefined) updates.time_ago = r.timeAgo;
+    if (r.content !== undefined) updates.content = r.content;
+    if (r.avatarColor !== undefined) updates.avatar_color = r.avatarColor;
+    if (r.verified !== undefined) updates.verified = r.verified ? 1 : 0;
+    if (r.reviewsCount !== undefined) updates.reviews_count = r.reviewsCount;
+    if (r.isLocalGuide !== undefined) updates.is_local_guide = r.isLocalGuide ? 1 : 0;
+    if (r.published !== undefined) updates.published = r.published ? 1 : 0;
+
+    await supabase.from('reviews').update(updates).eq('id', id);
+    return res.json({ success: true, message: 'Review updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update review' });
   }
 });
 
+// DELETE /api/cms/reviews/:id (Protected Admin)
 router.delete('/reviews/:id', authenticateToken, async (req, res) => {
   try {
-    await run(`DELETE FROM reviews WHERE id = ?`, [req.params.id]);
-    return res.json({ success: true, message: 'Review deleted' });
+    const { id } = req.params;
+    await supabase.from('reviews').delete().eq('id', id);
+    return res.json({ success: true, message: 'Review deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete review' });
   }
 });
 
-// Location Nodes Endpoints
+// POST /api/cms/locations (Protected Admin)
 router.post('/locations', authenticateToken, async (req, res) => {
   try {
-    const { name, description, activeCount } = req.body;
+    const l = req.body;
     const id = `loc-${Date.now()}`;
-    await run(`INSERT INTO location_nodes (id, name, description, active_count) VALUES (?, ?, ?, ?)`, [
-      id, name, description || '', activeCount || 0
-    ]);
-    return res.json({ success: true, message: 'Location added' });
+    await supabase.from('location_nodes').insert([{
+      id,
+      name: l.name,
+      description: l.description || '',
+      active_count: l.activeCount || 0,
+      sort_order: 0
+    }]);
+    return res.json({ success: true, location: { ...l, id }, message: 'Location added successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to add location' });
   }
 });
 
+// PUT /api/cms/locations/:id (Protected Admin)
 router.put('/locations/:id', authenticateToken, async (req, res) => {
   try {
-    const { name, description, activeCount } = req.body;
-    await run(`UPDATE location_nodes SET name = ?, description = ?, active_count = ? WHERE id = ?`, [
-      name, description, activeCount, req.params.id
-    ]);
-    return res.json({ success: true, message: 'Location updated' });
+    const { id } = req.params;
+    const l = req.body;
+    const updates = {};
+    if (l.name !== undefined) updates.name = l.name;
+    if (l.description !== undefined) updates.description = l.description;
+    if (l.activeCount !== undefined) updates.active_count = l.activeCount;
+
+    await supabase.from('location_nodes').update(updates).eq('id', id);
+    return res.json({ success: true, message: 'Location updated successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update location' });
   }
 });
 
+// DELETE /api/cms/locations/:id (Protected Admin)
 router.delete('/locations/:id', authenticateToken, async (req, res) => {
   try {
-    await run(`DELETE FROM location_nodes WHERE id = ?`, [req.params.id]);
-    return res.json({ success: true, message: 'Location deleted' });
+    const { id } = req.params;
+    await supabase.from('location_nodes').delete().eq('id', id);
+    return res.json({ success: true, message: 'Location deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete location' });
   }

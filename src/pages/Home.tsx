@@ -228,7 +228,7 @@ export const Home: React.FC = () => {
               icon={Building2}
             />
             <AnimatedCounter
-              end={15}
+              end={25}
               suffix="+"
               label="Years Trust"
               sublabel="Navi Mumbai Experts"

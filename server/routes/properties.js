@@ -1,10 +1,10 @@
 import express from 'express';
-import { query, getOne, run } from '../db/database.js';
+import { supabase } from '../db/supabase.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper to format property row from DB
+// Helper to format property record for frontend
 function formatProperty(row) {
   if (!row) return null;
   return {
@@ -18,9 +18,9 @@ function formatProperty(row) {
     price: row.price || '',
     area: row.area || '',
     possession: row.possession || '',
-    features: row.features_json ? JSON.parse(row.features_json) : [],
+    features: row.features_json ? (typeof row.features_json === 'string' ? JSON.parse(row.features_json) : row.features_json) : [],
     image: row.image,
-    galleryImages: row.gallery_images_json ? JSON.parse(row.gallery_images_json) : [row.image],
+    galleryImages: row.gallery_images_json ? (typeof row.gallery_images_json === 'string' ? JSON.parse(row.gallery_images_json) : row.gallery_images_json) : [row.image],
     youtubeUrl: row.youtube_url || '',
     description: row.description || '',
     shortDescription: row.short_description || '',
@@ -32,12 +32,12 @@ function formatProperty(row) {
     brokerageFree: Boolean(row.brokerage_free),
     published: Boolean(row.published),
     archived: Boolean(row.archived),
-    placements: row.placements_json ? JSON.parse(row.placements_json) : ['buy'],
+    placements: row.placements_json ? (typeof row.placements_json === 'string' ? JSON.parse(row.placements_json) : row.placements_json) : ['buy'],
     brochureUrl: row.brochure_url || '',
     floorPlanUrl: row.floor_plan_url || '',
     builderName: row.builder_name || '',
     builderExperience: row.builder_experience || '',
-    amenities: row.amenities_json ? JSON.parse(row.amenities_json) : [],
+    amenities: row.amenities_json ? (typeof row.amenities_json === 'string' ? JSON.parse(row.amenities_json) : row.amenities_json) : [],
     seoTitle: row.seo_title || row.title,
     seoDescription: row.seo_description || row.highlights,
     seoKeywords: row.seo_keywords || '',
@@ -49,8 +49,17 @@ function formatProperty(row) {
 // GET /api/properties (Public)
 router.get('/', async (req, res) => {
   try {
-    const rows = await query(`SELECT * FROM properties ORDER BY created_at DESC`);
-    const properties = rows.map(formatProperty);
+    const { data: rows, error } = await supabase
+      .from('properties')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[Properties API] Error reading from Supabase:', error);
+      return res.json({ success: true, properties: [] });
+    }
+
+    const properties = (rows || []).map(formatProperty);
     return res.json({ success: true, properties });
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -61,11 +70,18 @@ router.get('/', async (req, res) => {
 // GET /api/properties/:id (Public)
 router.get('/:id', async (req, res) => {
   try {
-    const row = await getOne(`SELECT * FROM properties WHERE id = ? OR slug = ?`, [req.params.id, req.params.id]);
-    if (!row) {
+    const { id } = req.params;
+    const { data: rows, error } = await supabase
+      .from('properties')
+      .select('*')
+      .or(`id.eq.${id},slug.eq.${id}`)
+      .limit(1);
+
+    if (error || !rows || rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Property not found' });
     }
-    return res.json({ success: true, property: formatProperty(row) });
+
+    return res.json({ success: true, property: formatProperty(rows[0]) });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error loading property' });
   }
@@ -78,57 +94,56 @@ router.post('/', authenticateToken, async (req, res) => {
     const id = p.id || `proj-${Date.now()}`;
     const slug = (p.slug || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')) + '-' + Date.now().toString().slice(-4);
 
-    await run(`INSERT INTO properties (
-      id, slug, title, category, location, type, configuration, price, area, possession,
-      features_json, image, gallery_images_json, youtube_url, description, short_description, long_description,
-      is_featured, code, highlights, brokerage, brokerage_free, published, archived, placements_json, brochure_url, floor_plan_url,
-      builder_name, builder_experience, amenities_json, seo_title, seo_description, seo_keywords
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    const newRecord = {
       id,
       slug,
-      p.title || 'Untitled Property',
-      p.category || 'Kharghar New Projects',
-      p.location || 'Kharghar',
-      p.type || 'New Launch',
-      p.configuration || '2 BHK',
-      p.price || 'Price on Call',
-      p.area || '750 Sq.Ft.',
-      p.possession || 'Ready Possession',
-      JSON.stringify(p.features || []),
-      p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
-      JSON.stringify(p.galleryImages || [p.image]),
-      p.youtubeUrl || '',
-      p.description || '',
-      p.shortDescription || '',
-      p.longDescription || '',
-      p.isFeatured ? 1 : 0,
-      p.code || '',
-      p.highlights || '',
-      p.brokerage || '0% Brokerage',
-      p.brokerageFree ? 1 : 0,
-      p.published !== false ? 1 : 0,
-      p.archived ? 1 : 0,
-      JSON.stringify(p.placements || ['homepage', 'featured', 'buy']),
-      p.brochureUrl || '',
-      p.floorPlanUrl || '',
-      p.builderName || 'Jayshree Developers',
-      p.builderExperience || '12+ Years',
-      JSON.stringify(p.amenities || []),
-      p.seoTitle || p.title,
-      p.seoDescription || p.highlights,
-      p.seoKeywords || ''
-    ]);
+      title: p.title,
+      category: p.category || 'Kharghar New Projects',
+      location: p.location || 'Navi Mumbai',
+      type: p.type || 'New Launch',
+      configuration: p.configuration || '',
+      price: p.price || '',
+      area: p.area || '',
+      possession: p.possession || '',
+      features_json: JSON.stringify(p.features || []),
+      image: p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
+      gallery_images_json: JSON.stringify(p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages : [p.image || '']),
+      is_featured: p.isFeatured ? 1 : 0,
+      code: p.code || `JR-${Math.floor(1000 + Math.random() * 9000)}`,
+      highlights: p.highlights || '',
+      brokerage: p.brokerage || '0% Brokerage',
+      brokerage_free: p.brokerageFree ? 1 : 0,
+      published: p.published !== undefined ? (p.published ? 1 : 0) : 1,
+      archived: p.archived ? 1 : 0,
+      placements_json: JSON.stringify(p.placements || ['buy']),
+      brochure_url: p.brochureUrl || '',
+      floor_plan_url: p.floorPlanUrl || '',
+      builder_name: p.builderName || 'Jayshree Realty',
+      builder_experience: p.builderExperience || '12+ Years',
+      amenities_json: JSON.stringify(p.amenities || []),
+      seo_title: p.seoTitle || p.title,
+      seo_description: p.seoDescription || p.highlights,
+      seo_keywords: p.seoKeywords || '',
+      youtube_url: p.youtubeUrl || '',
+      description: p.description || '',
+      short_description: p.shortDescription || '',
+      long_description: p.longDescription || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    await run(`INSERT INTO activity_logs (id, user, action, details, ip_address) VALUES (?, ?, ?, ?, ?)`, [
-      `log-${Date.now()}`,
-      req.user.username,
-      'Create Property',
-      `Created property "${p.title}" (ID: ${id})`,
-      req.ip
-    ]);
+    const { data, error } = await supabase
+      .from('properties')
+      .insert([newRecord])
+      .select();
 
-    const created = await getOne(`SELECT * FROM properties WHERE id = ?`, [id]);
-    return res.json({ success: true, property: formatProperty(created) });
+    if (error) {
+      console.error('[Properties API] Error creating property:', error);
+      return res.status(500).json({ success: false, message: 'Database error creating property: ' + error.message });
+    }
+
+    const createdProperty = formatProperty(data ? data[0] : newRecord);
+    return res.json({ success: true, property: createdProperty, message: 'Property created successfully' });
   } catch (error) {
     console.error('Error creating property:', error);
     return res.status(500).json({ success: false, message: 'Failed to create property' });
@@ -138,65 +153,56 @@ router.post('/', authenticateToken, async (req, res) => {
 // PUT /api/properties/:id (Protected Admin)
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
     const p = req.body;
 
-    const existing = await getOne(`SELECT * FROM properties WHERE id = ?`, [id]);
-    if (!existing) {
-      return res.status(404).json({ success: false, message: 'Property not found' });
+    const updates = {};
+    if (p.title !== undefined) updates.title = p.title;
+    if (p.category !== undefined) updates.category = p.category;
+    if (p.location !== undefined) updates.location = p.location;
+    if (p.type !== undefined) updates.type = p.type;
+    if (p.configuration !== undefined) updates.configuration = p.configuration;
+    if (p.price !== undefined) updates.price = p.price;
+    if (p.area !== undefined) updates.area = p.area;
+    if (p.possession !== undefined) updates.possession = p.possession;
+    if (p.features !== undefined) updates.features_json = JSON.stringify(p.features);
+    if (p.image !== undefined) updates.image = p.image;
+    if (p.galleryImages !== undefined) updates.gallery_images_json = JSON.stringify(p.galleryImages);
+    if (p.isFeatured !== undefined) updates.is_featured = p.isFeatured ? 1 : 0;
+    if (p.code !== undefined) updates.code = p.code;
+    if (p.highlights !== undefined) updates.highlights = p.highlights;
+    if (p.brokerage !== undefined) updates.brokerage = p.brokerage;
+    if (p.brokerageFree !== undefined) updates.brokerage_free = p.brokerageFree ? 1 : 0;
+    if (p.published !== undefined) updates.published = p.published ? 1 : 0;
+    if (p.archived !== undefined) updates.archived = p.archived ? 1 : 0;
+    if (p.placements !== undefined) updates.placements_json = JSON.stringify(p.placements);
+    if (p.brochureUrl !== undefined) updates.brochure_url = p.brochureUrl;
+    if (p.floorPlanUrl !== undefined) updates.floor_plan_url = p.floorPlanUrl;
+    if (p.builderName !== undefined) updates.builder_name = p.builderName;
+    if (p.builderExperience !== undefined) updates.builder_experience = p.builderExperience;
+    if (p.amenities !== undefined) updates.amenities_json = JSON.stringify(p.amenities);
+    if (p.seoTitle !== undefined) updates.seo_title = p.seoTitle;
+    if (p.seoDescription !== undefined) updates.seo_description = p.seoDescription;
+    if (p.seoKeywords !== undefined) updates.seo_keywords = p.seoKeywords;
+    if (p.youtubeUrl !== undefined) updates.youtube_url = p.youtubeUrl;
+    if (p.description !== undefined) updates.description = p.description;
+    if (p.shortDescription !== undefined) updates.short_description = p.shortDescription;
+    if (p.longDescription !== undefined) updates.long_description = p.longDescription;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('properties')
+      .update(updates)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('[Properties API] Error updating property:', error);
+      return res.status(500).json({ success: false, message: 'Failed to update property' });
     }
 
-    await run(`UPDATE properties SET
-      title = ?, category = ?, location = ?, type = ?, configuration = ?, price = ?, area = ?, possession = ?,
-      features_json = ?, image = ?, gallery_images_json = ?, youtube_url = ?, description = ?, short_description = ?, long_description = ?,
-      is_featured = ?, code = ?, highlights = ?, brokerage = ?, brokerage_free = ?, published = ?, archived = ?, placements_json = ?, brochure_url = ?,
-      floor_plan_url = ?, builder_name = ?, builder_experience = ?, amenities_json = ?, seo_title = ?,
-      seo_description = ?, seo_keywords = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`, [
-      p.title !== undefined ? p.title : existing.title,
-      p.category !== undefined ? p.category : existing.category,
-      p.location !== undefined ? p.location : existing.location,
-      p.type !== undefined ? p.type : existing.type,
-      p.configuration !== undefined ? p.configuration : existing.configuration,
-      p.price !== undefined ? p.price : existing.price,
-      p.area !== undefined ? p.area : existing.area,
-      p.possession !== undefined ? p.possession : existing.possession,
-      p.features ? JSON.stringify(p.features) : existing.features_json,
-      p.image !== undefined ? p.image : existing.image,
-      p.galleryImages ? JSON.stringify(p.galleryImages) : existing.gallery_images_json,
-      p.youtubeUrl !== undefined ? p.youtubeUrl : existing.youtube_url,
-      p.description !== undefined ? p.description : existing.description,
-      p.shortDescription !== undefined ? p.shortDescription : existing.short_description,
-      p.longDescription !== undefined ? p.longDescription : existing.long_description,
-      p.isFeatured !== undefined ? (p.isFeatured ? 1 : 0) : existing.is_featured,
-      p.code !== undefined ? p.code : existing.code,
-      p.highlights !== undefined ? p.highlights : existing.highlights,
-      p.brokerage !== undefined ? p.brokerage : existing.brokerage,
-      p.brokerageFree !== undefined ? (p.brokerageFree ? 1 : 0) : existing.brokerage_free,
-      p.published !== undefined ? (p.published ? 1 : 0) : existing.published,
-      p.archived !== undefined ? (p.archived ? 1 : 0) : existing.archived,
-      p.placements ? JSON.stringify(p.placements) : existing.placements_json,
-      p.brochureUrl !== undefined ? p.brochureUrl : existing.brochure_url,
-      p.floorPlanUrl !== undefined ? p.floorPlanUrl : existing.floor_plan_url,
-      p.builderName !== undefined ? p.builderName : existing.builder_name,
-      p.builderExperience !== undefined ? p.builderExperience : existing.builder_experience,
-      p.amenities ? JSON.stringify(p.amenities) : existing.amenities_json,
-      p.seoTitle !== undefined ? p.seoTitle : existing.seo_title,
-      p.seoDescription !== undefined ? p.seoDescription : existing.seo_description,
-      p.seoKeywords !== undefined ? p.seoKeywords : existing.seo_keywords,
-      id
-    ]);
-
-    await run(`INSERT INTO activity_logs (id, user, action, details, ip_address) VALUES (?, ?, ?, ?, ?)`, [
-      `log-${Date.now()}`,
-      req.user.username,
-      'Update Property',
-      `Updated property "${p.title || existing.title}"`,
-      req.ip
-    ]);
-
-    const updated = await getOne(`SELECT * FROM properties WHERE id = ?`, [id]);
-    return res.json({ success: true, property: formatProperty(updated) });
+    const updatedProperty = data && data.length > 0 ? formatProperty(data[0]) : null;
+    return res.json({ success: true, property: updatedProperty, message: 'Property updated successfully' });
   } catch (error) {
     console.error('Error updating property:', error);
     return res.status(500).json({ success: false, message: 'Failed to update property' });
@@ -206,26 +212,61 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // DELETE /api/properties/:id (Protected Admin)
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    const existing = await getOne(`SELECT * FROM properties WHERE id = ?`, [id]);
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('properties')
+      .delete()
+      .eq('id', id);
 
-    if (!existing) {
-      return res.status(404).json({ success: false, message: 'Property not found' });
+    if (error) {
+      return res.status(500).json({ success: false, message: 'Failed to delete property' });
     }
-
-    await run(`DELETE FROM properties WHERE id = ?`, [id]);
-
-    await run(`INSERT INTO activity_logs (id, user, action, details, ip_address) VALUES (?, ?, ?, ?, ?)`, [
-      `log-${Date.now()}`,
-      req.user.username,
-      'Delete Property',
-      `Deleted property "${existing.title}"`,
-      req.ip
-    ]);
 
     return res.json({ success: true, message: 'Property deleted successfully' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Failed to delete property' });
+    return res.status(500).json({ success: false, message: 'Error deleting property' });
+  }
+});
+
+// PATCH /api/properties/:id/toggle-featured (Protected Admin)
+router.patch('/:id/toggle-featured', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: current } = await supabase.from('properties').select('is_featured').eq('id', id).single();
+    const newStatus = current ? (current.is_featured ? 0 : 1) : 1;
+
+    await supabase.from('properties').update({ is_featured: newStatus }).eq('id', id);
+    return res.json({ success: true, isFeatured: Boolean(newStatus) });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error toggling featured' });
+  }
+});
+
+// PATCH /api/properties/:id/toggle-published (Protected Admin)
+router.patch('/:id/toggle-published', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: current } = await supabase.from('properties').select('published').eq('id', id).single();
+    const newStatus = current ? (current.published ? 0 : 1) : 1;
+
+    await supabase.from('properties').update({ published: newStatus }).eq('id', id);
+    return res.json({ success: true, published: Boolean(newStatus) });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error toggling published' });
+  }
+});
+
+// PATCH /api/properties/:id/toggle-archive (Protected Admin)
+router.patch('/:id/toggle-archive', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: current } = await supabase.from('properties').select('archived').eq('id', id).single();
+    const newStatus = current ? (current.archived ? 0 : 1) : 1;
+
+    await supabase.from('properties').update({ archived: newStatus }).eq('id', id);
+    return res.json({ success: true, archived: Boolean(newStatus) });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error toggling archive' });
   }
 });
 

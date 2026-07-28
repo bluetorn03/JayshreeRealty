@@ -74,7 +74,7 @@ export const Testimonials: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#0d1527] to-[#121c35] border border-[#c5a059]/40 rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#c5a059]/10 rounded-full blur-3xl"></div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10">
               <div className="md:col-span-4 text-center">
                 <div className="relative inline-block rounded-2xl overflow-hidden border-2 border-[#c5a059] shadow-2xl p-1.5 bg-[#070b19]">
@@ -85,7 +85,7 @@ export const Testimonials: React.FC = () => {
                   />
                   <div className="absolute bottom-3 left-3 right-3 bg-[#070b19]/90 backdrop-blur-md border border-[#c5a059]/40 rounded-lg p-2 text-center">
                     <span className="font-serif text-xs font-bold text-[#e5c178] block">Jayshree Realty Founder</span>
-                    <span className="text-[10px] text-slate-300">15+ Yrs Navi Mumbai Real Estate Expertise</span>
+                    <span className="text-[10px] text-slate-300">25+ Yrs Navi Mumbai Real Estate Expertise</span>
                   </div>
                 </div>
               </div>

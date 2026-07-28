@@ -161,6 +161,15 @@ export const api = {
     return res.json();
   },
 
+  async updateSiteSettings(siteData: any) {
+    const res = await fetch(`${API_BASE}/cms/site-settings`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(siteData),
+    });
+    return res.json();
+  },
+
   async updateCounters(counters: any[]) {
     const res = await fetch(`${API_BASE}/cms/counters`, {
       method: 'PUT',

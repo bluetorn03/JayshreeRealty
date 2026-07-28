@@ -364,7 +364,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateSiteSettings = async (settings: Partial<SiteSettings>) => {
-    setSiteSettings(prev => ({ ...prev, ...settings }));
+    const newSettings = { ...siteSettings, ...settings };
+    setSiteSettings(newSettings);
+    await api.updateSiteSettings(newSettings);
   };
 
   const addMediaItem = (url: string) => {

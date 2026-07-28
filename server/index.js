@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
-import { initDb } from './db/database.js';
+import { initSupabaseDb } from './db/supabase.js';
 
 import authRoutes from './routes/auth.js';
 import propertyRoutes from './routes/properties.js';
@@ -60,7 +60,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development'
+    env: process.env.NODE_ENV || 'development',
+    database: 'Supabase'
   });
 });
 
@@ -76,11 +77,12 @@ if (fs.existsSync(distPath)) {
 }
 
 // Start Server
-initDb().then(() => {
+initSupabaseDb().then(() => {
   app.listen(PORT, () => {
     console.log(`===================================================`);
     console.log(`🚀 Jayshree Realty Enterprise Backend Server Running`);
     console.log(`📡 URL: http://localhost:${PORT}`);
+    console.log(`⚡ Production Database: Supabase Integration Active`);
     console.log(`===================================================`);
   });
 }).catch(err => {
