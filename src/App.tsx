@@ -9,6 +9,7 @@ import { FloatingCTA } from './components/FloatingCTA';
 
 import { Home } from './pages/Home';
 import { About } from './pages/About';
+import { Testimonials } from './pages/Testimonials';
 import { BuyProperty } from './pages/BuyProperty';
 import { SellProperty } from './pages/SellProperty';
 import { CommercialProperties } from './pages/CommercialProperties';
@@ -20,8 +21,17 @@ import { TermsConditions } from './pages/TermsConditions';
 import { NotFound } from './pages/NotFound';
 import { AdminDashboard } from './pages/AdminDashboard';
 
+import { useLocation } from 'react-router-dom';
+import { analyticsTracker } from './services/analyticsTracker';
+
 // Public Layout Wrapper: Ensures Navbar, Footer, LeadModal, FloatingCTA are present ONLY on public pages
 const PublicLayout: React.FC = () => {
+  const location = useLocation();
+
+  React.useEffect(() => {
+    analyticsTracker.trackPageView(location.pathname, document.title || 'Jayshree Realty');
+  }, [location.pathname]);
+
   return (
     <div className="flex flex-col min-h-screen bg-[#070b19] text-slate-100 font-sans selection:bg-[#c5a059] selection:text-white">
       <Navbar />
@@ -48,12 +58,13 @@ export function App() {
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
+              <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/buy" element={<BuyProperty />} />
               <Route path="/sell" element={<SellProperty />} />
               <Route path="/commercial" element={<CommercialProperties />} />
               <Route path="/projects" element={<FeaturedProjects />} />
               <Route path="/listings" element={<PropertyListings />} />
-              <Route path="/reviews" element={<Navigate to="/" replace />} />
+              <Route path="/reviews" element={<Navigate to="/testimonials" replace />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />

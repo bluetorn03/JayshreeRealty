@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2 } from 'lucide-react';
+import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2, Play, X, Youtube } from 'lucide-react';
 import { PropertyItem } from '../types';
 import { useLeads } from '../context/LeadContext';
 
@@ -10,6 +10,29 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'light' }) => {
   const { openModal } = useLeads();
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [showVideoModal, setShowVideoModal] = React.useState(false);
+
+  const imagesList = React.useMemo(() => {
+    if (property.galleryImages && property.galleryImages.length > 0) {
+      return property.galleryImages;
+    }
+    return [property.image];
+  }, [property]);
+
+  React.useEffect(() => {
+    if (!isHovered || imagesList.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % imagesList.length);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [isHovered, imagesList]);
+
+  const currentDisplayImage = imagesList[currentImageIndex] || property.image;
+
   const whatsappUrl = `https://wa.me/918169005579?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
     property.title + ' (' + property.location + ')'
   )}%20from%20Jayshree%20Realty.`;
@@ -18,6 +41,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
 
   return (
     <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setCurrentImageIndex(0);
+      }}
       className={`rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 flex flex-col group ${
         isLight
           ? 'bg-white border border-amber-200/60 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-[#c5a059]'
@@ -27,12 +55,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
       {/* Image Container */}
       <div className="relative h-56 w-full overflow-hidden bg-slate-900">
         <img
-          src={property.image}
+          src={currentDisplayImage}
           alt={property.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/90 via-black/20 to-black/30"></div>
+
+        {/* Gallery Dots Indicator on Hover */}
+        {imagesList.length > 1 && (
+          <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {imagesList.map((_, idx) => (
+              <span
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === currentImageIndex ? 'w-4 bg-[#c5a059]' : 'w-1.5 bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Top Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2 z-10">
@@ -67,11 +109,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
             <span className="text-[10px] text-slate-300 uppercase tracking-widest block font-outfit font-medium">Starting Price</span>
             <span className="font-serif text-xl font-bold text-white tracking-wide">{property.price}</span>
           </div>
-          {property.isFeatured && (
-            <span className="text-[11px] bg-[#c5a059] text-[#070b19] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 font-outfit shadow-lg">
-              <Sparkles className="w-3 h-3" /> Featured
-            </span>
-          )}
+          {/* YouTube Video Button (Replaces Featured Badge) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setShowVideoModal(true);
+            }}
+            className="text-[11px] bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-full font-bold flex items-center gap-1 font-outfit shadow-lg transition-transform hover:scale-105"
+            title="Watch Property Walkthrough Video"
+          >
+            <Play className="w-3 h-3 fill-white" /> Watch Video
+          </button>
         </div>
       </div>
 
@@ -161,6 +211,48 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
           </a>
         </div>
       </div>
+
+      {/* YOUTUBE VIDEO MODAL */}
+      {showVideoModal && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4"
+          onClick={() => setShowVideoModal(false)}
+        >
+          <div
+            className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-4 w-full max-w-3xl shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 px-2">
+              <div className="flex items-center gap-2 font-outfit text-sm font-bold text-white">
+                <Youtube className="w-5 h-5 text-red-500" />
+                {property.title} - Official Video Tour
+              </div>
+              <button
+                onClick={() => setShowVideoModal(false)}
+                className="p-1.5 rounded-full bg-slate-800 hover:bg-[#c5a059] text-slate-300 hover:text-[#070b19] transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black">
+              <iframe
+                src={
+                  property.youtubeUrl && property.youtubeUrl.includes('embed')
+                    ? `${property.youtubeUrl}?autoplay=1`
+                    : property.youtubeUrl && property.youtubeUrl.includes('watch?v=')
+                    ? `https://www.youtube.com/embed/${property.youtubeUrl.split('watch?v=')[1]?.split('&')[0]}?autoplay=1`
+                    : `https://www.youtube.com/embed/videoseries?list=PL3x-videos-jayshree&autoplay=1`
+                }
+                title={`${property.title} YouTube Video`}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -46,9 +46,14 @@ export const BuyProperty: React.FC = () => {
         description="Browse premium verified properties for sale in Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel with Jayshree Realty."
       />
 
-      {/* 1. HEADER (Dark Navy Background) */}
-      <section className="pt-32 pb-20 section-navy border-b border-[#c5a059]/20">
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3">
+      {/* 1. HEADER */}
+      <section className="relative pt-32 pb-20 border-b border-[#c5a059]/20 overflow-hidden bg-[#070b19]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10">
           <span className="badge-gold">Verified Buyer Inventory</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
             Buy Your Ideal Home in <span className="text-gradient-gold">Navi Mumbai</span>

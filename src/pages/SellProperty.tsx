@@ -45,15 +45,20 @@ export const SellProperty: React.FC = () => {
         description="Sell your 1, 2, 3 BHK property at top market valuation with Jayshree Realty. Access to 5000+ verified buyers in Navi Mumbai."
       />
 
-      {/* 1. HEADER (Dark Navy Background) */}
-      <section className="pt-32 pb-20 section-navy border-b border-[#c5a059]/20">
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3">
+      {/* 1. HEADER */}
+      <section className="relative pt-32 pb-20 border-b border-[#c5a059]/20 overflow-hidden bg-[#070b19]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-35"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=2000')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10">
           <span className="badge-gold">Seller Consultation</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
             Sell Your Property at <span className="text-gradient-gold">Best Valuation</span>
           </h1>
           <p className="text-sm sm:text-base text-slate-300 font-outfit">
-            Connect with genuine pre-approved buyers across Nerul, Seawoods, Juinagar, Kharghar & Ulwe with zero upfront marketing costs.
+            Connect with 5,000+ verified buyers looking for 1, 2, 3 BHK flats & CIDCO plot resales in Nerul, Seawoods, Kharghar & Ulwe.
           </p>
         </div>
       </section>

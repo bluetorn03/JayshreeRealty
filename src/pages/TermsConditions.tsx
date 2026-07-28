@@ -23,7 +23,7 @@ export const TermsConditions: React.FC = () => {
             <section className="space-y-2">
               <h2 className="font-serif text-xl font-bold text-slate-900">1. Real Estate Consultancy Scope</h2>
               <p className="leading-relaxed text-slate-600">
-                <strong>Jayshree Realty</strong> acts as an authorized real estate consultancy and channel partner facilitating property buying, selling, and leasing across Navi Mumbai nodes (Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel).
+                <strong>Jayshree Realty</strong> acts as an authorized real estate consultancy and channel partner facilitating property buying, selling (Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel).
               </p>
             </section>
 

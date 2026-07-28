@@ -8,6 +8,7 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
   const location = useLocation();
   const { openModal } = useLeads();
 
@@ -22,6 +23,7 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setDropdownOpen(false);
+    setAboutDropdownOpen(false);
   }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
@@ -40,7 +42,7 @@ export const Navbar: React.FC = () => {
           <img
             src={logo}
             alt="Jayshree Realty"
-            className="h-11 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            className="h-12 sm:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
           <div className="flex flex-col">
             <span className="font-serif text-lg sm:text-xl font-bold tracking-wider text-gradient-gold uppercase leading-none">
@@ -60,14 +62,31 @@ export const Navbar: React.FC = () => {
             Home
           </Link>
           
-          <Link
-            to="/about"
-            className={`transition-colors hover:text-[#e5c178] py-1 ${
-              isActive('/about') ? 'text-[#e5c178] font-bold border-b-2 border-[#c5a059]' : 'text-slate-200'
-            }`}
-          >
-            About Us
-          </Link>
+          {/* Submenu Dropdown for About & Testimonials */}
+          <div className="relative" onMouseEnter={() => setAboutDropdownOpen(true)} onMouseLeave={() => setAboutDropdownOpen(false)}>
+            <button className="flex items-center gap-1 text-slate-200 hover:text-[#e5c178] py-1 transition-colors">
+              About <ChevronDown className="w-3.5 h-3.5 text-[#c5a059]" />
+            </button>
+
+            {aboutDropdownOpen && (
+              <div className="absolute top-full left-0 w-56 bg-[#0d1527] border border-[#c5a059]/30 rounded-xl shadow-2xl py-2 px-1 backdrop-blur-xl animate-fade-in z-50">
+                <Link
+                  to="/about"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                >
+                  <Building2 className="w-4 h-4 text-[#c5a059]" />
+                  About Jayshree Realty
+                </Link>
+                <Link
+                  to="/testimonials"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                >
+                  <HomeIcon className="w-4 h-4 text-[#c5a059]" />
+                  Client Reviews & Testimonials
+                </Link>
+              </div>
+            )}
+          </div>
 
           <Link
             to="/buy"
@@ -166,6 +185,9 @@ export const Navbar: React.FC = () => {
             </Link>
             <Link to="/about" className="text-slate-200 hover:text-[#e5c178] py-1 border-b border-slate-800">
               About Us
+            </Link>
+            <Link to="/testimonials" className="text-slate-200 hover:text-[#e5c178] py-1 border-b border-slate-800">
+              Client Testimonials & Reviews
             </Link>
             <Link to="/buy" className="text-slate-200 hover:text-[#e5c178] py-1 border-b border-slate-800">
               Buy Property

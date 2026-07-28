@@ -13,9 +13,14 @@ export const About: React.FC = () => {
         description="Learn about Jayshree Realty, Navi Mumbai's leading real estate consultancy located at Nerul Railway Station Complex. Over 15 years of excellence."
       />
 
-      {/* 1. HERO HEADER (Dark Navy Background) */}
-      <section className="pt-32 pb-20 section-navy border-b border-[#c5a059]/20">
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-4">
+      {/* 1. HERO HEADER */}
+      <section className="relative pt-32 pb-20 border-b border-[#c5a059]/20 overflow-hidden bg-[#070b19]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=2000')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-4 relative z-10">
           <span className="badge-gold">Our Legacy of Trust</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
             About <span className="text-gradient-gold">Jayshree Realty</span>
@@ -122,6 +127,40 @@ export const About: React.FC = () => {
                 Personal executive assistance from start to key handover, ensuring seamless bank loan approvals.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3.5 YOUTUBE VIDEO SHOWCASE SECTION */}
+      <section className="py-20 bg-[#090f20] border-b border-slate-800">
+        <div className="container mx-auto px-4 text-center max-w-4xl space-y-6">
+          <span className="badge-gold">Official YouTube Channel</span>
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
+            Watch Our <span className="text-gradient-gold">Property Walkthroughs</span>
+          </h2>
+          <p className="text-sm text-slate-300 font-outfit max-w-2xl mx-auto">
+            Subscribe to our YouTube channel for latest Navi Mumbai site visit videos, project walkthroughs, and CIDCO plot investment guides.
+          </p>
+
+          <div className="relative pt-[56.25%] rounded-3xl overflow-hidden border border-[#c5a059]/40 shadow-2xl bg-black">
+            <iframe
+              src="https://www.youtube.com/embed/videoseries?list=PL3x-videos-jayshree"
+              title="Jayshree Realty YouTube Channel Walkthroughs"
+              className="absolute inset-0 w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+
+          <div className="pt-2 flex justify-center">
+            <a
+              href="https://youtube.com/@jayshree_realty_navi_mumbai?si=TfK4HesvkWiswOEz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-gold px-7 py-3 text-xs font-bold shadow-lg flex items-center gap-2"
+            >
+              VISIT OFFICIAL YOUTUBE CHANNEL
+            </a>
           </div>
         </div>
       </section>

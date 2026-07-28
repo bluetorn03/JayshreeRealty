@@ -1,16 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeadSubmission } from '../types';
+import { api } from '../services/api';
 
 interface LeadContextType {
   leads: LeadSubmission[];
-  addLead: (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => void;
-  updateLeadStatus: (id: string, status: LeadSubmission['status']) => void;
-  deleteLead: (id: string) => void;
+  addLead: (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => Promise<void>;
+  updateLeadStatus: (id: string, status: LeadSubmission['status']) => Promise<void>;
+  updateLeadDetails: (id: string, updated: Partial<LeadSubmission>) => Promise<void>;
+  deleteLead: (id: string) => Promise<void>;
+  bulkDeleteLeads: (ids: string[]) => Promise<void>;
+  bulkStatusLeads: (ids: string[], status: LeadSubmission['status']) => Promise<void>;
+  addLeadManual: (leadData: Partial<LeadSubmission>) => Promise<void>;
   isModalOpen: boolean;
   openModal: (ctaSource?: string, requirement?: string) => void;
   closeModal: () => void;
   modalCtaSource: string;
   modalRequirement: string;
+  refreshLeads: () => Promise<void>;
 }
 
 const INITIAL_DEMO_LEADS: LeadSubmission[] = [
@@ -67,32 +73,31 @@ const INITIAL_DEMO_LEADS: LeadSubmission[] = [
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
 
 export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [leads, setLeads] = useState<LeadSubmission[]>(() => {
-    const saved = localStorage.getItem('jayshree_leads');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved leads:', e);
-      }
-    }
-    return INITIAL_DEMO_LEADS;
-  });
-
+  const [leads, setLeads] = useState<LeadSubmission[]>(INITIAL_DEMO_LEADS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCtaSource, setModalCtaSource] = useState('General CTA');
   const [modalRequirement, setModalRequirement] = useState('');
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem('jayshree_leads', JSON.stringify(leads));
-  }, [leads]);
+  const refreshLeads = async () => {
+    try {
+      const res = await api.getLeads();
+      if (res.success && Array.isArray(res.leads)) {
+        setLeads(res.leads);
+      }
+    } catch (e) {
+      console.warn('Lead API sync fallback:', e);
+    }
+  };
 
-  // Automatic Trigger: 3 Seconds OR 25% Scroll
+  useEffect(() => {
+    refreshLeads();
+  }, []);
+
+  // Popup Triggers
   useEffect(() => {
     if (hasAutoOpened) return;
 
-    // 1. Timer trigger (3 seconds)
     const timer = setTimeout(() => {
       if (!hasAutoOpened) {
         setHasAutoOpened(true);
@@ -101,7 +106,6 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }, 3000);
 
-    // 2. Scroll trigger (25% scroll depth)
     const handleScroll = () => {
       const scrollDepth = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
       if (scrollDepth >= 0.25 && !hasAutoOpened) {
@@ -130,24 +134,57 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsModalOpen(false);
   };
 
-  const addLead = (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => {
-    const newLead: LeadSubmission = {
-      ...leadData,
-      id: `lead-${Date.now()}`,
-      timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-      status: 'New'
-    };
-    setLeads((prev) => [newLead, ...prev]);
+  const addLead = async (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => {
+    const res = await api.submitLead(leadData);
+    if (res.success && res.lead) {
+      setLeads((prev) => [res.lead, ...prev]);
+    } else {
+      const fallback: LeadSubmission = {
+        ...leadData,
+        id: `lead-${Date.now()}`,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        status: 'New'
+      };
+      setLeads((prev) => [fallback, ...prev]);
+    }
   };
 
-  const updateLeadStatus = (id: string, status: LeadSubmission['status']) => {
+  const addLeadManual = async (leadData: Partial<LeadSubmission>) => {
+    const res = await api.createLeadManual(leadData);
+    if (res.success && res.lead) {
+      setLeads(prev => [res.lead, ...prev]);
+    }
+  };
+
+  const updateLeadStatus = async (id: string, status: LeadSubmission['status']) => {
     setLeads((prev) =>
       prev.map((lead) => (lead.id === id ? { ...lead, status } : lead))
     );
+    await api.updateLead(id, { status });
   };
 
-  const deleteLead = (id: string) => {
+  const updateLeadDetails = async (id: string, updated: Partial<LeadSubmission>) => {
+    setLeads((prev) =>
+      prev.map((lead) => (lead.id === id ? { ...lead, ...updated } : lead))
+    );
+    await api.updateLead(id, updated);
+  };
+
+  const deleteLead = async (id: string) => {
     setLeads((prev) => prev.filter((lead) => lead.id !== id));
+    await api.deleteLead(id);
+  };
+
+  const bulkDeleteLeads = async (ids: string[]) => {
+    setLeads((prev) => prev.filter((lead) => !ids.includes(lead.id)));
+    await api.bulkDeleteLeads(ids);
+  };
+
+  const bulkStatusLeads = async (ids: string[], status: LeadSubmission['status']) => {
+    setLeads((prev) =>
+      prev.map((lead) => (ids.includes(lead.id) ? { ...lead, status } : lead))
+    );
+    await api.bulkStatusLeads(ids, status);
   };
 
   return (
@@ -155,13 +192,18 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         leads,
         addLead,
+        addLeadManual,
         updateLeadStatus,
+        updateLeadDetails,
         deleteLead,
+        bulkDeleteLeads,
+        bulkStatusLeads,
         isModalOpen,
         openModal,
         closeModal,
         modalCtaSource,
-        modalRequirement
+        modalRequirement,
+        refreshLeads
       }}
     >
       {children}

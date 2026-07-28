@@ -1,26 +1,4 @@
-export type ProjectCategory = 
-  | 'Kharghar New Projects'
-  | 'Upper Kharghar'
-  | 'Ulwe New Projects'
-  | 'Pushpak Nagar New Projects'
-  | 'Nerul & Seawoods New Projects'
-  | 'Juinagar & Sanpada New Projects'
-  | 'Panvel'
-  | 'Khandeshwar / Kamothe'
-  | 'Resale'
-  | '1 BHK Nerul East'
-  | '1 BHK Nerul West'
-  | '1 BHK Seawoods East'
-  | '1 BHK Seawoods West'
-  | '1 BHK Juinagar'
-  | '2 BHK Nerul East'
-  | '2 BHK Nerul West'
-  | '2 BHK Seawoods East'
-  | '2 BHK Seawoods West'
-  | '2 BHK Juinagar'
-  | '3/4 BHK'
-  | 'Row House'
-  | 'Commercial Workspaces';
+export type ProjectCategory = string;
 
 export type PlacementTarget = 'homepage' | 'featured' | 'buy' | 'commercial' | 'resale';
 
@@ -38,6 +16,10 @@ export interface PropertyItem {
   features: string[];
   image: string;
   galleryImages?: string[];
+  youtubeUrl?: string;
+  description?: string;
+  shortDescription?: string;
+  longDescription?: string;
   isFeatured?: boolean;
   code?: string; // e.g. "1 BHK - 01", "2 BHK - 28N"
   highlights?: string;
@@ -66,6 +48,7 @@ export interface GoogleReviewItem {
   verified?: boolean;
   reviewsCount?: string;
   isLocalGuide?: boolean;
+  published?: boolean;
 }
 
 export interface LeadSubmission {
@@ -84,6 +67,8 @@ export interface LeadSubmission {
   timestamp: string;
   status: 'New' | 'Contacted' | 'Closed' | 'Follow-up';
   notes?: string;
+  assignedTo?: string;
+  followUpDate?: string;
 }
 
 export interface SiteSettings {

@@ -6,8 +6,8 @@ import { ProjectCard } from '../components/ProjectCard';
 import { ReviewCard } from '../components/ReviewCard';
 import { useData } from '../context/DataContext';
 import { useLeads } from '../context/LeadContext';
-import { 
-  Building2, MapPin, ShieldCheck, Award, ArrowRight, CheckCircle2, 
+import {
+  Building2, MapPin, ShieldCheck, Award, ArrowRight, CheckCircle2,
   Sparkles, Star, Phone, MessageSquare, Search, Users
 } from 'lucide-react';
 
@@ -62,7 +62,7 @@ export const Home: React.FC = () => {
       />
 
       {/* 1. HERO SECTION (Dark Navy Background) */}
-      <section className="relative min-h-[92vh] pt-32 pb-24 flex items-center justify-center overflow-hidden border-b border-[#c5a059]/20 section-navy">
+      <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden border-b border-[#c5a059]/20 section-navy">
         {/* Background Image with Lighter Overlay & Entrance Zoom */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-zoom transition-all"
@@ -71,13 +71,13 @@ export const Home: React.FC = () => {
           }}
         >
           {/* Lighter Gradient Overlay so background image is vibrant and visible */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]/40"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070b19] via-transparent to-[#070b19]/50"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070b19]/30 via-[#070b19]/25 to-[#070b19]/8"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070b19] via-transparent to-[#070b19]/10"></div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
+
             {/* Hero Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#c5a059]/15 border border-[#c5a059]/40 text-[#e5c178] text-xs font-outfit uppercase tracking-widest font-semibold animate-fade-in shadow-lg">
@@ -221,7 +221,7 @@ export const Home: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <AnimatedCounter
-              end={100}
+              end={150}
               suffix="+"
               label="Verified Projects"
               sublabel="Sanpada to Panvel"
@@ -235,7 +235,7 @@ export const Home: React.FC = () => {
               icon={Award}
             />
             <AnimatedCounter
-              end={5000}
+              end={750}
               suffix="+"
               label="Happy Families"
               sublabel="Seamless Closures"
@@ -270,11 +270,10 @@ export const Home: React.FC = () => {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-full border transition-all duration-300 font-semibold ${
-                    selectedCategory === cat
-                      ? 'bg-[#0b132b] text-white border-[#0b132b] shadow-md'
-                      : 'bg-white text-slate-700 border-slate-200 hover:border-[#c5a059]'
-                  }`}
+                  className={`px-4 py-2 rounded-full border transition-all duration-300 font-semibold ${selectedCategory === cat
+                    ? 'bg-[#0b132b] text-white border-[#0b132b] shadow-md'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#c5a059]'
+                    }`}
                 >
                   {cat}
                 </button>
@@ -418,6 +417,27 @@ export const Home: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Testimonials CTA Banner Below Google Reviews */}
+        <div className="container mx-auto px-4 mt-8 relative z-20">
+          <div className="bg-[#0d1527] border border-[#c5a059]/40 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left shadow-xl">
+            <div className="space-y-1 font-outfit">
+              <span className="badge-gold">Verified Client Gallery & Videos</span>
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-white">
+                Explore Full Client Stories, Head Office Gallery & Video Reviews
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 font-outfit">
+                Watch video testimonials, view our Nerul Railway Station office gallery, and read in-depth reviews.
+              </p>
+            </div>
+            <Link
+              to="/testimonials"
+              className="btn-gold shrink-0 px-6 py-3.5 text-xs font-bold shadow-lg flex items-center gap-2"
+            >
+              VIEW TESTIMONIALS PAGE <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* 7. STRATEGIC GROWTH NODES SECTION (Dark Navy Background) */}
@@ -468,7 +488,7 @@ export const Home: React.FC = () => {
               <p className="text-sm sm:text-base text-slate-300 font-outfit">
                 Talk directly with our senior consultants at <strong className="text-white">Jayshree Realty</strong> today for priority site visits.
               </p>
-              
+
               <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
                 <button
                   onClick={() => openModal('Bottom Home CTA Banner')}
@@ -476,7 +496,7 @@ export const Home: React.FC = () => {
                 >
                   REQUEST INSTANT CALLBACK
                 </button>
-                
+
                 <a
                   href="https://wa.me/918169005579?text=Hello,%20I%20want%20property%20information%20from%20Jayshree%20Realty."
                   target="_blank"

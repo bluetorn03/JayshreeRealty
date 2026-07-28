@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PropertyItem, GoogleReviewItem, SiteSettings, CounterItem, LocationNode, ProjectCategory } from '../types';
 import { PROJECTS_DATA as INITIAL_PROJECTS } from '../data/projectsData';
 import { GOOGLE_REVIEWS_DATA as INITIAL_REVIEWS } from '../data/reviewsData';
+import { api } from '../services/api';
 
 interface AdminCredentials {
   username: string;
@@ -22,6 +23,11 @@ interface PopupSettings {
   badge: string;
   leftImage: string;
   privacyText: string;
+  enabled?: boolean;
+  triggerDelay?: number;
+  scrollTriggerPercent?: number;
+  redirectUrl?: string;
+  successMessage?: string;
 }
 
 interface DataContextType {
@@ -38,33 +44,41 @@ interface DataContextType {
   isAdminAuthenticated: boolean;
   
   // Actions
-  loginAdmin: (username: string, password: string) => boolean;
+  loginAdmin: (username: string, pass: string) => Promise<boolean>;
   logoutAdmin: () => void;
-  updateAdminCredentials: (username: string, password: string) => void;
+  updateAdminCredentials: (username: string, password: string) => Promise<boolean>;
   
-  addProject: (project: Omit<PropertyItem, 'id'>) => void;
-  updateProject: (id: string, updated: Partial<PropertyItem>) => void;
-  deleteProject: (id: string) => void;
-  toggleProjectFeatured: (id: string) => void;
-  toggleProjectPublished: (id: string) => void;
-  toggleProjectArchive: (id: string) => void;
+  addProject: (project: Omit<PropertyItem, 'id'>) => Promise<void>;
+  updateProject: (id: string, updated: Partial<PropertyItem>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  toggleProjectFeatured: (id: string) => Promise<void>;
+  toggleProjectPublished: (id: string) => Promise<void>;
+  toggleProjectArchive: (id: string) => Promise<void>;
   
-  addReview: (review: Omit<GoogleReviewItem, 'id'>) => void;
-  updateReview: (id: string, updated: Partial<GoogleReviewItem>) => void;
-  deleteReview: (id: string) => void;
+  addReview: (review: Omit<GoogleReviewItem, 'id'>) => Promise<void>;
+  updateReview: (id: string, updated: Partial<GoogleReviewItem>) => Promise<void>;
+  deleteReview: (id: string) => Promise<void>;
   
-  updateHeroSettings: (settings: Partial<HeroSettings>) => void;
-  updatePopupSettings: (settings: Partial<PopupSettings>) => void;
-  updateSiteSettings: (settings: Partial<SiteSettings>) => void;
+  updateHeroSettings: (settings: Partial<HeroSettings>) => Promise<void>;
+  updatePopupSettings: (settings: Partial<PopupSettings>) => Promise<void>;
+  updateSiteSettings: (settings: Partial<SiteSettings>) => Promise<void>;
   
   addMediaItem: (url: string) => void;
   deleteMediaItem: (url: string) => void;
   
-  updateCounter: (id: string, updated: Partial<CounterItem>) => void;
-  addCategory: (category: ProjectCategory) => void;
+  updateCounter: (id: string, updated: Partial<CounterItem>) => Promise<void>;
+  saveAllCounters: (updatedCounters: CounterItem[]) => Promise<void>;
+  addCategory: (category: ProjectCategory) => Promise<void>;
+  updateCategory: (oldName: string, newName: string) => Promise<void>;
+  deleteCategory: (category: ProjectCategory) => Promise<void>;
+
+  addLocation: (location: Omit<LocationNode, 'id'>) => Promise<void>;
+  updateLocation: (id: string, updated: Partial<LocationNode>) => Promise<void>;
+  deleteLocation: (id: string) => Promise<void>;
 
   exportBackup: () => void;
   importBackup: (jsonData: string) => boolean;
+  refreshData: () => Promise<void>;
 }
 
 const DEFAULT_HERO_SETTINGS: HeroSettings = {
@@ -87,7 +101,12 @@ const DEFAULT_POPUP_SETTINGS: PopupSettings = {
   subtitle: "Register now for exclusive launch pricing, priority site visits & floor plans.",
   badge: "Exclusive Launch Pricing",
   leftImage: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
-  privacyText: "We respect your privacy. No spam, ever."
+  privacyText: "We respect your privacy. No spam, ever.",
+  enabled: true,
+  triggerDelay: 3,
+  scrollTriggerPercent: 25,
+  redirectUrl: "",
+  successMessage: "Thank you! Our luxury real estate expert will contact you shortly."
 };
 
 const DEFAULT_ADMIN_CREDENTIALS: AdminCredentials = {
@@ -127,10 +146,10 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 const DEFAULT_COUNTERS: CounterItem[] = [
-  { id: 'cnt-1', label: 'Happy Families', value: 450, suffix: '+' },
-  { id: 'cnt-2', label: 'Projects Delivered', value: 85, suffix: '+' },
-  { id: 'cnt-3', label: 'Years Experience', value: 12, suffix: '+' },
-  { id: 'cnt-4', label: 'Sq.Ft. Managed', value: 2, suffix: 'M+' },
+  { id: 'cnt-1', label: 'Happy Families', value: 450, suffix: '+', iconName: 'Users' },
+  { id: 'cnt-2', label: 'Projects Delivered', value: 85, suffix: '+', iconName: 'Building2' },
+  { id: 'cnt-3', label: 'Years Experience', value: 12, suffix: '+', iconName: 'Award' },
+  { id: 'cnt-4', label: 'Sq.Ft. Managed', value: 2, suffix: 'M+', iconName: 'TrendingUp' },
 ];
 
 const DEFAULT_LOCATIONS: LocationNode[] = [
@@ -167,196 +186,184 @@ const INITIAL_CATEGORIES: ProjectCategory[] = [
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<PropertyItem[]>(() => {
-    const saved = localStorage.getItem('jayshree_projects');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    // Set default published and placements for initial projects
-    return INITIAL_PROJECTS.map(p => ({
-      ...p,
-      published: p.published !== undefined ? p.published : true,
-      brokerageFree: p.brokerageFree || false,
-      placements: p.placements || (p.isFeatured ? ['homepage', 'featured', 'buy'] : ['buy'])
-    }));
-  });
-
-  const [reviews, setReviews] = useState<GoogleReviewItem[]>(() => {
-    const saved = localStorage.getItem('jayshree_reviews');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return INITIAL_REVIEWS;
-  });
-
-  const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => {
-    const saved = localStorage.getItem('jayshree_hero');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_HERO_SETTINGS;
-  });
-
-  const [popupSettings, setPopupSettings] = useState<PopupSettings>(() => {
-    const saved = localStorage.getItem('jayshree_popup');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_POPUP_SETTINGS;
-  });
-
-  const [adminCredentials, setAdminCredentials] = useState<AdminCredentials>(() => {
-    const saved = localStorage.getItem('jayshree_admin_creds');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_ADMIN_CREDENTIALS;
-  });
-
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
-    const saved = localStorage.getItem('jayshree_site_settings');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_SITE_SETTINGS;
-  });
-
-  const [categories, setCategories] = useState<ProjectCategory[]>(() => {
-    const saved = localStorage.getItem('jayshree_categories');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return INITIAL_CATEGORIES;
-  });
-
-  const [counters, setCounters] = useState<CounterItem[]>(() => {
-    const saved = localStorage.getItem('jayshree_counters');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_COUNTERS;
-  });
-
-  const [locations, setLocations] = useState<LocationNode[]>(() => {
-    const saved = localStorage.getItem('jayshree_locations');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return DEFAULT_LOCATIONS;
-  });
-
-  const [mediaLibrary, setMediaLibrary] = useState<string[]>(() => {
-    const saved = localStorage.getItem('jayshree_media_library');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return [
-      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1000",
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&q=80&w=1000"
-    ];
-  });
+  const [projects, setProjects] = useState<PropertyItem[]>(INITIAL_PROJECTS as PropertyItem[]);
+  const [reviews, setReviews] = useState<GoogleReviewItem[]>(INITIAL_REVIEWS);
+  const [heroSettings, setHeroSettings] = useState<HeroSettings>(DEFAULT_HERO_SETTINGS);
+  const [popupSettings, setPopupSettings] = useState<PopupSettings>(DEFAULT_POPUP_SETTINGS);
+  const [adminCredentials, setAdminCredentials] = useState<AdminCredentials>(DEFAULT_ADMIN_CREDENTIALS);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
+  const [categories, setCategories] = useState<ProjectCategory[]>(INITIAL_CATEGORIES);
+  const [counters, setCounters] = useState<CounterItem[]>(DEFAULT_COUNTERS);
+  const [locations, setLocations] = useState<LocationNode[]>(DEFAULT_LOCATIONS);
+  const [mediaLibrary, setMediaLibrary] = useState<string[]>([
+    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000",
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1000",
+    "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1000",
+    "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&q=80&w=1000"
+  ]);
 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('jayshree_admin_auth') === 'true';
+    return Boolean(localStorage.getItem('jayshree_admin_token'));
   });
 
-  useEffect(() => { localStorage.setItem('jayshree_projects', JSON.stringify(projects)); }, [projects]);
-  useEffect(() => { localStorage.setItem('jayshree_reviews', JSON.stringify(reviews)); }, [reviews]);
-  useEffect(() => { localStorage.setItem('jayshree_hero', JSON.stringify(heroSettings)); }, [heroSettings]);
-  useEffect(() => { localStorage.setItem('jayshree_popup', JSON.stringify(popupSettings)); }, [popupSettings]);
-  useEffect(() => { localStorage.setItem('jayshree_admin_creds', JSON.stringify(adminCredentials)); }, [adminCredentials]);
-  useEffect(() => { localStorage.setItem('jayshree_site_settings', JSON.stringify(siteSettings)); }, [siteSettings]);
-  useEffect(() => { localStorage.setItem('jayshree_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('jayshree_counters', JSON.stringify(counters)); }, [counters]);
-  useEffect(() => { localStorage.setItem('jayshree_locations', JSON.stringify(locations)); }, [locations]);
-  useEffect(() => { localStorage.setItem('jayshree_media_library', JSON.stringify(mediaLibrary)); }, [mediaLibrary]);
-  useEffect(() => { localStorage.setItem('jayshree_admin_auth', isAdminAuthenticated ? 'true' : 'false'); }, [isAdminAuthenticated]);
+  const refreshData = async () => {
+    try {
+      // 1. Fetch properties from DB
+      const propRes = await api.getProperties();
+      if (propRes.success && Array.isArray(propRes.properties) && propRes.properties.length > 0) {
+        setProjects(propRes.properties);
+      }
 
-  const loginAdmin = (username: string, pass: string): boolean => {
-    if (
-      username.trim().toLowerCase() === adminCredentials.username.toLowerCase() &&
-      pass.trim() === adminCredentials.passwordHash
-    ) {
-      setIsAdminAuthenticated(true);
-      return true;
+      // 2. Fetch CMS settings from DB
+      const cmsRes = await api.getAllCMS();
+      if (cmsRes.success) {
+        if (cmsRes.heroSettings) setHeroSettings(cmsRes.heroSettings);
+        if (cmsRes.popupSettings) setPopupSettings(cmsRes.popupSettings);
+        if (cmsRes.siteSettings) setSiteSettings(cmsRes.siteSettings);
+        if (Array.isArray(cmsRes.counters) && cmsRes.counters.length > 0) setCounters(cmsRes.counters);
+        if (Array.isArray(cmsRes.locations) && cmsRes.locations.length > 0) setLocations(cmsRes.locations);
+        if (Array.isArray(cmsRes.categories) && cmsRes.categories.length > 0) setCategories(cmsRes.categories);
+        if (Array.isArray(cmsRes.reviews) && cmsRes.reviews.length > 0) setReviews(cmsRes.reviews);
+      }
+    } catch (e) {
+      console.warn('Backend API connection check fallback:', e);
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  // Verify auth on mount
+  useEffect(() => {
+    const token = localStorage.getItem('jayshree_admin_token');
+    if (token) {
+      api.verifyAuth().then(res => {
+        if (!res.success) {
+          localStorage.removeItem('jayshree_admin_token');
+          setIsAdminAuthenticated(false);
+        } else {
+          setIsAdminAuthenticated(true);
+        }
+      });
+    }
+  }, []);
+
+  const loginAdmin = async (username: string, pass: string): Promise<boolean> => {
+    try {
+      const res = await api.login(username, pass);
+      if (res.success && res.token) {
+        localStorage.setItem('jayshree_admin_token', res.token);
+        setIsAdminAuthenticated(true);
+        refreshData();
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
     }
     return false;
   };
 
   const logoutAdmin = () => {
+    localStorage.removeItem('jayshree_admin_token');
     setIsAdminAuthenticated(false);
   };
 
-  const updateAdminCredentials = (newUsername: string, newPass: string) => {
-    setAdminCredentials({
-      username: newUsername.trim(),
-      passwordHash: newPass.trim()
-    });
+  const updateAdminCredentials = async (newUsername: string, newPass: string): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem('jayshree_admin_token');
+      if (!token) return false;
+      const res = await fetch('/api/auth/update-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ newUsername, newPassword: newPass }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdminCredentials({ username: newUsername, passwordHash: '***' });
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
   };
 
-  const addProject = (projectData: Omit<PropertyItem, 'id'>) => {
-    const newProject: PropertyItem = {
-      ...projectData,
-      id: 'proj-' + Date.now(),
-      published: projectData.published !== undefined ? projectData.published : true,
-      placements: projectData.placements || ['homepage', 'featured', 'buy']
-    };
-    setProjects(prev => [newProject, ...prev]);
+  const addProject = async (projectData: Omit<PropertyItem, 'id'>) => {
+    const res = await api.createProperty(projectData);
+    if (res.success && res.property) {
+      setProjects(prev => [res.property, ...prev]);
+    }
   };
 
-  const updateProject = (id: string, updated: Partial<PropertyItem>) => {
+  const updateProject = async (id: string, updated: Partial<PropertyItem>) => {
     setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    await api.updateProperty(id, updated);
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
     setProjects(prev => prev.filter(p => p.id !== id));
+    await api.deleteProperty(id);
   };
 
-  const toggleProjectFeatured = (id: string) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, isFeatured: !p.isFeatured } : p));
+  const toggleProjectFeatured = async (id: string) => {
+    const p = projects.find(item => item.id === id);
+    if (p) {
+      const updated = { isFeatured: !p.isFeatured };
+      setProjects(prev => prev.map(item => item.id === id ? { ...item, ...updated } : item));
+      await api.updateProperty(id, updated);
+    }
   };
 
-  const toggleProjectPublished = (id: string) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, published: !p.published } : p));
+  const toggleProjectPublished = async (id: string) => {
+    const p = projects.find(item => item.id === id);
+    if (p) {
+      const updated = { published: !p.published };
+      setProjects(prev => prev.map(item => item.id === id ? { ...item, ...updated } : item));
+      await api.updateProperty(id, updated);
+    }
   };
 
-  const toggleProjectArchive = (id: string) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, archived: !p.archived } : p));
+  const toggleProjectArchive = async (id: string) => {
+    const p = projects.find(item => item.id === id);
+    if (p) {
+      const updated = { archived: !p.archived };
+      setProjects(prev => prev.map(item => item.id === id ? { ...item, ...updated } : item));
+      await api.updateProperty(id, updated);
+    }
   };
 
-  const addReview = (reviewData: Omit<GoogleReviewItem, 'id'>) => {
-    const newReview: GoogleReviewItem = {
-      ...reviewData,
-      id: 'rev-' + Date.now()
-    };
-    setReviews(prev => [newReview, ...prev]);
+  const addReview = async (reviewData: Omit<GoogleReviewItem, 'id'>) => {
+    const res = await api.addReview(reviewData);
+    if (res.success) {
+      refreshData();
+    }
   };
 
-  const updateReview = (id: string, updated: Partial<GoogleReviewItem>) => {
+  const updateReview = async (id: string, updated: Partial<GoogleReviewItem>) => {
     setReviews(prev => prev.map(r => r.id === id ? { ...r, ...updated } : r));
+    await api.updateReview(id, updated);
   };
 
-  const deleteReview = (id: string) => {
+  const deleteReview = async (id: string) => {
     setReviews(prev => prev.filter(r => r.id !== id));
+    await api.deleteReview(id);
   };
 
-  const updateHeroSettings = (settings: Partial<HeroSettings>) => {
-    setHeroSettings(prev => ({ ...prev, ...settings }));
+  const updateHeroSettings = async (settings: Partial<HeroSettings>) => {
+    const newHero = { ...heroSettings, ...settings };
+    setHeroSettings(newHero);
+    await api.updateHeroSettings(newHero);
   };
 
-  const updatePopupSettings = (settings: Partial<PopupSettings>) => {
-    setPopupSettings(prev => ({ ...prev, ...settings }));
+  const updatePopupSettings = async (settings: Partial<PopupSettings>) => {
+    const newPopup = { ...popupSettings, ...settings };
+    setPopupSettings(newPopup);
+    await api.updatePopupSettings(newPopup);
   };
 
-  const updateSiteSettings = (settings: Partial<SiteSettings>) => {
+  const updateSiteSettings = async (settings: Partial<SiteSettings>) => {
     setSiteSettings(prev => ({ ...prev, ...settings }));
   };
 
@@ -370,14 +377,47 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMediaLibrary(prev => prev.filter(item => item !== url));
   };
 
-  const updateCounter = (id: string, updated: Partial<CounterItem>) => {
-    setCounters(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+  const updateCounter = async (id: string, updated: Partial<CounterItem>) => {
+    const newCounters = counters.map(c => c.id === id ? { ...c, ...updated } : c);
+    setCounters(newCounters);
   };
 
-  const addCategory = (category: ProjectCategory) => {
+  const saveAllCounters = async (updatedCounters: CounterItem[]) => {
+    setCounters(updatedCounters);
+    await api.updateCounters(updatedCounters);
+  };
+
+  const addCategory = async (category: ProjectCategory) => {
     if (!categories.includes(category)) {
       setCategories(prev => [...prev, category]);
+      await api.addCategory(category);
     }
+  };
+
+  const updateCategory = async (oldName: string, newName: string) => {
+    setCategories(prev => prev.map(c => c === oldName ? newName : c));
+    setProjects(prev => prev.map(p => p.category === oldName ? { ...p, category: newName } : p));
+    await api.updateCategory(oldName, newName);
+  };
+
+  const deleteCategory = async (category: ProjectCategory) => {
+    setCategories(prev => prev.filter(c => c !== category));
+    await api.deleteCategory(category);
+  };
+
+  const addLocation = async (loc: Omit<LocationNode, 'id'>) => {
+    const res = await api.addLocation(loc);
+    if (res.success) refreshData();
+  };
+
+  const updateLocation = async (id: string, updated: Partial<LocationNode>) => {
+    setLocations(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+    await api.updateLocation(id, updated);
+  };
+
+  const deleteLocation = async (id: string) => {
+    setLocations(prev => prev.filter(l => l.id !== id));
+    await api.deleteLocation(id);
   };
 
   const exportBackup = () => {
@@ -456,9 +496,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addMediaItem,
         deleteMediaItem,
         updateCounter,
+        saveAllCounters,
         addCategory,
+        updateCategory,
+        deleteCategory,
+        addLocation,
+        updateLocation,
+        deleteLocation,
         exportBackup,
-        importBackup
+        importBackup,
+        refreshData
       }}
     >
       {children}
