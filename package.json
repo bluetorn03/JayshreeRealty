@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "node --watch server/index.js",
+    "dev:all": "node --watch server/index.js & vite",
     "server": "node server/index.js",
     "start": "node server/index.js",
     "migrate": "node server/migrate.js",

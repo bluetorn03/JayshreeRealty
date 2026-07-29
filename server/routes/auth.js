@@ -51,17 +51,20 @@ router.post('/login', async (req, res) => {
       }
 
       // Auto-create user in DB for future logins (non-blocking)
-      const hash = await bcrypt.hash(envAdminPass, 10);
-      supabase.from('admin_users').insert([{
-        id: 'admin-1',
-        username: envAdminUser,
-        password_hash: hash,
-        role: 'super_admin'
-      }]).then(() => {
-        console.log('[Auth] Admin user auto-created in Supabase DB');
-      }).catch(() => {
-        // Tables might not exist yet - that's OK
-      });
+      (async () => {
+        try {
+          const hash = await bcrypt.hash(envAdminPass, 10);
+          await supabase.from('admin_users').insert([{
+            id: 'admin-1',
+            username: envAdminUser,
+            password_hash: hash,
+            role: 'super_admin'
+          }]);
+          console.log('[Auth] Admin user auto-created in Supabase DB');
+        } catch (e) {
+          // Tables might not exist yet - that's OK
+        }
+      })();
 
       const token = generateToken({
         id: 'admin-1',
@@ -102,14 +105,18 @@ router.post('/login', async (req, res) => {
     });
 
     // 6. Log successful login (non-blocking)
-    supabase.from('activity_logs').insert([{
-      id: `log-${Date.now()}`,
-      user_name: adminUser.username,
-      action: 'Admin Login',
-      details: 'Successful login to Admin Dashboard',
-      ip_address: req.ip || 'unknown',
-      timestamp: new Date().toISOString()
-    }]).catch(() => {});
+    (async () => {
+      try {
+        await supabase.from('activity_logs').insert([{
+          id: `log-${Date.now()}`,
+          user_name: adminUser.username,
+          action: 'Admin Login',
+          details: 'Successful login to Admin Dashboard',
+          ip_address: req.ip || 'unknown',
+          timestamp: new Date().toISOString()
+        }]);
+      } catch (e) {}
+    })();
 
     return res.json({
       success: true,
@@ -183,14 +190,18 @@ router.post('/update-credentials', authenticateToken, async (req, res) => {
     }
 
     // Log activity
-    supabase.from('activity_logs').insert([{
-      id: `log-${Date.now()}`,
-      user_name: req.user.username,
-      action: 'Credentials Updated',
-      details: `Username changed to ${cleanUsername}`,
-      ip_address: req.ip || 'unknown',
-      timestamp: new Date().toISOString()
-    }]).catch(() => {});
+    (async () => {
+      try {
+        await supabase.from('activity_logs').insert([{
+          id: `log-${Date.now()}`,
+          user_name: req.user.username,
+          action: 'Credentials Updated',
+          details: `Username changed to ${cleanUsername}`,
+          ip_address: req.ip || 'unknown',
+          timestamp: new Date().toISOString()
+        }]);
+      } catch (e) {}
+    })();
 
     return res.json({ success: true, message: 'Admin credentials updated successfully.' });
   } catch (error) {

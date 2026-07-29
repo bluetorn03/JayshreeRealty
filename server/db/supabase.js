@@ -29,26 +29,25 @@ export const initSupabaseDb = async () => {
   console.log('[Supabase DB] Checking & Initializing database connection...');
 
   try {
-    // 1. Seed Admin User
+    // 1. Seed / Ensure Admin User with correct password hash
     const adminUser = (process.env.ADMIN_USER || 'admin@jayshreerealty').toLowerCase();
     const adminPass = process.env.ADMIN_PASS || 'jayshreerealty@8989';
 
-    const { data: existingAdmins, error: adminErr } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('username', adminUser);
+    // Always upsert with fresh hash to ensure password is always correct
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(adminPass, salt);
 
-    if (!adminErr && (!existingAdmins || existingAdmins.length === 0)) {
-      const salt = await bcrypt.genSalt(10);
-      const hash = await bcrypt.hash(adminPass, salt);
-      
-      await supabase.from('admin_users').insert([{
-        id: 'admin-1',
-        username: adminUser,
-        password_hash: hash,
-        role: 'super_admin'
-      }]);
-      console.log(`[Supabase DB] Seeded default admin user: ${adminUser}`);
+    const { error: adminErr } = await supabase.from('admin_users').upsert([{
+      id: 'admin-1',
+      username: adminUser,
+      password_hash: hash,
+      role: 'super_admin'
+    }], { onConflict: 'id' });
+
+    if (!adminErr) {
+      console.log(`[Supabase DB] Admin user seeded/updated: ${adminUser}`);
+    } else {
+      console.warn('[Supabase DB] Admin upsert warning:', adminErr.message);
     }
 
     // 2. Seed Hero Settings
