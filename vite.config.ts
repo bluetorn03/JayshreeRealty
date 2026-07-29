@@ -19,14 +19,36 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    chunkSizeWarningLimit: 600, // Suppress warning for known large chunks
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          icons: ['lucide-react'],
+        manualChunks(id) {
+          // React core
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-core';
+          }
+          // Router
+          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/')) {
+            return 'router';
+          }
+          // Icons (large - split separately)
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'icons';
+          }
+          // Supabase client
+          if (id.includes('node_modules/@supabase/')) {
+            return 'supabase';
+          }
+          // Admin panel components (only loaded on /admin route)
+          if (id.includes('/src/components/admin/') || id.includes('/src/pages/AdminDashboard')) {
+            return 'admin';
+          }
+          // Data context
+          if (id.includes('/src/context/') || id.includes('/src/services/')) {
+            return 'app-core';
+          }
         },
       },
     },
   },
 });
-

@@ -46,7 +46,20 @@ router.get('/', authenticateToken, async (req, res) => {
 // POST /api/leads (Public - Website Form Submissions)
 router.post('/', async (req, res) => {
   try {
-    const { name, phone, email, requirement, budget, preferredArea, propertyType, message, leadSource, ctaSource, pageName } = req.body;
+    const body = req.body;
+
+    // Accept both camelCase (frontend) and snake_case field names
+    const name = body.name;
+    const phone = body.phone;
+    const email = body.email || '';
+    const requirement = body.requirement || '';
+    const budget = body.budget || '';
+    const preferredArea = body.preferredArea || body.preferred_area || '';
+    const propertyType = body.propertyType || body.property_type || '';
+    const message = body.message || '';
+    const leadSource = body.leadSource || body.lead_source || 'Website Form';
+    const ctaSource = body.ctaSource || body.cta_source || 'Inquiry Form';
+    const pageName = body.pageName || body.page_name || 'Website';
 
     if (!name || !phone) {
       return res.status(400).json({ success: false, message: 'Name and phone number are required.' });
@@ -59,15 +72,15 @@ router.post('/', async (req, res) => {
       id,
       name: name.trim(),
       phone: phone.trim(),
-      email: email ? email.trim() : '',
-      requirement: requirement || 'N/A',
-      budget: budget || 'N/A',
-      preferred_area: preferredArea || 'N/A',
-      property_type: propertyType || 'Residential',
-      message: message || '',
-      lead_source: leadSource || 'Website Form',
-      cta_source: ctaSource || 'Inquiry Form',
-      page_name: pageName || 'Website',
+      email: email.trim(),
+      requirement,
+      budget,
+      preferred_area: preferredArea,
+      property_type: propertyType,
+      message,
+      lead_source: leadSource,
+      cta_source: ctaSource,
+      page_name: pageName,
       timestamp: timestampStr,
       status: 'New',
       notes: '',
@@ -82,11 +95,32 @@ router.post('/', async (req, res) => {
       console.error('[Leads API] Database save error:', dbErr.message);
     }
 
-    // 2. Send Email via Gmail SMTP
+    // 2. Send Email Notification via Gmail SMTP
     const emailResult = await sendLeadEmailNotification(newLeadRecord);
+
+    // 3. Return full lead object so frontend state updates immediately
+    const responseLead = {
+      id,
+      name: newLeadRecord.name,
+      phone: newLeadRecord.phone,
+      email: newLeadRecord.email,
+      requirement,
+      budget,
+      preferredArea,
+      propertyType,
+      message,
+      lead_source: leadSource,
+      cta_source: ctaSource,
+      page_name: pageName,
+      timestamp: timestampStr,
+      status: 'New',
+      notes: '',
+      assignedTo: 'Unassigned'
+    };
 
     return res.json({
       success: true,
+      lead: responseLead,
       leadId: id,
       message: 'Thank you! Our luxury real estate expert will contact you shortly.',
       emailSent: emailResult.emailSent

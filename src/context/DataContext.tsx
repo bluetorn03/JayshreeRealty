@@ -148,7 +148,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 const DEFAULT_COUNTERS: CounterItem[] = [
   { id: 'cnt-1', label: 'Happy Families', value: 450, suffix: '+', iconName: 'Users' },
   { id: 'cnt-2', label: 'Projects Delivered', value: 85, suffix: '+', iconName: 'Building2' },
-  { id: 'cnt-3', label: 'Years Experience', value: 12, suffix: '+', iconName: 'Award' },
+  { id: 'cnt-3', label: 'Years Experience', value: 25, suffix: '+', iconName: 'Award' },
   { id: 'cnt-4', label: 'Sq.Ft. Managed', value: 2, suffix: 'M+', iconName: 'TrendingUp' },
 ];
 
