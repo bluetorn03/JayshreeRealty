@@ -86,9 +86,9 @@ In Hostinger → Node.js App → **Environment Variables**, add these:
 ```
 NODE_ENV=production
 PORT=5000
-FRONTEND_URL=https://iampratik.tech
-BACKEND_URL=https://iampratik.tech
-CLIENT_URL=https://iampratik.tech
+FRONTEND_URL=https://jayshreerealty.com
+BACKEND_URL=https://jayshreerealty.com
+CLIENT_URL=https://jayshreerealty.com
 
 VITE_SUPABASE_URL=https://pzmjewrnnzntvtueqmcq.supabase.co
 SUPABASE_URL=https://pzmjewrnnzntvtueqmcq.supabase.co
@@ -100,11 +100,11 @@ SESSION_SECRET=jayshree_realty_session_secret_2026_super_secure_key
 ADMIN_USER=admin@jayshreerealty
 ADMIN_PASS=jayshreerealty@8989
 
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=bluetorn03@gmail.com
-SMTP_PASS=rhdu aiff twvb buok
-RECEIVER_EMAIL=bluetorn03@gmail.com
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=info@jayshreerealty.com
+SMTP_PASS=YourHostingerEmailPassword
+RECEIVER_EMAIL=info@jayshreerealty.com
 ```
 
 ---
@@ -117,7 +117,7 @@ RECEIVER_EMAIL=bluetorn03@gmail.com
 4. After git pull, run via SSH:
 
 ```bash
-npm install --production
+npm install
 npm run build
 # Server auto-starts via Hostinger Node.js App Manager
 ```
@@ -135,16 +135,16 @@ Open browser and test:
 
 | URL | Expected |
 |-----|----------|
-| `https://iampratik.tech/` | Website homepage loads |
-| `https://iampratik.tech/api/health` | `{"status":"ok","database":"Supabase PostgreSQL"}` |
-| `https://iampratik.tech/admin` | Admin login page |
-| `https://iampratik.tech/robots.txt` | Robots.txt content |
+| `https://jayshreerealty.com/` | Website homepage loads |
+| `https://jayshreerealty.com/api/health` | `{"status":"ok","database":"Supabase PostgreSQL"}` |
+| `https://jayshreerealty.com/admin` | Admin login page |
+| `https://jayshreerealty.com/robots.txt` | Robots.txt content |
 
 ---
 
 ## STEP 9 — Admin Login
 
-**URL:** `https://iampratik.tech/admin`
+**URL:** `https://jayshreerealty.com/admin`
 
 | Field | Value |
 |-------|-------|

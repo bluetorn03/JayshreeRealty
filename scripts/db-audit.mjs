@@ -227,7 +227,7 @@ async function auditAndSeedData() {
     const { error } = await supabase.from('site_settings').insert([{
       id: 1, company_name: 'Jayshree Realty',
       phone: '+91 81690 05579', phone_raw: '+918169005579',
-      email: 'jayshreerealty03@gmail.com',
+      email: 'info@jayshreerealty.com',
       whatsapp: '+91 81690 05579', whatsapp_raw: '918169005579',
       address: 'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
       logo_url: '/assets/jayshree-realty-logo.png', favicon_url: '/favicon.ico',

@@ -94,7 +94,7 @@ export const initSupabaseDb = async () => {
         company_name: 'Jayshree Realty',
         phone: '+91 81690 05579',
         phone_raw: '+918169005579',
-        email: 'jayshreerealty03@gmail.com',
+        email: 'info@jayshreerealty.com',
         whatsapp: '+91 81690 05579',
         whatsapp_raw: '918169005579',
         address: 'Shop No. 12, Prime Plaza, Sector 19, Nerul West, Navi Mumbai, Maharashtra 400706',
@@ -113,10 +113,10 @@ export const initSupabaseDb = async () => {
         gsc_verification_meta: 'gsc-verification-token',
         robots_txt_content: "User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml",
         sitemap_auto_generate: 1,
-        smtp_host: 'smtp.gmail.com',
-        smtp_port: '587',
-        smtp_user: 'jayshreerealty03@gmail.com',
-        smtp_from_email: 'jayshreerealty03@gmail.com',
+        smtp_host: 'smtp.hostinger.com',
+        smtp_port: '465',
+        smtp_user: 'info@jayshreerealty.com',
+        smtp_from_email: 'info@jayshreerealty.com',
         maintenance_mode: 0,
         maintenance_message: 'System undergoes scheduled maintenance. We will be back shortly.'
       }]);

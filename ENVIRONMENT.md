@@ -15,12 +15,12 @@ This document explains every environment variable used in the Jayshree Realty En
 - **`ADMIN_PASS`**: Initial password for seeding the admin user account (`jayshreerealty@8989`).
 - **`ADMIN_PASSWORD_HASH`**: Pre-hashed bcrypt password fallback for production verification.
 
-## 3. Gmail SMTP Configuration
-- **`SMTP_HOST`**: SMTP server host (`smtp.gmail.com`).
-- **`SMTP_PORT`**: Port for SMTP connection (`587` for TLS or `465` for SSL).
-- **`SMTP_USER`**: Sender Gmail address (`jayshreerealty03@gmail.com`).
-- **`SMTP_PASS`**: Gmail 16-character App Password generated from Google Account Security.
-- **`RECEIVER_EMAIL`**: Recipient email address for all incoming lead notifications (`bluetorn03@gmail.com`).
+## 3. Hostinger Business Email SMTP Configuration
+- **`SMTP_HOST`**: SMTP server host (`smtp.hostinger.com`).
+- **`SMTP_PORT`**: Port for SMTP connection (`465` for SSL).
+- **`SMTP_USER`**: Sender email address (`info@jayshreerealty.com`).
+- **`SMTP_PASS`**: Hostinger webmail account password.
+- **`RECEIVER_EMAIL`**: Recipient email address for all incoming lead notifications (`info@jayshreerealty.com`).
 
 ## 4. Application & Server Settings
 - **`NODE_ENV`**: Environment mode (`development` or `production`).

@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     company_name TEXT DEFAULT 'Jayshree Realty',
     phone TEXT DEFAULT '+91 81690 05579',
     phone_raw TEXT DEFAULT '+918169005579',
-    email TEXT DEFAULT 'jayshreerealty03@gmail.com',
+    email TEXT DEFAULT 'info@jayshreerealty.com',
     whatsapp TEXT DEFAULT '+91 81690 05579',
     whatsapp_raw TEXT DEFAULT '918169005579',
     address TEXT DEFAULT 'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
@@ -392,7 +392,7 @@ INSERT INTO public.site_settings (
   robots_txt_content, sitemap_auto_generate, maintenance_mode, maintenance_message,
   google_maps_embed_url, ga_measurement_id, gtm_container_id, gsc_verification_meta
 )
-SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'jayshreerealty03@gmail.com',
+SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'info@jayshreerealty.com',
   '+91 81690 05579', '918169005579',
   'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
   '/assets/jayshree-realty-logo.png', '/favicon.ico',

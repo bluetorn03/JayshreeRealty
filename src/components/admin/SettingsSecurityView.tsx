@@ -99,16 +99,16 @@ export const SettingsSecurityView: React.FC = () => {
 
           <div className="pt-4 border-t border-slate-800 space-y-2">
             <div className="font-serif font-bold text-white text-xs flex items-center gap-2">
-              <Mail className="w-4 h-4 text-sky-400" /> Nodemailer Gmail SMTP Status (.env)
+              <Mail className="w-4 h-4 text-sky-400" /> Nodemailer SMTP Status (.env)
             </div>
             <div className="p-3 bg-[#070b19] border border-slate-800 rounded-xl space-y-1.5 text-[11px]">
               <div className="flex justify-between">
                 <span className="text-slate-400">SMTP Host:</span>
-                <span className="font-mono text-emerald-400">smtp.gmail.com</span>
+                <span className="font-mono text-emerald-400">smtp.hostinger.com</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">SMTP Port:</span>
-                <span className="font-mono text-slate-200">587</span>
+                <span className="font-mono text-slate-200">465</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Receiver Email:</span>

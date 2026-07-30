@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     company_name TEXT DEFAULT 'Jayshree Realty',
     phone TEXT DEFAULT '+91 81690 05579',
     phone_raw TEXT DEFAULT '+918169005579',
-    email TEXT DEFAULT 'jayshreerealty03@gmail.com',
+    email TEXT DEFAULT 'info@jayshreerealty.com',
     whatsapp TEXT DEFAULT '+91 81690 05579',
     whatsapp_raw TEXT DEFAULT '918169005579',
     address TEXT DEFAULT 'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
@@ -215,10 +215,10 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     gsc_verification_meta TEXT DEFAULT '',
     robots_txt_content TEXT DEFAULT '',
     sitemap_auto_generate INTEGER DEFAULT 1,
-    smtp_host TEXT DEFAULT 'smtp.gmail.com',
-    smtp_port TEXT DEFAULT '587',
-    smtp_user TEXT DEFAULT 'bluetorn03@gmail.com',
-    smtp_from_email TEXT DEFAULT 'bluetorn03@gmail.com',
+    smtp_host TEXT DEFAULT 'smtp.hostinger.com',
+    smtp_port TEXT DEFAULT '465',
+    smtp_user TEXT DEFAULT 'info@jayshreerealty.com',
+    smtp_from_email TEXT DEFAULT 'info@jayshreerealty.com',
     maintenance_mode INTEGER DEFAULT 0,
     maintenance_message TEXT DEFAULT ''
 );
@@ -383,7 +383,7 @@ WHERE NOT EXISTS (SELECT 1 FROM public.popup_settings WHERE id = 1);
 
 -- Site Settings
 INSERT INTO public.site_settings (id, company_name, phone, phone_raw, email, whatsapp, whatsapp_raw, address, logo_url, favicon_url, facebook_url, instagram_url, linkedin_url, youtube_url, seo_title_default, seo_description_default, seo_keywords_default, smtp_host, smtp_port, smtp_user, smtp_from_email, robots_txt_content, sitemap_auto_generate, maintenance_mode, maintenance_message)
-SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'jayshreerealty03@gmail.com',
+SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'info@jayshreerealty.com',
   '+91 81690 05579', '918169005579',
   'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
   '/assets/jayshree-realty-logo.png', '/favicon.ico',
@@ -392,7 +392,7 @@ SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'jayshreerealty
   'Jayshree Realty | Premium Luxury Real Estate Consultancy Navi Mumbai',
   'Navi Mumbai premier luxury real estate consultancy. Verified CIDCO plot projects, luxury residential towers & commercial spaces in Nerul, Seawoods, Kharghar & Ulwe.',
   'Navi Mumbai Real Estate, Nerul Flat Sale, Kharghar New Launch, Seawoods Luxury Flat, Pushpak Nagar CIDCO Plot, Jayshree Realty',
-  'smtp.gmail.com', '587', 'bluetorn03@gmail.com', 'bluetorn03@gmail.com',
+  'smtp.hostinger.com', '465', 'info@jayshreerealty.com', 'info@jayshreerealty.com',
   E'User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml',
   1, 0, 'We will be back shortly.'
 WHERE NOT EXISTS (SELECT 1 FROM public.site_settings WHERE id = 1);

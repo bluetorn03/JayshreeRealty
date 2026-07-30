@@ -328,7 +328,7 @@ async function seedDefaults() {
       'Jayshree Realty',
       '+91 81690 05579',
       '+918169005579',
-      'jayshreerealty03@gmail.com',
+      'info@jayshreerealty.com',
       '+91 81690 05579',
       '918169005579',
       'Shop No. 12, Prime Plaza, Sector 19, Nerul West, Navi Mumbai, Maharashtra 400706',
@@ -347,10 +347,10 @@ async function seedDefaults() {
       'gsc-verification-token',
       'User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml',
       1,
-      'smtp.gmail.com',
-      '587',
-      'jayshreerealty03@gmail.com',
-      'noreply@jayshreerealty.com',
+      'smtp.hostinger.com',
+      '465',
+      'info@jayshreerealty.com',
+      'info@jayshreerealty.com',
       0,
       'System undergoes scheduled maintenance. We will be back shortly.'
     )`);
