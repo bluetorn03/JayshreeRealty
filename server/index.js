@@ -36,8 +36,11 @@ app.use(helmet({
 // CORS Configuration
 // ================================================================
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'https://jayshreerealty.com',
-  process.env.CLIENT_URL || 'https://jayshreerealty.com',
+  process.env.FRONTEND_URL || 'https://iampratik.tech',
+  process.env.CLIENT_URL || 'https://iampratik.tech',
+  process.env.BACKEND_URL || 'https://iampratik.tech',
+  'https://iampratik.tech',
+  'https://www.iampratik.tech',
   'https://jayshreerealty.com',
   'https://www.jayshreerealty.com',
   'http://localhost:5173', // Vite dev server
@@ -51,7 +54,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin) || NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all in production for now (Hostinger setup)
+      callback(null, true); // Allow all in production for Hostinger deployment
     }
   },
   credentials: true,
@@ -163,15 +166,21 @@ if (fs.existsSync(distPath)) {
     etag: true
   }));
 
-  // SPA fallback - serve index.html for all non-API routes
-  app.get(/.*/, (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
-      res.sendFile(path.join(distPath, 'index.html'));
+  // SPA fallback - serve index.html for all non-API / non-uploads routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
     }
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 } else if (NODE_ENV !== 'production') {
   console.log('⚠️  No dist/ folder found. Run "npm run build" for production, or use "npm run dev" for frontend dev server.');
 }
+
+// Unhandled API route fallback
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: 'API route not found' });
+});
 
 // ================================================================
 // GLOBAL ERROR HANDLER
