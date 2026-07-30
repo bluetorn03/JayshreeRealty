@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLeads } from '../../context/LeadContext';
 import { LeadSubmission } from '../../types';
+import { ConfirmModal } from './ConfirmModal';
 import {
   Users, Search, Download, Trash2, Phone, Mail, Plus, Filter,
   CheckCircle2, Clock, Calendar, FileText, CheckSquare, Square, RefreshCw, UserCheck
@@ -15,6 +16,8 @@ export const LeadManagementView: React.FC = () => {
   const [leadFilterTab, setLeadFilterTab] = useState<'All' | 'New' | 'Today' | 'Follow-up' | 'Contacted' | 'Closed'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   
   // Lead Details / Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -69,12 +72,15 @@ export const LeadManagementView: React.FC = () => {
     );
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedLeadIds.length === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedLeadIds.length} selected leads?`)) {
-      await bulkDeleteLeads(selectedLeadIds);
-      setSelectedLeadIds([]);
-    }
+    setConfirmBulkDelete(true);
+  };
+
+  const executeBulkDelete = async () => {
+    await bulkDeleteLeads(selectedLeadIds);
+    setSelectedLeadIds([]);
+    setConfirmBulkDelete(false);
   };
 
   const handleBulkStatus = async (status: LeadSubmission['status']) => {
@@ -84,10 +90,17 @@ export const LeadManagementView: React.FC = () => {
   };
 
   const exportCSV = () => {
-    const headers = ['ID', 'Name', 'Phone', 'Email', 'Requirement', 'Budget', 'Area', 'Property Type', 'Message', 'Lead Source', 'CTA Source', 'Page', 'Timestamp', 'Status', 'Notes', 'Assigned To', 'Follow Up Date'];
+    const headers = [
+      'ID', 'Name', 'Phone', 'Email', 'Requirement', 'Budget', 'Area', 'Property Type', 'Message',
+      'Lead Source', 'CTA Source', 'Button Source', 'Page', 'Device Info', 'Traffic Source',
+      'UTM Source', 'UTM Medium', 'UTM Campaign', 'Timestamp', 'Status', 'Notes', 'Assigned To', 'Follow Up Date'
+    ];
     const rows = (selectedLeadIds.length > 0 ? leads.filter(l => selectedLeadIds.includes(l.id)) : leads).map(l => [
       l.id, l.name, l.phone, l.email || '', l.requirement || '', l.budget || '', l.preferredArea || '', l.propertyType || '',
-      `"${(l.message || '').replace(/"/g, '""')}"`, l.lead_source, l.cta_source, l.page_name, l.timestamp, l.status,
+      `"${(l.message || '').replace(/"/g, '""')}"`, l.lead_source, l.cta_source,
+      l.buttonSource || '', l.page_name, l.deviceInfo || '', l.trafficSource || '',
+      l.utmSource || '', l.utmMedium || '', l.utmCampaign || '',
+      l.timestamp, l.status,
       `"${(l.notes || '').replace(/"/g, '""')}"`, l.assignedTo || 'Unassigned', l.followUpDate || ''
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -260,6 +273,12 @@ export const LeadManagementView: React.FC = () => {
                   <td className="p-4 text-[11px] text-slate-400">
                     <div className="text-slate-200 font-semibold">{lead.lead_source}</div>
                     <div>{lead.cta_source}</div>
+                    {lead.deviceInfo && (
+                      <div className="text-[10px] text-indigo-400 mt-0.5">{lead.deviceInfo}</div>
+                    )}
+                    {lead.trafficSource && lead.trafficSource !== 'Direct' && (
+                      <div className="text-[10px] text-emerald-400">{lead.trafficSource}</div>
+                    )}
                     <div className="text-[10px] text-slate-500 font-mono">{lead.timestamp}</div>
                   </td>
                   <td className="p-4">
@@ -295,7 +314,7 @@ export const LeadManagementView: React.FC = () => {
                       <FileText className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => deleteLead(lead.id)}
+                      onClick={() => setConfirmDeleteId(lead.id)}
                       className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/30"
                       title="Delete Lead"
                     >
@@ -469,6 +488,27 @@ export const LeadManagementView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Single Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Are you sure you want to continue?"
+        message="This action will permanently delete the selected lead record."
+        onConfirm={() => {
+          if (confirmDeleteId) deleteLead(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmBulkDelete}
+        title={`Delete ${selectedLeadIds.length} selected leads?`}
+        message="This action is permanent and cannot be undone. All selected lead records will be removed."
+        onConfirm={executeBulkDelete}
+        onCancel={() => setConfirmBulkDelete(false)}
+      />
     </div>
   );
 };

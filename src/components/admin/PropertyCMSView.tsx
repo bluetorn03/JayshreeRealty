@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useData } from '../../context/DataContext';
 import { PropertyItem, ProjectCategory } from '../../types';
 import { api } from '../../services/api';
+import { ConfirmModal } from './ConfirmModal';
 import {
   Building2, Plus, Edit3, Trash2, Eye, EyeOff, Sparkles, Upload,
   Image as ImageIcon, FileText, Check, X, Layers, MapPin, Search, ArrowUpRight
@@ -19,6 +20,7 @@ export const PropertyCMSView: React.FC = () => {
   // Modal & Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [form, setForm] = useState<Partial<PropertyItem>>({
     title: '',
@@ -351,7 +353,7 @@ export const PropertyCMSView: React.FC = () => {
               </button>
 
               <button
-                onClick={() => deleteProject(proj.id)}
+                onClick={() => setConfirmDeleteId(proj.id)}
                 className="text-red-400 hover:underline flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -601,28 +603,6 @@ export const PropertyCMSView: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-300 mb-1">Brochure URL / PDF Path</label>
-                    <input
-                      type="text"
-                      value={form.brochureUrl || ''}
-                      onChange={(e) => setForm({ ...form, brochureUrl: e.target.value })}
-                      placeholder="/uploads/brochure.pdf"
-                      className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 mb-1">Floor Plan Image / PDF URL</label>
-                    <input
-                      type="text"
-                      value={form.floorPlanUrl || ''}
-                      onChange={(e) => setForm({ ...form, floorPlanUrl: e.target.value })}
-                      placeholder="/uploads/floorplan.jpg"
-                      className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* Toggles & SEO */}
@@ -679,6 +659,18 @@ export const PropertyCMSView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Are you sure you want to continue?"
+        message="This action will move the selected property to Trash."
+        onConfirm={() => {
+          if (confirmDeleteId) deleteProject(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 };

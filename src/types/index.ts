@@ -64,6 +64,15 @@ export interface LeadSubmission {
   lead_source: string;
   cta_source: string;
   page_name: string;
+  // Attribution / Tracking Fields
+  buttonSource?: string;
+  formSource?: string;
+  propertySource?: string;
+  deviceInfo?: string;
+  trafficSource?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
   timestamp: string;
   status: 'New' | 'Contacted' | 'Closed' | 'Follow-up';
   notes?: string;

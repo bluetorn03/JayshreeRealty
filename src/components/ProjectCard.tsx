@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2, Play, X, Youtube } from 'lucide-react';
 import { PropertyItem } from '../types';
 import { useLeads } from '../context/LeadContext';
+import { getYouTubeEmbedUrl } from '../utils/youtube';
 
 interface ProjectCardProps {
   property: PropertyItem;
@@ -237,13 +238,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
 
             <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black">
               <iframe
-                src={
-                  property.youtubeUrl && property.youtubeUrl.includes('embed')
-                    ? `${property.youtubeUrl}?autoplay=1`
-                    : property.youtubeUrl && property.youtubeUrl.includes('watch?v=')
-                    ? `https://www.youtube.com/embed/${property.youtubeUrl.split('watch?v=')[1]?.split('&')[0]}?autoplay=1`
-                    : `https://www.youtube.com/embed/videoseries?list=PL3x-videos-jayshree&autoplay=1`
-                }
+                src={getYouTubeEmbedUrl(property.youtubeUrl, true)}
                 title={`${property.title} YouTube Video`}
                 className="absolute inset-0 w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeadSubmission } from '../types';
 import { api } from '../services/api';
+import { getLeadAttribution } from '../utils/attribution';
 
 interface LeadContextType {
   leads: LeadSubmission[];
@@ -135,12 +136,17 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addLead = async (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => {
-    const res = await api.submitLead(leadData);
+    const attribution = getLeadAttribution();
+    const enrichedData = {
+      ...attribution,
+      ...leadData,
+    };
+    const res = await api.submitLead(enrichedData);
     if (res.success && res.lead) {
       setLeads((prev) => [res.lead, ...prev]);
     } else {
       const fallback: LeadSubmission = {
-        ...leadData,
+        ...enrichedData,
         id: `lead-${Date.now()}`,
         timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         status: 'New'

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { GoogleReviewItem } from '../../types';
 import { Star, Plus, Edit3, Trash2, Check, X, ShieldCheck } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 export const ReviewsCMSView: React.FC = () => {
   const { reviews, addReview, updateReview, deleteReview } = useData();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<GoogleReviewItem | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [form, setForm] = useState<Partial<GoogleReviewItem>>({
     author: '',
@@ -121,7 +123,7 @@ export const ReviewsCMSView: React.FC = () => {
                 <Edit3 className="w-3.5 h-3.5" /> Edit
               </button>
               <button
-                onClick={() => deleteReview(rev.id)}
+                onClick={() => setConfirmDeleteId(rev.id)}
                 className="text-red-400 hover:underline flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -206,6 +208,18 @@ export const ReviewsCMSView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Are you sure you want to continue?"
+        message="This action will move the selected testimonial to Trash."
+        onConfirm={() => {
+          if (confirmDeleteId) deleteReview(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 };

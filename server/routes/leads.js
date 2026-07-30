@@ -27,7 +27,15 @@ router.get('/', authenticateToken, async (req, res) => {
       message: row.message || '',
       leadSource: row.lead_source || 'Website Form',
       ctaSource: row.cta_source || 'General Inquiry',
-      pageName: row.page_name || 'Home',
+      pageName: row.page_name || row.page_source || 'Home',
+      buttonSource: row.button_source || '',
+      formSource: row.form_source || '',
+      propertySource: row.property_source || '',
+      deviceInfo: row.device_info || '',
+      trafficSource: row.traffic_source || '',
+      utmSource: row.utm_source || '',
+      utmMedium: row.utm_medium || '',
+      utmCampaign: row.utm_campaign || '',
       timestamp: row.timestamp || row.created_at,
       status: row.status || 'New',
       notes: row.notes || '',
@@ -48,7 +56,6 @@ router.post('/', async (req, res) => {
   try {
     const body = req.body;
 
-    // Accept both camelCase (frontend) and snake_case field names
     const name = body.name;
     const phone = body.phone;
     const email = body.email || '';
@@ -59,14 +66,26 @@ router.post('/', async (req, res) => {
     const message = body.message || '';
     const leadSource = body.leadSource || body.lead_source || 'Website Form';
     const ctaSource = body.ctaSource || body.cta_source || 'Inquiry Form';
-    const pageName = body.pageName || body.page_name || 'Website';
+    const pageName = body.pageName || body.page_name || body.page_source || 'Website';
+    
+    // Attribution fields
+    const buttonSource = body.button_source || body.buttonSource || ctaSource;
+    const formSource = body.form_source || body.formSource || leadSource;
+    const propertySource = body.property_source || body.propertySource || '';
+    const deviceInfo = body.device_info || body.deviceInfo || '';
+    const trafficSource = body.traffic_source || body.trafficSource || '';
+    const utmSource = body.utm_source || body.utmSource || '';
+    const utmMedium = body.utm_medium || body.utmMedium || '';
+    const utmCampaign = body.utm_campaign || body.utmCampaign || '';
+    const utmTerm = body.utm_term || body.utmTerm || '';
+    const utmContent = body.utm_content || body.utmContent || '';
 
     if (!name || !phone) {
       return res.status(400).json({ success: false, message: 'Name and phone number are required.' });
     }
 
     const id = `lead-${Date.now()}`;
-    const timestampStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const timestampStr = body.timestamp || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const newLeadRecord = {
       id,
@@ -81,6 +100,16 @@ router.post('/', async (req, res) => {
       lead_source: leadSource,
       cta_source: ctaSource,
       page_name: pageName,
+      button_source: buttonSource,
+      form_source: formSource,
+      property_source: propertySource,
+      device_info: deviceInfo,
+      traffic_source: trafficSource,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
+      utm_term: utmTerm,
+      utm_content: utmContent,
       timestamp: timestampStr,
       status: 'New',
       notes: '',
@@ -95,7 +124,7 @@ router.post('/', async (req, res) => {
       console.error('[Leads API] Database save error:', dbErr.message);
     }
 
-    // 2. Send Email Notification via Gmail SMTP
+    // 2. Send Hostinger Email Notification
     const emailResult = await sendLeadEmailNotification(newLeadRecord);
 
     // 3. Return full lead object so frontend state updates immediately
@@ -112,6 +141,14 @@ router.post('/', async (req, res) => {
       lead_source: leadSource,
       cta_source: ctaSource,
       page_name: pageName,
+      button_source: buttonSource,
+      form_source: formSource,
+      property_source: propertySource,
+      device_info: deviceInfo,
+      traffic_source: trafficSource,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
       timestamp: timestampStr,
       status: 'New',
       notes: '',

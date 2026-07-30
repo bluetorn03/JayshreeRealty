@@ -112,7 +112,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             <div className="p-3 bg-[#060a16] rounded-xl border border-slate-800 text-[11px] space-y-1">
               <div className="flex items-center justify-between text-slate-400">
                 <span>Database Engine</span>
-                <span className="text-[#c5a059] font-bold">SQLite 3</span>
+                <span className="text-[#c5a059] font-bold">Supabase PostgreSQL</span>
               </div>
               <div className="text-[10px] text-slate-400">Secure REST API Connectivity</div>
             </div>

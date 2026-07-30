@@ -1,15 +1,15 @@
 import nodemailer from 'nodemailer';
 
 export const sendLeadEmailNotification = async (leadData) => {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER || 'jayshreerealty03@gmail.com';
+  const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
+  const port = parseInt(process.env.SMTP_PORT || '465');
+  const user = process.env.SMTP_USER || 'info@jayshreerealty.com';
   const pass = process.env.SMTP_PASS || '';
-  const receiver = process.env.RECEIVER_EMAIL || 'jayshreerealty03@gmail.com';
+  const receiver = process.env.RECEIVER_EMAIL || 'info@jayshreerealty.com';
 
-  if (!pass || pass === 'your_app_password_here') {
-    console.warn('[SMTP Warning] SMTP_PASS is not configured in .env. Email sending skipped, lead saved in database.');
-    return { success: true, emailSent: false, note: 'Lead saved to database, SMTP skipped' };
+  if (!pass || pass === 'your_app_password_here' || pass === 'HostingerEmailPassword') {
+    console.warn('[SMTP Warning] SMTP_PASS is not fully configured in .env. Lead saved to database.');
+    return { success: true, emailSent: false, note: 'Lead saved to database, SMTP password placeholder skipped' };
   }
 
   const transporter = nodemailer.createTransport({
@@ -28,13 +28,28 @@ export const sendLeadEmailNotification = async (leadData) => {
   const visitorName = leadData.name || 'Valued Prospect';
   const visitorPhone = leadData.phone || 'N/A';
   const visitorEmail = leadData.email || 'No email provided';
-  const formName = leadData.cta_source || leadData.lead_source || 'Website Form';
-  const pageName = leadData.page_name || 'Home';
+  const formName = leadData.cta_source || leadData.form_source || leadData.lead_source || 'Website Form';
+  const pageName = leadData.page_name || leadData.page_source || 'Home';
   const requirement = leadData.requirement || 'N/A';
   const budget = leadData.budget || 'N/A';
   const preferredArea = leadData.preferred_area || 'N/A';
   const message = leadData.message || 'No additional notes provided.';
   const timestampStr = leadData.timestamp || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+  // Extended Attribution Fields
+  const buttonSource = leadData.button_source || 'N/A';
+  const propertySource = leadData.property_source || 'N/A';
+  const deviceInfo = leadData.device_info || 'Unknown Device';
+  const trafficSource = leadData.traffic_source || 'Direct';
+  const utmSource = leadData.utm_source || '';
+  const utmMedium = leadData.utm_medium || '';
+  const utmCampaign = leadData.utm_campaign || '';
+
+  const utmString = [
+    utmSource && `Source: ${utmSource}`,
+    utmMedium && `Medium: ${utmMedium}`,
+    utmCampaign && `Campaign: ${utmCampaign}`
+  ].filter(Boolean).join(' | ') || 'None';
 
   const htmlContent = `
   <!DOCTYPE html>
@@ -82,13 +97,23 @@ export const sendLeadEmailNotification = async (leadData) => {
           <div class="label">Requirement & Budget</div>
           <div class="value">${requirement} (${budget}) - ${preferredArea}</div>
         </div>
+        ${propertySource !== 'N/A' ? `
+        <div class="field-group">
+          <div class="label">Property Source</div>
+          <div class="value" style="color:#c5a059;">${propertySource}</div>
+        </div>` : ''}
         <div class="highlight-box">
           <div class="label">Message / Details</div>
           <div class="value" style="margin-top:4px;">${message}</div>
         </div>
         <div class="field-group">
-          <div class="label">Submission Metadata</div>
-          <div class="value" style="font-size:13px; color:#94a3b8;">Page: ${pageName} | Date & Time: ${timestampStr}</div>
+          <div class="label">Submission Attribution</div>
+          <div class="value" style="font-size:13px; color:#94a3b8;">
+            Page: ${pageName} | Button: ${buttonSource}<br/>
+            Device: ${deviceInfo} | Traffic: ${trafficSource}<br/>
+            UTM Parameters: ${utmString}<br/>
+            Date & Time: ${timestampStr}
+          </div>
         </div>
         ${
           visitorEmail && visitorEmail.includes('@')
@@ -99,7 +124,7 @@ export const sendLeadEmailNotification = async (leadData) => {
         }
       </div>
       <div class="footer">
-        <p>© ${new Date().getFullYear()} Jayshree Realty Admin Notification System. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} Jayshree Realty Hostinger Business Email Alert System.</p>
       </div>
     </div>
   </body>
@@ -116,10 +141,10 @@ export const sendLeadEmailNotification = async (leadData) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[SMTP Success] Email sent:', info.messageId);
+    console.log('[Hostinger SMTP Success] Email sent:', info.messageId);
     return { success: true, emailSent: true, messageId: info.messageId };
   } catch (error) {
-    console.error('[SMTP Error] Failed to send email via Gmail SMTP:', error);
+    console.error('[Hostinger SMTP Error] Failed to send email:', error.message);
     return { success: true, emailSent: false, error: error.message };
   }
 };

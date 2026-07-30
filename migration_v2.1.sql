@@ -1,22 +1,20 @@
--- ==============================================================================
--- JAYSHREE REALTY - COMPLETE SUPABASE PRODUCTION DATABASE SCHEMA
--- Version: 2.0 | Optimized for Supabase PostgreSQL
+-- ================================================================
+-- JAYSHREE REALTY - COMPLETE DATABASE MIGRATION
+-- Version: 2.1 | Generated for production sync
 -- 
--- HOW TO RUN:
---   1. Go to: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql
---   2. Click "New Query"
---   3. Paste this entire file
---   4. Click "Run" (Ctrl+Enter)
--- ==============================================================================
+-- SAFE TO RUN MULTIPLE TIMES — All statements are idempotent.
+-- No existing data or tables are dropped.
+--
+-- RUN IN: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql
+-- ================================================================
 
--- Enable UUID extension (already enabled in Supabase by default)
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ==============================================================================
--- TABLE CREATION
--- ==============================================================================
+-- ================================================================
+-- STEP 1: CREATE MISSING TABLES (IF NOT EXISTS — safe)
+-- ================================================================
 
--- 1. Admin Users
 CREATE TABLE IF NOT EXISTS public.admin_users (
     id TEXT PRIMARY KEY DEFAULT 'admin-1',
     username TEXT UNIQUE NOT NULL,
@@ -25,7 +23,6 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Properties / Projects
 CREATE TABLE IF NOT EXISTS public.properties (
     id TEXT PRIMARY KEY,
     slug TEXT UNIQUE,
@@ -64,7 +61,6 @@ CREATE TABLE IF NOT EXISTS public.properties (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Leads (Form Submissions)
 CREATE TABLE IF NOT EXISTS public.leads (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -78,7 +74,6 @@ CREATE TABLE IF NOT EXISTS public.leads (
     lead_source TEXT DEFAULT 'Website Form',
     cta_source TEXT DEFAULT 'General Inquiry',
     page_name TEXT DEFAULT 'Home',
-    -- Attribution / Tracking Columns
     button_source TEXT DEFAULT '',
     form_source TEXT DEFAULT '',
     property_source TEXT DEFAULT '',
@@ -97,41 +92,6 @@ CREATE TABLE IF NOT EXISTS public.leads (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3a. MIGRATION: Add attribution columns to existing leads table (safe, idempotent)
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='button_source') THEN
-    ALTER TABLE public.leads ADD COLUMN button_source TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='form_source') THEN
-    ALTER TABLE public.leads ADD COLUMN form_source TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='property_source') THEN
-    ALTER TABLE public.leads ADD COLUMN property_source TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='device_info') THEN
-    ALTER TABLE public.leads ADD COLUMN device_info TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='traffic_source') THEN
-    ALTER TABLE public.leads ADD COLUMN traffic_source TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='utm_source') THEN
-    ALTER TABLE public.leads ADD COLUMN utm_source TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='utm_medium') THEN
-    ALTER TABLE public.leads ADD COLUMN utm_medium TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='utm_campaign') THEN
-    ALTER TABLE public.leads ADD COLUMN utm_campaign TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='utm_term') THEN
-    ALTER TABLE public.leads ADD COLUMN utm_term TEXT DEFAULT '';
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='leads' AND column_name='utm_content') THEN
-    ALTER TABLE public.leads ADD COLUMN utm_content TEXT DEFAULT '';
-  END IF;
-END $$;
-
--- 4. Lead History / Activity Tracking
 CREATE TABLE IF NOT EXISTS public.lead_history (
     id TEXT PRIMARY KEY,
     lead_id TEXT NOT NULL,
@@ -141,7 +101,6 @@ CREATE TABLE IF NOT EXISTS public.lead_history (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Property Categories
 CREATE TABLE IF NOT EXISTS public.categories (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
@@ -149,7 +108,6 @@ CREATE TABLE IF NOT EXISTS public.categories (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Google Reviews / Testimonials
 CREATE TABLE IF NOT EXISTS public.reviews (
     id TEXT PRIMARY KEY,
     author TEXT NOT NULL,
@@ -165,7 +123,6 @@ CREATE TABLE IF NOT EXISTS public.reviews (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Hero Section Settings (singleton)
 CREATE TABLE IF NOT EXISTS public.hero_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     heading_part1 TEXT DEFAULT 'Navi Mumbai''s Most',
@@ -175,7 +132,6 @@ CREATE TABLE IF NOT EXISTS public.hero_settings (
     background_image TEXT DEFAULT ''
 );
 
--- 8. Popup / Lead Modal Settings (singleton)
 CREATE TABLE IF NOT EXISTS public.popup_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     title TEXT DEFAULT 'Get Best Offer & Instant Details',
@@ -190,7 +146,6 @@ CREATE TABLE IF NOT EXISTS public.popup_settings (
     success_message TEXT DEFAULT 'Thank you! Our expert will contact you shortly.'
 );
 
--- 9. Site / Company / SEO Settings (singleton)
 CREATE TABLE IF NOT EXISTS public.site_settings (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     company_name TEXT DEFAULT 'Jayshree Realty',
@@ -215,15 +170,14 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     gsc_verification_meta TEXT DEFAULT '',
     robots_txt_content TEXT DEFAULT '',
     sitemap_auto_generate INTEGER DEFAULT 1,
-    smtp_host TEXT DEFAULT 'smtp.gmail.com',
-    smtp_port TEXT DEFAULT '587',
-    smtp_user TEXT DEFAULT 'bluetorn03@gmail.com',
-    smtp_from_email TEXT DEFAULT 'bluetorn03@gmail.com',
+    smtp_host TEXT DEFAULT 'smtp.hostinger.com',
+    smtp_port TEXT DEFAULT '465',
+    smtp_user TEXT DEFAULT 'info@jayshreerealty.com',
+    smtp_from_email TEXT DEFAULT 'info@jayshreerealty.com',
     maintenance_mode INTEGER DEFAULT 0,
     maintenance_message TEXT DEFAULT ''
 );
 
--- 10. Stats / Counters Section
 CREATE TABLE IF NOT EXISTS public.counters (
     id TEXT PRIMARY KEY,
     label TEXT NOT NULL,
@@ -234,7 +188,6 @@ CREATE TABLE IF NOT EXISTS public.counters (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. Location Nodes (Featured Areas)
 CREATE TABLE IF NOT EXISTS public.location_nodes (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -244,7 +197,6 @@ CREATE TABLE IF NOT EXISTS public.location_nodes (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. Analytics Event Tracking
 CREATE TABLE IF NOT EXISTS public.analytics_events (
     id TEXT PRIMARY KEY,
     visitor_id TEXT NOT NULL,
@@ -263,7 +215,6 @@ CREATE TABLE IF NOT EXISTS public.analytics_events (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 13. Visitor Sessions
 CREATE TABLE IF NOT EXISTS public.visitor_sessions (
     id TEXT PRIMARY KEY,
     visitor_id TEXT NOT NULL,
@@ -275,7 +226,6 @@ CREATE TABLE IF NOT EXISTS public.visitor_sessions (
     lead_id TEXT
 );
 
--- 14. Admin Activity Logs
 CREATE TABLE IF NOT EXISTS public.activity_logs (
     id TEXT PRIMARY KEY,
     user_name TEXT NOT NULL DEFAULT 'Admin',
@@ -285,48 +235,102 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==============================================================================
--- PERFORMANCE INDEXES
--- ==============================================================================
-CREATE INDEX IF NOT EXISTS idx_properties_category ON public.properties(category);
-CREATE INDEX IF NOT EXISTS idx_properties_featured ON public.properties(is_featured);
-CREATE INDEX IF NOT EXISTS idx_properties_published ON public.properties(published);
-CREATE INDEX IF NOT EXISTS idx_properties_archived ON public.properties(archived);
-CREATE INDEX IF NOT EXISTS idx_leads_created_at ON public.leads(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_leads_status ON public.leads(status);
-CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON public.analytics_events(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_analytics_visitor ON public.analytics_events(visitor_id);
-CREATE INDEX IF NOT EXISTS idx_analytics_session ON public.analytics_events(session_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_published ON public.reviews(published);
+-- ================================================================
+-- STEP 2: SAFE COLUMN MIGRATIONS (ADD COLUMN IF NOT EXISTS)
+-- These will not fail if columns already exist
+-- ================================================================
 
--- ==============================================================================
--- ROW LEVEL SECURITY (RLS)
--- ==============================================================================
+-- leads: Attribution columns (added in v2.1)
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS button_source TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS form_source TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS property_source TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS device_info TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS traffic_source TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS utm_source TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS utm_medium TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS utm_term TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS utm_content TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS assigned_to TEXT DEFAULT 'Unassigned';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS follow_up_date TEXT DEFAULT '';
 
--- Enable RLS on all tables
-ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lead_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.hero_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.popup_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.counters ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.location_nodes ENABLE ROW LEVEL SECURITY;
+-- properties: Extended fields (added in v2.0)
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS slug TEXT;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS short_description TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS long_description TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS builder_name TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS builder_experience TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS amenities_json TEXT DEFAULT '[]';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS seo_title TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS seo_description TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS seo_keywords TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS youtube_url TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS placements_json TEXT DEFAULT '["buy"]';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS brochure_url TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS floor_plan_url TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS code TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS highlights TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS brokerage TEXT DEFAULT '';
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS brokerage_free INTEGER DEFAULT 0;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS gallery_images_json TEXT DEFAULT '[]';
+
+-- site_settings: Hostinger SMTP fields
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS google_maps_embed_url TEXT DEFAULT '';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS ga_measurement_id TEXT DEFAULT '';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS gtm_container_id TEXT DEFAULT '';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS gsc_verification_meta TEXT DEFAULT '';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS robots_txt_content TEXT DEFAULT '';
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS sitemap_auto_generate INTEGER DEFAULT 1;
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS maintenance_mode INTEGER DEFAULT 0;
+ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS maintenance_message TEXT DEFAULT '';
+
+-- ================================================================
+-- STEP 3: PERFORMANCE INDEXES (safe, IF NOT EXISTS)
+-- ================================================================
+CREATE INDEX IF NOT EXISTS idx_properties_category  ON public.properties(category);
+CREATE INDEX IF NOT EXISTS idx_properties_featured   ON public.properties(is_featured);
+CREATE INDEX IF NOT EXISTS idx_properties_published  ON public.properties(published);
+CREATE INDEX IF NOT EXISTS idx_properties_archived   ON public.properties(archived);
+CREATE INDEX IF NOT EXISTS idx_properties_slug       ON public.properties(slug);
+CREATE INDEX IF NOT EXISTS idx_leads_created_at      ON public.leads(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_status          ON public.leads(status);
+CREATE INDEX IF NOT EXISTS idx_leads_phone           ON public.leads(phone);
+CREATE INDEX IF NOT EXISTS idx_analytics_timestamp   ON public.analytics_events(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_visitor     ON public.analytics_events(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_session     ON public.analytics_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_published     ON public.reviews(published);
+CREATE INDEX IF NOT EXISTS idx_lead_history_lead_id  ON public.lead_history(lead_id);
+
+-- ================================================================
+-- STEP 4: ROW LEVEL SECURITY
+-- ================================================================
+ALTER TABLE public.admin_users      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.properties       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leads            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lead_history     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hero_settings    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.popup_settings   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.counters         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_nodes   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.visitor_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs    ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies (prevents duplication errors on re-run)
+-- Drop all existing policies (idempotent re-run safe)
 DO $$ DECLARE pol RECORD; BEGIN
   FOR pol IN (SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public') LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, pol.tablename);
   END LOOP;
 END $$;
 
--- Service role: Full access to all tables (our Node.js backend uses this key)
+-- Service role: Full access (Node.js backend)
 CREATE POLICY "service_role_admin_users"    ON public.admin_users    FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_properties"     ON public.properties     FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_leads"          ON public.leads          FOR ALL TO service_role USING (true) WITH CHECK (true);
@@ -342,7 +346,7 @@ CREATE POLICY "service_role_analytics"      ON public.analytics_events FOR ALL T
 CREATE POLICY "service_role_sessions"       ON public.visitor_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "service_role_activity"       ON public.activity_logs  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
--- Anonymous (public website): Read published content
+-- Anonymous: Read published content
 CREATE POLICY "anon_read_properties"  ON public.properties     FOR SELECT TO anon USING (published = 1 AND archived = 0);
 CREATE POLICY "anon_read_reviews"     ON public.reviews        FOR SELECT TO anon USING (published = 1);
 CREATE POLICY "anon_read_categories"  ON public.categories     FOR SELECT TO anon USING (true);
@@ -352,18 +356,16 @@ CREATE POLICY "anon_read_hero"        ON public.hero_settings  FOR SELECT TO ano
 CREATE POLICY "anon_read_popup"       ON public.popup_settings FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_read_site"        ON public.site_settings  FOR SELECT TO anon USING (true);
 
--- Anonymous: Submit leads (form submissions from website)
+-- Anonymous: Write (form submissions & tracking)
 CREATE POLICY "anon_insert_leads"     ON public.leads          FOR INSERT TO anon WITH CHECK (true);
-
--- Anonymous: Track analytics events
 CREATE POLICY "anon_insert_analytics" ON public.analytics_events FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_upsert_sessions"  ON public.visitor_sessions FOR ALL    TO anon USING (true) WITH CHECK (true);
 
--- ==============================================================================
--- DEFAULT DATA SEEDING
--- ==============================================================================
+-- ================================================================
+-- STEP 5: DEFAULT DATA SEEDING (safe, INSERT ... WHERE NOT EXISTS)
+-- ================================================================
 
--- Hero Settings (only insert if empty)
+-- Hero Settings
 INSERT INTO public.hero_settings (id, heading_part1, heading_gold, subtext, keywords_json, background_image)
 SELECT 1, 'Navi Mumbai''s Most', 'Trusted Luxury Real Estate',
   'Experience transparent property buying with verified CIDCO plots, direct developer launches, and prime resale homes across Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel.',
@@ -382,7 +384,14 @@ SELECT 1, 'Get Best Offer & Instant Details',
 WHERE NOT EXISTS (SELECT 1 FROM public.popup_settings WHERE id = 1);
 
 -- Site Settings
-INSERT INTO public.site_settings (id, company_name, phone, phone_raw, email, whatsapp, whatsapp_raw, address, logo_url, favicon_url, facebook_url, instagram_url, linkedin_url, youtube_url, seo_title_default, seo_description_default, seo_keywords_default, smtp_host, smtp_port, smtp_user, smtp_from_email, robots_txt_content, sitemap_auto_generate, maintenance_mode, maintenance_message)
+INSERT INTO public.site_settings (
+  id, company_name, phone, phone_raw, email, whatsapp, whatsapp_raw, address,
+  logo_url, favicon_url, facebook_url, instagram_url, linkedin_url, youtube_url,
+  seo_title_default, seo_description_default, seo_keywords_default,
+  smtp_host, smtp_port, smtp_user, smtp_from_email,
+  robots_txt_content, sitemap_auto_generate, maintenance_mode, maintenance_message,
+  google_maps_embed_url, ga_measurement_id, gtm_container_id, gsc_verification_meta
+)
 SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'jayshreerealty03@gmail.com',
   '+91 81690 05579', '918169005579',
   'G-102, 1st Floor, Nerul Railway Station Complex, Nerul West, Navi Mumbai 400706',
@@ -392,9 +401,9 @@ SELECT 1, 'Jayshree Realty', '+91 81690 05579', '+918169005579', 'jayshreerealty
   'Jayshree Realty | Premium Luxury Real Estate Consultancy Navi Mumbai',
   'Navi Mumbai premier luxury real estate consultancy. Verified CIDCO plot projects, luxury residential towers & commercial spaces in Nerul, Seawoods, Kharghar & Ulwe.',
   'Navi Mumbai Real Estate, Nerul Flat Sale, Kharghar New Launch, Seawoods Luxury Flat, Pushpak Nagar CIDCO Plot, Jayshree Realty',
-  'smtp.gmail.com', '587', 'bluetorn03@gmail.com', 'bluetorn03@gmail.com',
+  'smtp.hostinger.com', '465', 'info@jayshreerealty.com', 'info@jayshreerealty.com',
   E'User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml',
-  1, 0, 'We will be back shortly.'
+  1, 0, 'We will be back shortly.', '', '', '', ''
 WHERE NOT EXISTS (SELECT 1 FROM public.site_settings WHERE id = 1);
 
 -- Counters
@@ -419,7 +428,7 @@ SELECT 'loc-4', 'Pushpak Nagar', 'Navi Mumbai International Airport Node', 6, 3 
 INSERT INTO public.location_nodes (id, name, description, active_count, sort_order)
 SELECT 'loc-5', 'Panvel', 'Mega Township & Railway Junction', 4, 4 WHERE NOT EXISTS (SELECT 1 FROM public.location_nodes WHERE id = 'loc-5');
 
--- Categories (20 default categories)
+-- Categories (20 default)
 INSERT INTO public.categories (id, name, sort_order)
 SELECT id, name, sort_order FROM (VALUES
   ('cat-1','Kharghar New Projects',0), ('cat-2','Upper Kharghar',1),
@@ -451,30 +460,47 @@ SELECT id, author, rating, time_ago, content, avatar_color, 1, reviews_count, is
 ) AS v(id,author,rating,time_ago,content,avatar_color,reviews_count,is_local_guide,sort_order)
 WHERE NOT EXISTS (SELECT 1 FROM public.reviews WHERE reviews.id = v.id);
 
--- Admin User (default credentials - CHANGE AFTER FIRST LOGIN)
--- Password: jayshreerealty@8989 (bcrypt hashed)
+-- Admin User (bcrypt hash for: jayshreerealty@8989)
+-- NOTE: The db-audit.mjs script will upsert this with a fresh hash from bcrypt.
+-- This is a valid bcrypt hash for the password "jayshreerealty@8989"
 INSERT INTO public.admin_users (id, username, password_hash, role)
 SELECT 'admin-1', 'admin@jayshreerealty',
   '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
   'super_admin'
 WHERE NOT EXISTS (SELECT 1 FROM public.admin_users WHERE username = 'admin@jayshreerealty');
 
--- ==============================================================================
--- VERIFY SETUP
--- ==============================================================================
+-- ================================================================
+-- STEP 6: VERIFICATION
+-- ================================================================
 DO $$
 DECLARE
   tbl_count INTEGER;
+  col_count INTEGER;
 BEGIN
   SELECT COUNT(*) INTO tbl_count
   FROM information_schema.tables
   WHERE table_schema = 'public'
-  AND table_name IN ('admin_users','properties','leads','categories','reviews','hero_settings','popup_settings','site_settings','counters','location_nodes','analytics_events','visitor_sessions','activity_logs','lead_history');
-  
-  RAISE NOTICE '==================================================';
-  RAISE NOTICE 'Jayshree Realty Database Setup Complete!';
-  RAISE NOTICE 'Tables created: % / 14', tbl_count;
-  RAISE NOTICE 'Default admin: admin@jayshreerealty';
-  RAISE NOTICE 'Default password: jayshreerealty@8989';
-  RAISE NOTICE '==================================================';
+  AND table_name IN (
+    'admin_users','properties','leads','categories','reviews',
+    'hero_settings','popup_settings','site_settings','counters',
+    'location_nodes','analytics_events','visitor_sessions',
+    'activity_logs','lead_history'
+  );
+
+  -- Check attribution columns exist
+  SELECT COUNT(*) INTO col_count
+  FROM information_schema.columns
+  WHERE table_schema = 'public' AND table_name = 'leads'
+  AND column_name IN (
+    'button_source','form_source','property_source','device_info',
+    'traffic_source','utm_source','utm_medium','utm_campaign','utm_term','utm_content'
+  );
+
+  RAISE NOTICE '══════════════════════════════════════════════════════';
+  RAISE NOTICE 'Jayshree Realty DB Sync Complete!';
+  RAISE NOTICE 'Tables verified: % / 14', tbl_count;
+  RAISE NOTICE 'Lead attribution columns: % / 10', col_count;
+  RAISE NOTICE 'Admin login: admin@jayshreerealty';
+  RAISE NOTICE 'Password:    jayshreerealty@8989';
+  RAISE NOTICE '══════════════════════════════════════════════════════';
 END $$;

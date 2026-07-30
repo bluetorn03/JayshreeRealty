@@ -36,8 +36,10 @@ app.use(helmet({
 // CORS Configuration
 // ================================================================
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'https://iampratik.tech',
-  process.env.CLIENT_URL || 'https://iampratik.tech',
+  process.env.FRONTEND_URL || 'https://jayshreerealty.com',
+  process.env.CLIENT_URL || 'https://jayshreerealty.com',
+  'https://jayshreerealty.com',
+  'https://www.jayshreerealty.com',
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000',
   'http://localhost:5000'
@@ -131,7 +133,7 @@ app.get('/robots.txt', async (req, res) => {
 // Sitemap.xml (basic auto-generated)
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const baseUrl = process.env.FRONTEND_URL || 'https://iampratik.tech';
+    const baseUrl = process.env.FRONTEND_URL || 'https://jayshreerealty.com';
     const staticPages = ['/', '/about', '/buy', '/sell', '/commercial', '/projects', '/testimonials', '/contact'];
     
     const urls = staticPages.map(page => `

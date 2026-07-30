@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useData } from '../context/DataContext';
 import { useLeads } from '../context/LeadContext';
+import { getYouTubeEmbedUrl } from '../utils/youtube';
 import {
   Star, ShieldCheck, MapPin, Quote, Play, CheckCircle2,
   Users, Building2, ArrowRight, X, Phone, MessageSquare
@@ -307,7 +308,7 @@ export const Testimonials: React.FC = () => {
             </button>
             <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black">
               <iframe
-                src={`${selectedVideoUrl}?autoplay=1`}
+                src={getYouTubeEmbedUrl(selectedVideoUrl || undefined, true)}
                 title="Testimonial Video"
                 className="absolute inset-0 w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
