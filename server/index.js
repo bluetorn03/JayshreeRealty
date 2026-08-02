@@ -25,16 +25,49 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Dynamic dist/public_html resolution function
+const resolveDistFolder = () => {
+  const candidatePaths = [
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(__dirname, '..', 'dist'),
+    path.resolve(process.cwd(), 'public_html'),
+    path.resolve(__dirname, '..', 'public_html'),
+    path.resolve(process.cwd(), '../public_html'),
+    path.resolve(__dirname, '../../public_html')
+  ];
+
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+  return candidatePaths[0];
+};
+
+const distPath = resolveDistFolder();
+const indexPath = path.join(distPath, 'index.html');
+
+// Diagnostics & Path Audit log
+console.log('='.repeat(65));
+console.log('🚀 PRODUCTION ENVIRONMENT PATH AUDIT:');
+console.log('  • process.cwd():          ', process.cwd());
+console.log('  • __dirname:              ', __dirname);
+console.log('  • distPath:               ', distPath);
+console.log('  • indexPath:              ', indexPath);
+console.log('  • fs.existsSync(distPath): ', fs.existsSync(distPath));
+console.log('  • fs.existsSync(indexPath):', fs.existsSync(indexPath));
+console.log('='.repeat(65));
+
 // ================================================================
-// SECURITY HEADERS (helmet)
+// 1. HELMET (Security Headers)
 // ================================================================
 app.use(helmet({
-  contentSecurityPolicy: false, // Disabled because frontend uses inline scripts & Supabase CDN
+  contentSecurityPolicy: false, // Frontend uses inline scripts & Supabase CDN
   crossOriginEmbedderPolicy: false
 }));
 
 // ================================================================
-// CORS Configuration
+// 2. CORS Configuration
 // ================================================================
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'https://jayshreerealty.com',
@@ -42,18 +75,17 @@ const allowedOrigins = [
   process.env.BACKEND_URL || 'https://jayshreerealty.com',
   'https://jayshreerealty.com',
   'https://www.jayshreerealty.com',
-  'http://localhost:5173', // Vite dev server
+  'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5000'
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin) || NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all in production for Hostinger deployment
+      callback(null, true);
     }
   },
   credentials: true,
@@ -62,34 +94,28 @@ app.use(cors({
 }));
 
 // ================================================================
-// BODY PARSING
+// 3. JSON & URLENCODED BODY PARSERS
 // ================================================================
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
-// ================================================================
-// RATE LIMITING - Protect API endpoints
-// ================================================================
+// Rate Limiters for API endpoints
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // 500 requests per IP per 15 mins
+  windowMs: 15 * 60 * 1000,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests. Please try again later.' }
 });
 
-// Stricter limiter for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // Only 20 login attempts per 15 mins
+  max: 20,
   message: { success: false, message: 'Too many login attempts. Please try again later.' }
 });
 
-app.use('/api', apiLimiter);
-app.use('/api/auth/login', authLimiter);
-
 // ================================================================
-// STATIC FILE SERVING - Uploaded Media
+// 4. UPLOADS (Static User Media)
 // ================================================================
 const publicUploads = path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(publicUploads)) {
@@ -98,8 +124,30 @@ if (!fs.existsSync(publicUploads)) {
 app.use('/uploads', express.static(publicUploads));
 
 // ================================================================
-// API ROUTES
+// 5. EXPRESS.STATIC (Frontend Built Assets in dist / public_html)
 // ================================================================
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath, {
+    maxAge: NODE_ENV === 'production' ? '7d' : '0',
+    etag: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      }
+    }
+  }));
+} else {
+  console.warn(`⚠️ Warning: Static assets directory not found at ${distPath}`);
+}
+
+// ================================================================
+// 6. API ROUTES & CORE ENDPOINTS
+// ================================================================
+app.use('/api', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/leads', leadRoutes);
@@ -107,16 +155,26 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// ================================================================
-// HEALTH CHECK & STATUS ENDPOINTS
-// ================================================================
+// Health check
 app.get('/api/health', (req, res) => {
+  const currentDistPath = resolveDistFolder();
+  const currentIndexPath = path.join(currentDistPath, 'index.html');
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: NODE_ENV,
     database: 'Supabase PostgreSQL',
-    version: '2.0.0'
+    version: '2.0.0',
+    paths: {
+      cwd: process.cwd(),
+      dirname: __dirname,
+      distPath: currentDistPath,
+      indexPath: currentIndexPath
+    },
+    existence: {
+      distExists: fs.existsSync(currentDistPath),
+      indexExists: fs.existsSync(currentIndexPath)
+    }
   });
 });
 
@@ -126,7 +184,6 @@ app.all('/api/test-email', async (req, res) => {
     const { executeTestEmailAudit } = await import('./services/email.js');
     const recipient = req.body?.recipient || req.query?.recipient || 'jayshreerealty16@gmail.com';
     const result = await executeTestEmailAudit(recipient);
-    
     console.log(`[SMTP Test Route] Audit result for ${recipient}:`, result);
     return res.status(result.status_code || 200).json(result);
   } catch (error) {
@@ -139,7 +196,7 @@ app.all('/api/test-email', async (req, res) => {
   }
 });
 
-// Robots.txt (served dynamically from site_settings if available)
+// Robots.txt
 app.get('/robots.txt', async (req, res) => {
   try {
     const { supabase } = await import('./db/supabase.js');
@@ -151,12 +208,11 @@ app.get('/robots.txt', async (req, res) => {
   }
 });
 
-// Sitemap.xml (basic auto-generated)
+// Sitemap.xml
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const baseUrl = process.env.FRONTEND_URL || 'https://jayshreerealty.com';
     const staticPages = ['/', '/about', '/buy', '/sell', '/commercial', '/projects', '/testimonials', '/contact'];
-
     const urls = staticPages.map(page => `
   <url>
     <loc>${baseUrl}${page}</loc>
@@ -174,108 +230,72 @@ ${urls}
   }
 });
 
-// ================================================================
-// SERVE PRODUCTION FRONTEND BUILD & SPA FALLBACK (Hostinger deployment)
-// ================================================================
-// Function to find the dist directory across all possible Hostinger / Node execution locations
-const getDistPath = () => {
-  const candidatePaths = [
-    path.resolve(process.cwd(), 'dist'),
-    path.resolve(__dirname, '..', 'dist'),
-    path.resolve(process.cwd(), 'public_html'),
-    path.resolve(__dirname, '..', 'public_html')
-  ];
-
-  for (const candidate of candidatePaths) {
-    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'index.html'))) {
-      return candidate;
-    }
-  }
-  return candidatePaths[0];
-};
-
-const distPath = getDistPath();
-console.log('DIST:', distPath);
-
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath, {
-    maxAge: NODE_ENV === 'production' ? '7d' : '0',
-    etag: true,
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      } else if (filePath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css');
-      }
-    }
-  }));
-} else {
-  console.warn(`⚠️  dist folder not found at ${distPath}. Run "npm run build" to build frontend assets.`);
-}
-
-// Explicit route handler for /admin and /admin/ to ensure direct access works smoothly
-app.get(/^\/admin(\/.*)?$/, (req, res, next) => {
-  const activeDist = getDistPath();
-  const indexPath = path.join(activeDist, 'index.html');
-  const staticPath = activeDist;
-
-  console.log(`REQUEST PATH: ${req.path}`);
-  console.log(`DIST PATH: ${activeDist}`);
-  console.log(`INDEX PATH: ${indexPath}`);
-  console.log(`STATIC PATH: ${staticPath}`);
-  console.log(`RESPONSE STATUS: 200`);
-
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath, (err) => {
+// Favicon handler
+app.get('/favicon.ico', (req, res) => {
+  const currentDist = resolveDistFolder();
+  const faviconPath = path.join(currentDist, 'favicon.ico');
+  if (fs.existsSync(faviconPath)) {
+    return res.sendFile(faviconPath, (err) => {
       if (err && !res.headersSent) {
-        console.error(`[SPA Error] Failed to send index.html for ${req.path}:`, err.message);
-        next(err);
+        res.status(404).end();
       }
     });
   }
-  next();
+  return res.status(404).end();
 });
 
-// Universal SPA Fallback Middleware for React Router (/about, /buy, /contact, etc.)
+// ================================================================
+// 7. SPA FALLBACK (React Router - /admin, /about, /contact, etc.)
+// Task 8 Exclude: /api/*, /uploads/*, /assets/*, /favicon.ico, /robots.txt, /sitemap.xml
+// Task 9: Existence check before calling sendFile()
+// ================================================================
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-    return next();
-  }
-
+  // Exclude non-GET & non-HEAD requests
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return next();
   }
 
-  const activeDist = getDistPath();
-  const indexPath = path.join(activeDist, 'index.html');
-  const staticPath = activeDist;
+  // Exclude specific route prefixes and files (Requirement 8)
+  const excludedPrefixes = ['/api', '/uploads', '/assets'];
+  const excludedFiles = ['/favicon.ico', '/robots.txt', '/sitemap.xml'];
 
-  console.log(`REQUEST PATH: ${req.path}`);
-  console.log(`DIST PATH: ${activeDist}`);
-  console.log(`INDEX PATH: ${indexPath}`);
-  console.log(`STATIC PATH: ${staticPath}`);
-  console.log(`RESPONSE STATUS: ${res.statusCode || 200}`);
+  const isExcluded = excludedPrefixes.some(prefix => req.path.startsWith(prefix)) ||
+                     excludedFiles.includes(req.path);
 
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath, (err) => {
+  if (isExcluded) {
+    return next();
+  }
+
+  const activeDistFolder = resolveDistFolder();
+  const activeIndexPath = path.join(activeDistFolder, 'index.html');
+
+  // Existence check before sendFile (Requirement 9)
+  if (fs.existsSync(activeIndexPath)) {
+    return res.sendFile(activeIndexPath, (err) => {
       if (err && !res.headersSent) {
         console.error(`[SPA Error] Failed to send index.html for ${req.path}:`, err.message);
-        next(err);
+        return next(err);
       }
     });
   }
 
-  console.warn(`[SPA Warning] index.html not found at ${indexPath} for request ${req.path}`);
-  next();
+  console.warn(`[SPA Warning] index.html not found at ${activeIndexPath} for request ${req.path}`);
+  return next();
 });
 
-// Unhandled API route fallback
+// ================================================================
+// 8. 404 HANDLER FOR UNHANDLED API ROUTES AND UNRESOLVED ASSETS
+// ================================================================
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found' });
 });
 
+app.use((req, res) => {
+  res.status(404).send('Resource not found');
+});
+
 // ================================================================
-// GLOBAL ERROR HANDLER
+// 9. GLOBAL ERROR HANDLER
 // ================================================================
 app.use((err, req, res, next) => {
   console.error('[Server Error]', err.stack || err);
@@ -293,7 +313,6 @@ app.use((err, req, res, next) => {
 // ================================================================
 const startServer = async () => {
   try {
-    // Attempt DB initialization (seed default data) - non-blocking if tables don't exist yet
     await initSupabaseDb().catch(err => {
       console.warn('[DB Init Warning] Tables may not exist yet. Run: npm run migrate');
       console.warn('[DB Init Warning]', err.message);
@@ -301,14 +320,14 @@ const startServer = async () => {
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log('');
-      console.log('='.repeat(55));
-      console.log('🚀  Jayshree Realty Enterprise Backend');
-      console.log('='.repeat(55));
-      console.log(`📡  Running:    http://localhost:${PORT}`);
-      console.log(`⚡  Database:   Supabase (${process.env.SUPABASE_URL?.replace('https://', '') || 'not configured'})`);
-      console.log(`🌍  Mode:       ${NODE_ENV}`);
-      console.log(`📁  Uploads:    /uploads/`);
-      console.log('='.repeat(55));
+      console.log('='.repeat(65));
+      console.log('🚀 Jayshree Realty Enterprise Backend');
+      console.log('='.repeat(65));
+      console.log(`📡 Server Running:   http://localhost:${PORT}`);
+      console.log(`⚡ Mode:             ${NODE_ENV}`);
+      console.log(`📁 Static Dist:      ${distPath} (exists: ${fs.existsSync(distPath)})`);
+      console.log(`📄 Index HTML:       ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
+      console.log('='.repeat(65));
       console.log('');
     });
   } catch (err) {

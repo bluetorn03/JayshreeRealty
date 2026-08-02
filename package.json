@@ -11,6 +11,7 @@
     "start": "node server/index.js",
     "migrate": "node server/migrate.js",
     "build": "tsc && vite build",
+    "postbuild": "node scripts/copy-dist-to-public-html.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

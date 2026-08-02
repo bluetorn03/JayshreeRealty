@@ -4,6 +4,7 @@ node_modules/
 # Build Output
 dist/
 build/
+public_html/
 
 # Environment Files
 .env
