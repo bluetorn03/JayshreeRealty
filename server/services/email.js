@@ -5,7 +5,7 @@ export const sendLeadEmailNotification = async (leadData) => {
   const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
   const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
   const rawPass = process.env.SMTP_PASS || '';
-  const pass = rawPass.replace(/["']/g, '').trim();
+  const pass = rawPass.replace(/["']/g, '').replace(/\s+/g, '').trim();
   const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
   const receiver = (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
 
@@ -14,21 +14,13 @@ export const sendLeadEmailNotification = async (leadData) => {
     return { success: true, emailSent: false, note: 'Lead saved to database, SMTP password placeholder skipped' };
   }
 
-  const isGmail = host.includes('gmail.com');
-  const transporter = nodemailer.createTransport(
-    isGmail && port === 465
-      ? {
-          service: 'gmail',
-          auth: { user, pass }
-        }
-      : {
-          host,
-          port,
-          secure: port === 465,
-          auth: { user, pass },
-          tls: { rejectUnauthorized: false }
-        }
-  );
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false }
+  });
 
   const visitorName = leadData.name || 'Valued Prospect';
   const visitorPhone = leadData.phone || 'N/A';
@@ -154,17 +146,73 @@ export const sendLeadEmailNotification = async (leadData) => {
   }
 };
 
-export const sendTestEmail = async () => {
-  return sendLeadEmailNotification({
-    name: 'Test Prospect',
-    phone: '+91 99999 99999',
-    email: 'test@example.com',
-    requirement: '2 BHK Luxury Flat',
-    budget: '1.2 Cr',
-    preferred_area: 'Nerul West',
-    message: 'Test notification from Jayshree Realty system audit.',
-    lead_source: 'System Audit',
-    cta_source: 'Test Email Trigger'
+export const executeTestEmailAudit = async (customRecipient = null) => {
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').replace(/["']/g, '').trim();
+  const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
+  const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
+  const rawPass = process.env.SMTP_PASS || '';
+  const pass = rawPass.replace(/["']/g, '').replace(/\s+/g, '').trim();
+  const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
+  const receiver = customRecipient || (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
+
+  const auditLog = {
+    smtp_host: host,
+    smtp_port: port,
+    smtp_user: user,
+    smtp_from: fromEmail,
+    receiver_email: receiver,
+    transporter_verified: false,
+    email_sent: false,
+    message_id: null,
+    smtp_response: null,
+    status_code: 500,
+    failure_reason: null
+  };
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false }
   });
+
+  try {
+    await transporter.verify();
+    auditLog.transporter_verified = true;
+
+    const info = await transporter.sendMail({
+      from: `"Jayshree Realty System Audit" <${fromEmail}>`,
+      to: receiver,
+      subject: 'Jayshree Realty Production Test',
+      text: 'This is a production verification email.',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #070b19; color: #ffffff;">
+          <h2 style="color: #c5a059;">Jayshree Realty Production Test</h2>
+          <p>This is a production verification email.</p>
+          <hr style="border-color: #334155;"/>
+          <p style="font-size: 12px; color: #94a3b8;">
+            Sent from: ${fromEmail}<br/>
+            Timestamp: ${new Date().toISOString()}
+          </p>
+        </div>
+      `
+    });
+
+    auditLog.email_sent = true;
+    auditLog.message_id = info.messageId;
+    auditLog.smtp_response = info.response;
+    auditLog.status_code = 200;
+    return { success: true, ...auditLog };
+  } catch (error) {
+    auditLog.failure_reason = error.message;
+    auditLog.status_code = error.responseCode || 500;
+    console.error('[SMTP Audit Error]', error);
+    return { success: false, ...auditLog };
+  }
+};
+
+export const sendTestEmail = async () => {
+  return executeTestEmailAudit();
 };
 

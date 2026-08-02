@@ -53,6 +53,7 @@ export function App() {
           <Routes>
             {/* Private Isolated Admin Route - Completely detached from public layout */}
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
 
             {/* Public Website Routes with Header/Footer/Floating CTA */}
             <Route element={<PublicLayout />}>

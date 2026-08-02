@@ -120,6 +120,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Production Audit Test Email Route
+app.all('/api/test-email', async (req, res) => {
+  try {
+    const { executeTestEmailAudit } = await import('./services/email.js');
+    const recipient = req.body?.recipient || req.query?.recipient || 'jayshreerealty16@gmail.com';
+    const result = await executeTestEmailAudit(recipient);
+    
+    console.log(`[SMTP Test Route] Audit result for ${recipient}:`, result);
+    return res.status(result.status_code || 200).json(result);
+  } catch (error) {
+    console.error('[SMTP Test Route Error]', error);
+    return res.status(500).json({
+      success: false,
+      status_code: 500,
+      failure_reason: error.message
+    });
+  }
+});
+
 // Robots.txt (served dynamically from site_settings if available)
 app.get('/robots.txt', async (req, res) => {
   try {
@@ -187,7 +206,7 @@ if (fs.existsSync(distPath)) {
   console.warn(`⚠️  dist folder not found at ${distPath}. Run "npm run build" to build frontend assets.`);
 }
 
-// Universal SPA Fallback Middleware for React Router (/admin, /about, /projects, /contact, etc.)
+// Universal SPA Fallback Middleware for React Router (/admin, /admin/, /about, etc.)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
@@ -199,10 +218,13 @@ app.use((req, res, next) => {
 
   const activeDist = getDistPath();
   const indexPath = path.join(activeDist, 'index.html');
+  const staticPath = activeDist;
 
-  console.log('REQUEST:', req.path);
-  console.log('DIST:', activeDist);
-  console.log('INDEX:', indexPath);
+  console.log(`REQUEST PATH: ${req.path}`);
+  console.log(`DIST PATH: ${activeDist}`);
+  console.log(`INDEX PATH: ${indexPath}`);
+  console.log(`STATIC PATH: ${staticPath}`);
+  console.log(`RESPONSE STATUS: ${res.statusCode || 200}`);
 
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath, (err) => {
