@@ -25,7 +25,7 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Dynamic dist/public_html resolution function
+// Dynamic dist/public_html resolution function with detailed logging
 const resolveDistFolder = () => {
   const candidatePaths = [
     path.resolve(process.cwd(), 'dist'),
@@ -33,7 +33,9 @@ const resolveDistFolder = () => {
     path.resolve(process.cwd(), 'public_html'),
     path.resolve(__dirname, '..', 'public_html'),
     path.resolve(process.cwd(), '../public_html'),
-    path.resolve(__dirname, '../../public_html')
+    path.resolve(__dirname, '../../public_html'),
+    '/home/u875880016/.builds/current/nodejs/dist',
+    '/home/u875880016/domains/jayshreerealty.com/public_html'
   ];
 
   for (const candidate of candidatePaths) {
@@ -47,16 +49,58 @@ const resolveDistFolder = () => {
 const distPath = resolveDistFolder();
 const indexPath = path.join(distPath, 'index.html');
 
-// Diagnostics & Path Audit log
-console.log('='.repeat(65));
-console.log('🚀 PRODUCTION ENVIRONMENT PATH AUDIT:');
-console.log('  • process.cwd():          ', process.cwd());
-console.log('  • __dirname:              ', __dirname);
-console.log('  • distPath:               ', distPath);
-console.log('  • indexPath:              ', indexPath);
-console.log('  • fs.existsSync(distPath): ', fs.existsSync(distPath));
-console.log('  • fs.existsSync(indexPath):', fs.existsSync(indexPath));
-console.log('='.repeat(65));
+// Helper to safely get file stats (permissions, size, owner, mode)
+const getFileStats = (targetPath) => {
+  try {
+    if (!fs.existsSync(targetPath)) {
+      return { exists: false, path: targetPath };
+    }
+    const stat = fs.statSync(targetPath);
+    return {
+      exists: true,
+      path: targetPath,
+      size: stat.size,
+      mode: '0' + (stat.mode & 0o777).toString(8),
+      uid: stat.uid,
+      gid: stat.gid,
+      isFile: stat.isFile(),
+      isDirectory: stat.isDirectory(),
+      mtime: stat.mtime
+    };
+  } catch (err) {
+    return { exists: false, path: targetPath, error: err.message };
+  }
+};
+
+// Helper to safely list directory contents (ls -la equivalent)
+const safeReaddir = (targetPath) => {
+  try {
+    if (!fs.existsSync(targetPath)) return `Directory does not exist: ${targetPath}`;
+    const items = fs.readdirSync(targetPath);
+    return items.map(item => {
+      const p = path.join(targetPath, item);
+      const isDir = fs.existsSync(p) && fs.statSync(p).isDirectory();
+      return isDir ? `${item}/` : item;
+    });
+  } catch (err) {
+    return `Error reading directory (${targetPath}): ${err.message}`;
+  }
+};
+
+// Diagnostics Audit Print on Server Startup
+console.log('='.repeat(70));
+console.log('🚀 HOSTINGER PRODUCTION DIAGNOSTICS & PATH AUDIT:');
+console.log('  • process.cwd():                  ', process.cwd());
+console.log('  • __dirname:                      ', __dirname);
+console.log('  • distPath:                       ', distPath);
+console.log('  • indexPath:                      ', indexPath);
+console.log('  • fs.existsSync(distPath):        ', fs.existsSync(distPath));
+console.log('  • fs.existsSync(indexPath):       ', fs.existsSync(indexPath));
+console.log('  • indexPath STATS:                ', JSON.stringify(getFileStats(indexPath)));
+console.log('  • readdir(distPath):              ', safeReaddir(distPath));
+console.log('  • readdir(distPath/assets):       ', safeReaddir(path.join(distPath, 'assets')));
+console.log('  • readdir(public_html):           ', safeReaddir(path.resolve(process.cwd(), 'public_html')));
+console.log('='.repeat(70));
 
 // ================================================================
 // 1. HELMET (Security Headers)
@@ -94,12 +138,11 @@ app.use(cors({
 }));
 
 // ================================================================
-// 3. JSON & URLENCODED BODY PARSERS
+// 3. BODY PARSERS & RATE LIMITERS
 // ================================================================
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
-// Rate Limiters for API endpoints
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -155,48 +198,30 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Health check with comprehensive Phase 1 audit metrics
+// Detailed Production Health Endpoint with Hostinger Audit Metrics
 app.get('/api/health', (req, res) => {
-  const currentDistPath = resolveDistFolder();
-  const currentIndexPath = path.join(currentDistPath, 'index.html');
-  const assetsPath = path.join(currentDistPath, 'assets');
-
-  const safeReaddir = (targetPath) => {
-    try {
-      return fs.existsSync(targetPath) ? fs.readdirSync(targetPath) : null;
-    } catch (e) {
-      return `Error reading directory: ${e.message}`;
-    }
-  };
-
-  const candidatePublicHtmls = [
-    path.resolve(process.cwd(), 'public_html'),
-    path.resolve(__dirname, '..', 'public_html'),
-    path.resolve(process.cwd(), '../public_html')
-  ];
-
-  const publicHtmlContents = {};
-  candidatePublicHtmls.forEach(p => {
-    publicHtmlContents[p] = safeReaddir(p);
-  });
+  const activeDist = resolveDistFolder();
+  const activeIndex = path.join(activeDist, 'index.html');
+  const activeAssets = path.join(activeDist, 'assets');
 
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: NODE_ENV,
     database: 'Supabase PostgreSQL',
-    version: '2.1.0-prod-audit',
+    version: '2.2.0-debug-audit',
     audit: {
-      cwd: process.cwd(),
-      dirname: __dirname,
-      distPath: currentDistPath,
-      indexPath: currentIndexPath,
-      distExists: fs.existsSync(currentDistPath),
-      indexExists: fs.existsSync(currentIndexPath),
-      faviconExists: fs.existsSync(path.join(currentDistPath, 'favicon.ico')),
-      distContents: safeReaddir(currentDistPath),
-      assetsContents: safeReaddir(assetsPath),
-      publicHtmlSearch: publicHtmlContents
+      process_cwd: process.cwd(),
+      __dirname: __dirname,
+      distPath: activeDist,
+      indexPath: activeIndex,
+      fs_existsSync_distPath: fs.existsSync(activeDist),
+      fs_existsSync_indexPath: fs.existsSync(activeIndex),
+      indexPath_stats: getFileStats(activeIndex),
+      dist_readdir: safeReaddir(activeDist),
+      assets_readdir: safeReaddir(activeAssets),
+      public_html_cwd_readdir: safeReaddir(path.resolve(process.cwd(), 'public_html')),
+      public_html_parent_readdir: safeReaddir(path.resolve(__dirname, '..', 'public_html'))
     }
   });
 });
@@ -253,25 +278,25 @@ ${urls}
   }
 });
 
-// Favicon handler
+// Favicon handler with fs.readFileSync fallback
 app.get('/favicon.ico', (req, res) => {
   const currentDist = resolveDistFolder();
   const faviconPath = path.join(currentDist, 'favicon.ico');
   if (fs.existsSync(faviconPath)) {
-    return res.sendFile(faviconPath, (err) => {
-      if (err && !res.headersSent) {
-        res.status(404).end();
-      }
-    });
+    try {
+      const buffer = fs.readFileSync(faviconPath);
+      res.setHeader('Content-Type', 'image/x-icon');
+      return res.send(buffer);
+    } catch (e) {
+      return res.status(404).end();
+    }
   }
   return res.status(404).end();
 });
 
 // ================================================================
 // 7. SPA FALLBACK (React Router - /admin, /admin/, /admin/login, /contact, etc.)
-// Task 8 Exclude: /api/*, /uploads/*, /assets/*, /favicon.ico, /robots.txt, /sitemap.xml
-// Task 9: Existence check before sendFile()
-// Phase 3 Runtime Logging
+// Replaces sendFile() with direct fs.readFileSync() for guaranteed delivery
 // ================================================================
 app.use((req, res, next) => {
   // Exclude non-GET & non-HEAD requests
@@ -279,7 +304,7 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Exclude specific route prefixes and files (Requirement 8)
+  // Exclude specific route prefixes and files
   const excludedPrefixes = ['/api', '/uploads', '/assets'];
   const excludedFiles = ['/favicon.ico', '/robots.txt', '/sitemap.xml'];
 
@@ -292,38 +317,49 @@ app.use((req, res, next) => {
 
   const activeDistFolder = resolveDistFolder();
   const activeIndexPath = path.join(activeDistFolder, 'index.html');
+  const indexExists = fs.existsSync(activeIndexPath);
+  const fileStats = getFileStats(activeIndexPath);
 
-  // Phase 3 Runtime Logging
-  console.log(`[SPA Request] REQUEST PATH:    ${req.path}`);
-  console.log(`[SPA Request] DIST PATH:       ${activeDistFolder}`);
-  console.log(`[SPA Request] INDEX PATH:      ${activeIndexPath}`);
-  console.log(`[SPA Request] STATIC PATH:     ${activeDistFolder}`);
-  console.log(`[SPA Request] ABSOLUTE FILE:   ${activeIndexPath}`);
+  // Print exact production logs before delivery
+  console.log(`[SPA Request Audit] REQUEST PATH:            ${req.path}`);
+  console.log(`[SPA Request Audit] process.cwd():           ${process.cwd()}`);
+  console.log(`[SPA Request Audit] __dirname:               ${__dirname}`);
+  console.log(`[SPA Request Audit] distPath:                ${activeDistFolder}`);
+  console.log(`[SPA Request Audit] indexPath:               ${activeIndexPath}`);
+  console.log(`[SPA Request Audit] fs.existsSync(indexPath): ${indexExists}`);
+  console.log(`[SPA Request Audit] STATS:                   ${JSON.stringify(fileStats)}`);
 
-  // Existence check before sendFile (Requirement 9)
-  if (fs.existsSync(activeIndexPath)) {
-    console.log(`[SPA Request] STATUS CODE:     200 (Serving index.html)`);
-    return res.sendFile(activeIndexPath, (err) => {
-      if (err && !res.headersSent) {
-        console.error(`[SPA Error] sendFile failed for ${req.path}:`, err.message);
-        console.error(`[SPA Error] Stack:`, err.stack);
-        return next(err);
-      }
-    });
+  if (indexExists) {
+    try {
+      // Read index.html directly using fs.readFileSync to bypass express sendFile resolution bugs
+      const htmlContent = fs.readFileSync(activeIndexPath, 'utf8');
+      console.log(`[SPA Request Audit] STATUS CODE:             200 OK (Delivered ${htmlContent.length} bytes via fs.readFileSync)`);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.status(200).send(htmlContent);
+    } catch (readErr) {
+      console.error(`[SPA Error] fs.readFileSync failed for ${activeIndexPath}:`, readErr.message);
+      console.error(`[SPA Error] Stack:`, readErr.stack);
+    }
   }
 
-  console.warn(`[SPA Warning] index.html NOT found at ${activeIndexPath} for request ${req.path}`);
+  console.warn(`[SPA Warning] index.html NOT found or readable at ${activeIndexPath} for route ${req.path}`);
 
-  // Return HTML fallback error message instead of JSON so browser gets HTML for SPA route
-  res.setHeader('Content-Type', 'text/html');
+  // Debugging HTML output if file is missing
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(`
     <!DOCTYPE html>
     <html>
-      <head><title>Jayshree Realty - Build Warning</title></head>
-      <body style="font-family: sans-serif; background: #070b19; color: #fff; padding: 40px; text-align: center;">
-        <h1 style="color: #c5a059;">Jayshree Realty Production Audit</h1>
-        <p>The application server is active, but frontend static assets (index.html) are not yet generated in: <code>${activeIndexPath}</code>.</p>
-        <p>Please execute <code>npm run build</code> on Hostinger server or push latest release.</p>
+      <head><title>Jayshree Realty Audit - Path Debug</title></head>
+      <body style="font-family: monospace; background: #070b19; color: #fff; padding: 30px;">
+        <h2 style="color: #c5a059;">Hostinger SPA Debugging Report</h2>
+        <p><strong>Request Path:</strong> ${req.path}</p>
+        <p><strong>process.cwd():</strong> ${process.cwd()}</p>
+        <p><strong>__dirname:</strong> ${__dirname}</p>
+        <p><strong>distPath:</strong> ${activeDistFolder}</p>
+        <p><strong>indexPath:</strong> ${activeIndexPath}</p>
+        <p><strong>fs.existsSync(indexPath):</strong> ${indexExists}</p>
+        <p><strong>fileStats:</strong> <pre>${JSON.stringify(fileStats, null, 2)}</pre></p>
+        <p><strong>dist contents:</strong> <pre>${JSON.stringify(safeReaddir(activeDistFolder), null, 2)}</pre></p>
       </body>
     </html>
   `);
@@ -354,9 +390,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ================================================================
-// SERVER STARTUP
-// ================================================================
+// Server Startup
 const startServer = async () => {
   try {
     await initSupabaseDb().catch(err => {
@@ -366,14 +400,14 @@ const startServer = async () => {
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log('');
-      console.log('='.repeat(65));
+      console.log('='.repeat(70));
       console.log('🚀 Jayshree Realty Enterprise Backend');
-      console.log('='.repeat(65));
+      console.log('='.repeat(70));
       console.log(`📡 Server Running:   http://localhost:${PORT}`);
       console.log(`⚡ Mode:             ${NODE_ENV}`);
       console.log(`📁 Static Dist:      ${distPath} (exists: ${fs.existsSync(distPath)})`);
       console.log(`📄 Index HTML:       ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
-      console.log('='.repeat(65));
+      console.log('='.repeat(70));
       console.log('');
     });
   } catch (err) {
