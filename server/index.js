@@ -158,16 +158,25 @@ ${urls}
 // ================================================================
 // SERVE PRODUCTION FRONTEND BUILD & SPA FALLBACK (Hostinger deployment)
 // ================================================================
-// Dynamically resolve distPath relative to __dirname and process.cwd()
-const resolveDistPath = () => {
-  const p1 = path.resolve(__dirname, '..', 'dist');
-  if (fs.existsSync(p1)) return p1;
-  const p2 = path.resolve(process.cwd(), 'dist');
-  if (fs.existsSync(p2)) return p2;
-  return p1;
+// Function to find the dist directory across all possible Hostinger / Node execution locations
+const getDistPath = () => {
+  const candidatePaths = [
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(__dirname, '..', 'dist'),
+    path.resolve(process.cwd(), 'public_html'),
+    path.resolve(__dirname, '..', 'public_html')
+  ];
+
+  for (const candidate of candidatePaths) {
+    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+  return candidatePaths[0];
 };
 
-const distPath = resolveDistPath();
+const distPath = getDistPath();
+console.log('DIST:', distPath);
 
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
@@ -180,16 +189,31 @@ if (fs.existsSync(distPath)) {
 
 // Universal SPA Fallback Middleware for React Router (/admin, /about, /projects, /contact, etc.)
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
-    const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      return res.sendFile(indexPath, (err) => {
-        if (err && !res.headersSent) {
-          next(err);
-        }
-      });
-    }
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return next();
   }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return next();
+  }
+
+  const activeDist = getDistPath();
+  const indexPath = path.join(activeDist, 'index.html');
+
+  console.log('REQUEST:', req.path);
+  console.log('DIST:', activeDist);
+  console.log('INDEX:', indexPath);
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath, (err) => {
+      if (err && !res.headersSent) {
+        console.error(`[SPA Error] Failed to send index.html for ${req.path}:`, err.message);
+        next(err);
+      }
+    });
+  }
+
+  console.warn(`[SPA Warning] index.html not found at ${indexPath} for request ${req.path}`);
   next();
 });
 

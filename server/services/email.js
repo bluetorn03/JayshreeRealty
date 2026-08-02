@@ -1,31 +1,31 @@
 import nodemailer from 'nodemailer';
 
 export const sendLeadEmailNotification = async (leadData) => {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '465');
-  const user = process.env.SMTP_USER || 'jayshreerealty16@gmail.com';
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').replace(/["']/g, '').trim();
+  const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
+  const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
   const rawPass = process.env.SMTP_PASS || '';
   const pass = rawPass.replace(/["']/g, '').trim();
-  const receiver = process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com';
+  const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
+  const receiver = (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
 
   if (!pass || pass === 'your_app_password_here' || pass === 'your_gmail_app_password_here' || pass === 'HostingerEmailPassword') {
     console.warn('[SMTP Warning] SMTP_PASS is not fully configured in .env. Lead saved to database.');
     return { success: true, emailSent: false, note: 'Lead saved to database, SMTP password placeholder skipped' };
   }
 
-  // Gmail SMTP Transport
   const isGmail = host.includes('gmail.com');
   const transporter = nodemailer.createTransport(
     isGmail && port === 465
       ? {
           service: 'gmail',
-          auth: { user: user.trim(), pass }
+          auth: { user, pass }
         }
       : {
           host,
           port,
           secure: port === 465,
-          auth: { user: user.trim(), pass },
+          auth: { user, pass },
           tls: { rejectUnauthorized: false }
         }
   );
@@ -129,7 +129,7 @@ export const sendLeadEmailNotification = async (leadData) => {
         }
       </div>
       <div class="footer">
-        <p>© ${new Date().getFullYear()} Jayshree Realty Gmail Lead Notification System.</p>
+        <p>© ${new Date().getFullYear()} Jayshree Realty Lead Notification System.</p>
       </div>
     </div>
   </body>
@@ -137,19 +137,34 @@ export const sendLeadEmailNotification = async (leadData) => {
   `;
 
   const mailOptions = {
-    from: `"Jayshree Realty Leads" <${user}>`,
+    from: `"Jayshree Realty Leads" <${fromEmail}>`,
     to: receiver,
-    replyTo: visitorEmail && visitorEmail.includes('@') ? visitorEmail : user,
+    replyTo: visitorEmail && visitorEmail.includes('@') ? visitorEmail : fromEmail,
     subject: `🚨 New Lead: ${visitorName} (${visitorPhone}) - ${formName}`,
     html: htmlContent,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[Gmail SMTP Success] Email sent:', info.messageId);
+    console.log('[SMTP Success] Email sent:', info.messageId);
     return { success: true, emailSent: true, messageId: info.messageId };
   } catch (error) {
-    console.error('[Gmail SMTP Error] Failed to send email:', error.message);
+    console.error('[SMTP Error] Failed to send email:', error.message);
     return { success: true, emailSent: false, error: error.message };
   }
 };
+
+export const sendTestEmail = async () => {
+  return sendLeadEmailNotification({
+    name: 'Test Prospect',
+    phone: '+91 99999 99999',
+    email: 'test@example.com',
+    requirement: '2 BHK Luxury Flat',
+    budget: '1.2 Cr',
+    preferred_area: 'Nerul West',
+    message: 'Test notification from Jayshree Realty system audit.',
+    lead_source: 'System Audit',
+    cta_source: 'Test Email Trigger'
+  });
+};
+

@@ -5,6 +5,21 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 // Helper to format property record for frontend
+function formatYouTubeUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.includes('watch?v=')) {
+    const videoId = trimmed.split('watch?v=')[1]?.split('&')[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('youtu.be/')) {
+    const videoId = trimmed.split('youtu.be/')[1]?.split('?')[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return trimmed;
+}
+
 function formatProperty(row) {
   if (!row) return null;
   return {
@@ -124,7 +139,7 @@ router.post('/', authenticateToken, async (req, res) => {
       seo_title: p.seoTitle || p.title,
       seo_description: p.seoDescription || p.highlights,
       seo_keywords: p.seoKeywords || '',
-      youtube_url: p.youtubeUrl || '',
+      youtube_url: formatYouTubeUrl(p.youtubeUrl),
       description: p.description || '',
       short_description: p.shortDescription || '',
       long_description: p.longDescription || '',
@@ -184,7 +199,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (p.seoTitle !== undefined) updates.seo_title = p.seoTitle;
     if (p.seoDescription !== undefined) updates.seo_description = p.seoDescription;
     if (p.seoKeywords !== undefined) updates.seo_keywords = p.seoKeywords;
-    if (p.youtubeUrl !== undefined) updates.youtube_url = p.youtubeUrl;
+    if (p.youtubeUrl !== undefined) updates.youtube_url = formatYouTubeUrl(p.youtubeUrl);
     if (p.description !== undefined) updates.description = p.description;
     if (p.shortDescription !== undefined) updates.short_description = p.shortDescription;
     if (p.longDescription !== undefined) updates.long_description = p.longDescription;
