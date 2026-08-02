@@ -62,7 +62,7 @@ console.log('='.repeat(65));
 // 1. HELMET (Security Headers)
 // ================================================================
 app.use(helmet({
-  contentSecurityPolicy: false, // Frontend uses inline scripts & Supabase CDN
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
@@ -155,25 +155,48 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Health check
+// Health check with comprehensive Phase 1 audit metrics
 app.get('/api/health', (req, res) => {
   const currentDistPath = resolveDistFolder();
   const currentIndexPath = path.join(currentDistPath, 'index.html');
+  const assetsPath = path.join(currentDistPath, 'assets');
+
+  const safeReaddir = (targetPath) => {
+    try {
+      return fs.existsSync(targetPath) ? fs.readdirSync(targetPath) : null;
+    } catch (e) {
+      return `Error reading directory: ${e.message}`;
+    }
+  };
+
+  const candidatePublicHtmls = [
+    path.resolve(process.cwd(), 'public_html'),
+    path.resolve(__dirname, '..', 'public_html'),
+    path.resolve(process.cwd(), '../public_html')
+  ];
+
+  const publicHtmlContents = {};
+  candidatePublicHtmls.forEach(p => {
+    publicHtmlContents[p] = safeReaddir(p);
+  });
+
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: NODE_ENV,
     database: 'Supabase PostgreSQL',
-    version: '2.0.0',
-    paths: {
+    version: '2.1.0-prod-audit',
+    audit: {
       cwd: process.cwd(),
       dirname: __dirname,
       distPath: currentDistPath,
-      indexPath: currentIndexPath
-    },
-    existence: {
+      indexPath: currentIndexPath,
       distExists: fs.existsSync(currentDistPath),
-      indexExists: fs.existsSync(currentIndexPath)
+      indexExists: fs.existsSync(currentIndexPath),
+      faviconExists: fs.existsSync(path.join(currentDistPath, 'favicon.ico')),
+      distContents: safeReaddir(currentDistPath),
+      assetsContents: safeReaddir(assetsPath),
+      publicHtmlSearch: publicHtmlContents
     }
   });
 });
@@ -245,9 +268,10 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 // ================================================================
-// 7. SPA FALLBACK (React Router - /admin, /about, /contact, etc.)
+// 7. SPA FALLBACK (React Router - /admin, /admin/, /admin/login, /contact, etc.)
 // Task 8 Exclude: /api/*, /uploads/*, /assets/*, /favicon.ico, /robots.txt, /sitemap.xml
-// Task 9: Existence check before calling sendFile()
+// Task 9: Existence check before sendFile()
+// Phase 3 Runtime Logging
 // ================================================================
 app.use((req, res, next) => {
   // Exclude non-GET & non-HEAD requests
@@ -269,22 +293,44 @@ app.use((req, res, next) => {
   const activeDistFolder = resolveDistFolder();
   const activeIndexPath = path.join(activeDistFolder, 'index.html');
 
+  // Phase 3 Runtime Logging
+  console.log(`[SPA Request] REQUEST PATH:    ${req.path}`);
+  console.log(`[SPA Request] DIST PATH:       ${activeDistFolder}`);
+  console.log(`[SPA Request] INDEX PATH:      ${activeIndexPath}`);
+  console.log(`[SPA Request] STATIC PATH:     ${activeDistFolder}`);
+  console.log(`[SPA Request] ABSOLUTE FILE:   ${activeIndexPath}`);
+
   // Existence check before sendFile (Requirement 9)
   if (fs.existsSync(activeIndexPath)) {
+    console.log(`[SPA Request] STATUS CODE:     200 (Serving index.html)`);
     return res.sendFile(activeIndexPath, (err) => {
       if (err && !res.headersSent) {
-        console.error(`[SPA Error] Failed to send index.html for ${req.path}:`, err.message);
+        console.error(`[SPA Error] sendFile failed for ${req.path}:`, err.message);
+        console.error(`[SPA Error] Stack:`, err.stack);
         return next(err);
       }
     });
   }
 
-  console.warn(`[SPA Warning] index.html not found at ${activeIndexPath} for request ${req.path}`);
-  return next();
+  console.warn(`[SPA Warning] index.html NOT found at ${activeIndexPath} for request ${req.path}`);
+
+  // Return HTML fallback error message instead of JSON so browser gets HTML for SPA route
+  res.setHeader('Content-Type', 'text/html');
+  return res.status(200).send(`
+    <!DOCTYPE html>
+    <html>
+      <head><title>Jayshree Realty - Build Warning</title></head>
+      <body style="font-family: sans-serif; background: #070b19; color: #fff; padding: 40px; text-align: center;">
+        <h1 style="color: #c5a059;">Jayshree Realty Production Audit</h1>
+        <p>The application server is active, but frontend static assets (index.html) are not yet generated in: <code>${activeIndexPath}</code>.</p>
+        <p>Please execute <code>npm run build</code> on Hostinger server or push latest release.</p>
+      </body>
+    </html>
+  `);
 });
 
 // ================================================================
-// 8. 404 HANDLER FOR UNHANDLED API ROUTES AND UNRESOLVED ASSETS
+// 8. 404 HANDLER FOR UNHANDLED API ROUTES
 // ================================================================
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found' });
