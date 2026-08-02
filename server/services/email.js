@@ -1,29 +1,33 @@
 import nodemailer from 'nodemailer';
 
 export const sendLeadEmailNotification = async (leadData) => {
-  const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '465');
-  const user = process.env.SMTP_USER || 'info@jayshreerealty.com';
+  const user = process.env.SMTP_USER || 'jayshreerealty16@gmail.com';
   const pass = process.env.SMTP_PASS || '';
-  const receiver = process.env.RECEIVER_EMAIL || 'info@jayshreerealty.com';
+  const receiver = process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com';
 
-  if (!pass || pass === 'your_app_password_here' || pass === 'HostingerEmailPassword') {
+  if (!pass || pass === 'your_app_password_here' || pass === 'your_gmail_app_password_here' || pass === 'HostingerEmailPassword') {
     console.warn('[SMTP Warning] SMTP_PASS is not fully configured in .env. Lead saved to database.');
     return { success: true, emailSent: false, note: 'Lead saved to database, SMTP password placeholder skipped' };
   }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
+  // Gmail SMTP Transport
+  const isGmail = host.includes('gmail.com');
+  const transporter = nodemailer.createTransport(
+    isGmail && port === 465
+      ? {
+          service: 'gmail',
+          auth: { user, pass }
+        }
+      : {
+          host,
+          port,
+          secure: port === 465,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false }
+        }
+  );
 
   const visitorName = leadData.name || 'Valued Prospect';
   const visitorPhone = leadData.phone || 'N/A';
@@ -124,7 +128,7 @@ export const sendLeadEmailNotification = async (leadData) => {
         }
       </div>
       <div class="footer">
-        <p>© ${new Date().getFullYear()} Jayshree Realty Hostinger Business Email Alert System.</p>
+        <p>© ${new Date().getFullYear()} Jayshree Realty Gmail Lead Notification System.</p>
       </div>
     </div>
   </body>
@@ -141,10 +145,10 @@ export const sendLeadEmailNotification = async (leadData) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[Hostinger SMTP Success] Email sent:', info.messageId);
+    console.log('[Gmail SMTP Success] Email sent:', info.messageId);
     return { success: true, emailSent: true, messageId: info.messageId };
   } catch (error) {
-    console.error('[Hostinger SMTP Error] Failed to send email:', error.message);
+    console.error('[Gmail SMTP Error] Failed to send email:', error.message);
     return { success: true, emailSent: false, error: error.message };
   }
 };

@@ -1,6 +1,6 @@
 // API Service for Jayshree Realty Enterprise Backend
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('jayshree_admin_token');

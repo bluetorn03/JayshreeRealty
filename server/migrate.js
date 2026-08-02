@@ -139,7 +139,7 @@ function showManualInstructions() {
   console.log('📝 MANUAL SETUP REQUIRED');
   console.log('═'.repeat(55));
   console.log('\nTo create the database tables, run the SQL schema in Supabase:\n');
-  console.log('  1. Open: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql/new');
+  console.log(`  1. Open: https://supabase.com/dashboard/project/${PROJECT_REF}/sql/new`);
   console.log('  2. Click "New Query" (or clear existing content)');
   console.log('  3. Copy the contents of: supabase_schema.sql');
   console.log('  4. Paste into the SQL Editor');

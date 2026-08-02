@@ -346,11 +346,10 @@ async function seedDefaults() {
       'GTM-CONTAINER_ID',
       'gsc-verification-token',
       'User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml',
-      1,
-      'smtp.hostinger.com',
+      'smtp.gmail.com',
       '465',
-      'info@jayshreerealty.com',
-      'info@jayshreerealty.com',
+      'jayshreerealty16@gmail.com',
+      'jayshreerealty16@gmail.com',
       0,
       'System undergoes scheduled maintenance. We will be back shortly.'
     )`);

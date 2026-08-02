@@ -162,7 +162,7 @@ async function main() {
       console.log('\n  ℹ️  Automated migration requires manual SQL execution.');
       console.log('  The migration SQL is ready in: migration_pending.sql');
       console.log('\n  MANUAL STEPS:');
-      console.log('  1. Open: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql');
+      console.log(`  1. Open: https://supabase.com/dashboard/project/${projectRef}/sql`);
       console.log('  2. Click "New Query"');
       console.log('  3. Paste the contents of migration_pending.sql');
       console.log('  4. Click Run (Ctrl+Enter)');

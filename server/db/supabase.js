@@ -113,14 +113,96 @@ export const initSupabaseDb = async () => {
         gsc_verification_meta: 'gsc-verification-token',
         robots_txt_content: "User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml",
         sitemap_auto_generate: 1,
-        smtp_host: 'smtp.hostinger.com',
+        smtp_host: 'smtp.gmail.com',
         smtp_port: '465',
-        smtp_user: 'info@jayshreerealty.com',
-        smtp_from_email: 'info@jayshreerealty.com',
+        smtp_user: 'jayshreerealty16@gmail.com',
+        smtp_from_email: 'jayshreerealty16@gmail.com',
         maintenance_mode: 0,
         maintenance_message: 'System undergoes scheduled maintenance. We will be back shortly.'
       }]);
       console.log('[Supabase DB] Seeded site settings');
+    }
+
+    // 5. Seed Initial Properties if empty
+    const { data: existingProperties, error: propErr } = await supabase.from('properties').select('id').limit(1);
+    if (!propErr && (!existingProperties || existingProperties.length === 0)) {
+      const defaultProperties = [
+        {
+          id: 'proj-1',
+          slug: 'jayshree-heights-nerul',
+          title: 'Jayshree Heights',
+          category: '2 BHK Nerul West',
+          location: 'Sector 19, Nerul West, Navi Mumbai',
+          type: 'New Launch',
+          configuration: '2 & 3 BHK Luxury Residences',
+          price: '₹ 1.25 Cr*',
+          area: '780 - 1150 Sq.Ft.',
+          possession: 'Ready Possession',
+          features_json: JSON.stringify(['CIDCO Clear Title Plot', 'Podium Amenities', 'Grand Entrance Lobby']),
+          image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
+          gallery_images_json: JSON.stringify([
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000'
+          ]),
+          is_featured: 1,
+          code: '2BHK-01N',
+          highlights: 'Prime Palm Beach Road connectivity.',
+          brokerage: '0% Brokerage',
+          brokerage_free: 1,
+          published: 1,
+          archived: 0,
+          placements_json: JSON.stringify(['homepage', 'featured', 'buy']),
+          brochure_url: '',
+          floor_plan_url: '',
+          builder_name: 'Jayshree Developers',
+          builder_experience: '12+ Years',
+          amenities_json: JSON.stringify(['Swimming Pool', 'Gymnasium', '24/7 Security', 'Clubhouse']),
+          seo_title: 'Jayshree Heights | Luxury 2 & 3 BHK Nerul West',
+          seo_description: 'Luxury 2 & 3 BHK CIDCO clear title plot project in Nerul West, Navi Mumbai.',
+          seo_keywords: 'Nerul West Flat, Jayshree Heights, Navi Mumbai Luxury',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'proj-2',
+          slug: 'airport-view-pushpak-nagar',
+          title: 'Airport View Enclave',
+          category: 'Pushpak Nagar New Projects',
+          location: 'Pushpak Nagar, Navi Mumbai',
+          type: 'New Launch',
+          configuration: '1 & 2 BHK Premium Apartments',
+          price: '₹ 42 Lakhs*',
+          area: '450 - 680 Sq.Ft.',
+          possession: 'Possession Dec 2026',
+          features_json: JSON.stringify(['Near Navi Mumbai Intl Airport', 'CIDCO Plot', 'High ROI']),
+          image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
+          gallery_images_json: JSON.stringify([
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1000'
+          ]),
+          is_featured: 1,
+          code: '1BHK-09P',
+          highlights: 'Direct investment opportunity near Airport terminal.',
+          brokerage: '0% Brokerage',
+          brokerage_free: 1,
+          published: 1,
+          archived: 0,
+          placements_json: JSON.stringify(['homepage', 'featured', 'buy']),
+          brochure_url: '',
+          floor_plan_url: '',
+          builder_name: 'Jayshree Developers',
+          builder_experience: '12+ Years',
+          amenities_json: JSON.stringify(['Gymnasium', '24/7 Security', 'Podium Parking']),
+          seo_title: 'Airport View Enclave | 1 & 2 BHK Pushpak Nagar',
+          seo_description: 'Investment opportunity near upcoming Navi Mumbai Airport.',
+          seo_keywords: 'Pushpak Nagar CIDCO Plot, Airport View Enclave',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+
+      await supabase.from('properties').insert(defaultProperties);
+      console.log('[Supabase DB] Seeded initial default properties');
     }
 
     console.log('[Supabase DB] Initialization complete.');
