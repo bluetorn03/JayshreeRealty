@@ -156,25 +156,42 @@ ${urls}
 });
 
 // ================================================================
-// SERVE PRODUCTION FRONTEND BUILD (Hostinger deployment)
+// SERVE PRODUCTION FRONTEND BUILD & SPA FALLBACK (Hostinger deployment)
 // ================================================================
-const distPath = path.join(__dirname, '..', 'dist');
+// Dynamically resolve distPath relative to __dirname and process.cwd()
+const resolveDistPath = () => {
+  const p1 = path.resolve(__dirname, '..', 'dist');
+  if (fs.existsSync(p1)) return p1;
+  const p2 = path.resolve(process.cwd(), 'dist');
+  if (fs.existsSync(p2)) return p2;
+  return p1;
+};
+
+const distPath = resolveDistPath();
+
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
     maxAge: NODE_ENV === 'production' ? '7d' : '0',
     etag: true
   }));
-
-  // SPA fallback - serve index.html for all non-API / non-uploads routes (Express 5 syntax)
-  app.get('{*path}', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else if (NODE_ENV !== 'production') {
-  console.log('⚠️  No dist/ folder found. Run "npm run build" for production, or use "npm run dev" for frontend dev server.');
+} else {
+  console.warn(`⚠️  dist folder not found at ${distPath}. Run "npm run build" to build frontend assets.`);
 }
+
+// Universal SPA Fallback Middleware for React Router (/admin, /about, /projects, /contact, etc.)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath, (err) => {
+        if (err && !res.headersSent) {
+          next(err);
+        }
+      });
+    }
+  }
+  next();
+});
 
 // Unhandled API route fallback
 app.use('/api', (req, res) => {
