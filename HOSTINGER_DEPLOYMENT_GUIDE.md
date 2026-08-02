@@ -17,7 +17,7 @@
 
 **This is the most important step. Without it, nothing works.**
 
-1. Open your Supabase dashboard: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql/new
+1. Open your Supabase dashboard: https://supabase.com/dashboard/project/xusmnapodmcqaqavgokd/sql/new
 2. Click **"New Query"**
 3. Open the file `supabase_schema.sql` in this project
 4. **Copy the entire contents** and paste into the SQL Editor
@@ -90,21 +90,22 @@ FRONTEND_URL=https://jayshreerealty.com
 BACKEND_URL=https://jayshreerealty.com
 CLIENT_URL=https://jayshreerealty.com
 
-VITE_SUPABASE_URL=https://pzmjewrnnzntvtueqmcq.supabase.co
-SUPABASE_URL=https://pzmjewrnnzntvtueqmcq.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bWpld3JubnpudHZ0dWVxbWNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwODkwODcsImV4cCI6MjEwMDY2NTA4N30.VJmY32OZ107Bu33NIcEurkJzcSeXiaYEY6QFOIe84sE
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bWpld3JubnpudHZ0dWVxbWNxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTA4OTA4NywiZXhwIjoyMTAwNjY1MDg3fQ.-9qVNxCcvUlnd3QXAIGajB6u67l-AjiDdb_mq75XdqA
+VITE_SUPABASE_URL=https://xusmnapodmcqaqavgokd.supabase.co
+SUPABASE_URL=https://xusmnapodmcqaqavgokd.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1c21uYXBvZG1jcWFxYXZnb2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1ODcxMjgsImV4cCI6MjEwMTE2MzEyOH0.50d9lzMH5jvwMkvPXXYnqpntSafH2HkIVveuXsuO95w
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1c21uYXBvZG1jcWFxYXZnb2tkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTU4NzEyOCwiZXhwIjoyMTAxMTYzMTI4fQ.DAEvdpoczKPaATPKrp1AmPNuFj4ccR8ICG7cYvuwv54
 
 JWT_SECRET=jayshree_realty_jwt_secret_key_2026_super_secure_key
 SESSION_SECRET=jayshree_realty_session_secret_2026_super_secure_key
 ADMIN_USER=admin@jayshreerealty
 ADMIN_PASS=jayshreerealty@8989
 
-SMTP_HOST=smtp.hostinger.com
+SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
-SMTP_USER=info@jayshreerealty.com
-SMTP_PASS=YourHostingerEmailPassword
-RECEIVER_EMAIL=info@jayshreerealty.com
+SMTP_USER=jayshreerealty16@gmail.com
+SMTP_PASS="Yvyvg gmil bskd vxdv"
+SMTP_FROM=jayshreerealty16@gmail.com
+RECEIVER_EMAIL=jayshreerealty16@gmail.com
 ```
 
 ---

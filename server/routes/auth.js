@@ -38,31 +38,35 @@ router.post('/login', async (req, res) => {
       console.warn('[Auth] Supabase DB lookup failed:', dbErr.message);
     }
 
-    // 2. If DB lookup failed (tables not created yet), fall back to env credentials
-    //    This ensures admin can ALWAYS log in even before DB is set up
     const envAdminUser = (process.env.ADMIN_USER || 'admin@jayshreerealty').toLowerCase();
     const envAdminPass = process.env.ADMIN_PASS || 'jayshreerealty@8989';
 
-    if (!adminUser && cleanUsername === envAdminUser) {
-      // Verify against env password
-      const isEnvMatch = cleanPassword === envAdminPass;
-      if (!isEnvMatch) {
-        return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG });
+    // 2. Check DB user password if found
+    let isMatch = false;
+    if (adminUser) {
+      if (adminUser.password_hash && adminUser.password_hash.startsWith('$2')) {
+        isMatch = await bcrypt.compare(cleanPassword, adminUser.password_hash);
+      } else {
+        isMatch = cleanPassword === adminUser.password_hash;
       }
+    }
 
-      // Auto-create user in DB for future logins (non-blocking)
+    // 3. Fallback: If DB match failed or user wasn't in DB, test against env credentials
+    if (!isMatch && cleanUsername === envAdminUser && cleanPassword === envAdminPass) {
+      isMatch = true;
+      // Auto-update/create admin user in DB with fresh correct bcrypt hash (non-blocking)
       (async () => {
         try {
           const hash = await bcrypt.hash(envAdminPass, 10);
-          await supabase.from('admin_users').insert([{
+          await supabase.from('admin_users').upsert([{
             id: 'admin-1',
             username: envAdminUser,
             password_hash: hash,
             role: 'super_admin'
-          }]);
-          console.log('[Auth] Admin user auto-created in Supabase DB');
+          }], { onConflict: 'id' });
+          console.log('[Auth] Admin user password hash synced in Supabase DB');
         } catch (e) {
-          // Tables might not exist yet - that's OK
+          console.warn('[Auth] Admin sync warning:', e.message);
         }
       })();
 
@@ -79,21 +83,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // 3. No user found at all
-    if (!adminUser) {
-      return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG });
-    }
-
-    // 4. Password verification (bcrypt)
-    let isMatch = false;
-    if (adminUser.password_hash && adminUser.password_hash.startsWith('$2')) {
-      isMatch = await bcrypt.compare(cleanPassword, adminUser.password_hash);
-    } else {
-      // Plain text fallback (should not happen in production)
-      isMatch = cleanPassword === adminUser.password_hash;
-    }
-
-    if (!isMatch) {
+    if (!isMatch || !adminUser) {
       return res.status(401).json({ success: false, message: INVALID_CREDENTIALS_MSG });
     }
 

@@ -3,7 +3,7 @@
 -- Version: 2.0 | Optimized for Supabase PostgreSQL
 -- 
 -- HOW TO RUN:
---   1. Go to: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql
+--   1. Go to: https://supabase.com/dashboard/project/xusmnapodmcqaqavgokd/sql
 --   2. Click "New Query"
 --   3. Paste this entire file
 --   4. Click "Run" (Ctrl+Enter)

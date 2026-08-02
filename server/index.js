@@ -164,8 +164,8 @@ if (fs.existsSync(distPath)) {
     etag: true
   }));
 
-  // SPA fallback - serve index.html for all non-API / non-uploads routes
-  app.get('*', (req, res, next) => {
+  // SPA fallback - serve index.html for all non-API / non-uploads routes (Express 5 syntax)
+  app.get('{*path}', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
       return next();
     }
@@ -184,10 +184,13 @@ app.use('/api', (req, res) => {
 // GLOBAL ERROR HANDLER
 // ================================================================
 app.use((err, req, res, next) => {
-  console.error('[Server Error]', err.stack);
-  res.status(err.status || 500).json({
+  console.error('[Server Error]', err.stack || err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || err.statusCode || 500).json({
     success: false,
-    message: NODE_ENV === 'production' ? 'Internal server error' : err.message
+    message: NODE_ENV === 'production' ? 'Internal server error' : (err.message || 'An unexpected error occurred')
   });
 });
 

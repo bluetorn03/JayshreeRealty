@@ -2,7 +2,7 @@
 -- JAYSHREE REALTY - PENDING DATABASE MIGRATION
 -- Generated: 2026-07-30T20:57:20.007Z
 -- INSTRUCTIONS: Run in Supabase SQL Editor → New Query → Run
--- URL: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql
+-- URL: https://supabase.com/dashboard/project/xusmnapodmcqaqavgokd/sql
 -- ================================================================
 
 -- Safe idempotent column additions (ADD COLUMN IF NOT EXISTS)

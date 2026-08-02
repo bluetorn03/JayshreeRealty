@@ -5,7 +5,7 @@
 -- SAFE TO RUN MULTIPLE TIMES — All statements are idempotent.
 -- No existing data or tables are dropped.
 --
--- RUN IN: https://supabase.com/dashboard/project/pzmjewrnnzntvtueqmcq/sql
+-- RUN IN: https://supabase.com/dashboard/project/xusmnapodmcqaqavgokd/sql
 -- ================================================================
 
 -- Enable UUID extension
@@ -461,11 +461,9 @@ SELECT id, author, rating, time_ago, content, avatar_color, 1, reviews_count, is
 WHERE NOT EXISTS (SELECT 1 FROM public.reviews WHERE reviews.id = v.id);
 
 -- Admin User (bcrypt hash for: jayshreerealty@8989)
--- NOTE: The db-audit.mjs script will upsert this with a fresh hash from bcrypt.
--- This is a valid bcrypt hash for the password "jayshreerealty@8989"
 INSERT INTO public.admin_users (id, username, password_hash, role)
 SELECT 'admin-1', 'admin@jayshreerealty',
-  '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+  '$2b$10$xTHF5Ohn7TgVskyJrR3X6OnXrjOy4MZp7FJEtCPq94etC4v5sQQxO',
   'super_admin'
 WHERE NOT EXISTS (SELECT 1 FROM public.admin_users WHERE username = 'admin@jayshreerealty');
 

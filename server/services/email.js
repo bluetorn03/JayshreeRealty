@@ -4,7 +4,8 @@ export const sendLeadEmailNotification = async (leadData) => {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '465');
   const user = process.env.SMTP_USER || 'jayshreerealty16@gmail.com';
-  const pass = process.env.SMTP_PASS || '';
+  const rawPass = process.env.SMTP_PASS || '';
+  const pass = rawPass.replace(/"/g, '').trim();
   const receiver = process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com';
 
   if (!pass || pass === 'your_app_password_here' || pass === 'your_gmail_app_password_here' || pass === 'HostingerEmailPassword') {
@@ -18,13 +19,13 @@ export const sendLeadEmailNotification = async (leadData) => {
     isGmail && port === 465
       ? {
           service: 'gmail',
-          auth: { user, pass }
+          auth: { user: user.trim(), pass }
         }
       : {
           host,
           port,
           secure: port === 465,
-          auth: { user, pass },
+          auth: { user: user.trim(), pass },
           tls: { rejectUnauthorized: false }
         }
   );
