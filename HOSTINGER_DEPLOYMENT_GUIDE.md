@@ -72,7 +72,7 @@ git push origin main
 3. Configure:
    | Field | Value |
    |-------|-------|
-   | **Node.js Version** | `20.x` (or latest LTS) |
+   | **Node.js Version** | `22.x` (required by @supabase/supabase-js) |
    | **Application Mode** | `production` |
    | **Application Root** | `/` (project root) |
    | **Startup File** | `server/index.js` |
