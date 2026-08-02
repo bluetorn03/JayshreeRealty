@@ -200,13 +200,43 @@ console.log('DIST:', distPath);
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
     maxAge: NODE_ENV === 'production' ? '7d' : '0',
-    etag: true
+    etag: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      }
+    }
   }));
 } else {
   console.warn(`⚠️  dist folder not found at ${distPath}. Run "npm run build" to build frontend assets.`);
 }
 
-// Universal SPA Fallback Middleware for React Router (/admin, /admin/, /about, etc.)
+// Explicit route handler for /admin and /admin/ to ensure direct access works smoothly
+app.get(/^\/admin(\/.*)?$/, (req, res, next) => {
+  const activeDist = getDistPath();
+  const indexPath = path.join(activeDist, 'index.html');
+  const staticPath = activeDist;
+
+  console.log(`REQUEST PATH: ${req.path}`);
+  console.log(`DIST PATH: ${activeDist}`);
+  console.log(`INDEX PATH: ${indexPath}`);
+  console.log(`STATIC PATH: ${staticPath}`);
+  console.log(`RESPONSE STATUS: 200`);
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath, (err) => {
+      if (err && !res.headersSent) {
+        console.error(`[SPA Error] Failed to send index.html for ${req.path}:`, err.message);
+        next(err);
+      }
+    });
+  }
+  next();
+});
+
+// Universal SPA Fallback Middleware for React Router (/about, /buy, /contact, etc.)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();

@@ -9,13 +9,25 @@ function formatYouTubeUrl(url) {
   if (!url || typeof url !== 'string') return '';
   const trimmed = url.trim();
   if (!trimmed) return '';
+
+  if (trimmed.includes('/shorts/')) {
+    const videoId = trimmed.split('/shorts/')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('/embed/')) {
+    const videoId = trimmed.split('/embed/')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
   if (trimmed.includes('watch?v=')) {
-    const videoId = trimmed.split('watch?v=')[1]?.split('&')[0];
+    const videoId = trimmed.split('watch?v=')[1]?.split(/[?&#]/)[0];
     if (videoId) return `https://www.youtube.com/embed/${videoId}`;
   }
   if (trimmed.includes('youtu.be/')) {
-    const videoId = trimmed.split('youtu.be/')[1]?.split('?')[0];
+    const videoId = trimmed.split('youtu.be/')[1]?.split(/[?&#]/)[0];
     if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return `https://www.youtube.com/embed/${trimmed}`;
   }
   return trimmed;
 }

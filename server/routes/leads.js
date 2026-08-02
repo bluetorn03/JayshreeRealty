@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import { sendLeadEmailNotification } from '../services/email.js';
 
 const router = express.Router();
+const recentSubmissionsCache = new Map();
 
 // GET /api/leads (Protected Admin)
 router.get('/', authenticateToken, async (req, res) => {
@@ -116,6 +117,47 @@ router.post('/', async (req, res) => {
       assigned_to: 'Unassigned',
       created_at: new Date().toISOString()
     };
+
+    // 0. Duplicate submission check (In-memory cache + DB query)
+    const dedupKey = `${phone.trim()}:${requirement.trim() || 'general'}`;
+    const now = Date.now();
+    const lastSeen = recentSubmissionsCache.get(dedupKey);
+
+    if (lastSeen && (now - lastSeen) < 120000) { // 2 minutes window
+      console.warn(`[Leads API] In-memory duplicate submission prevented for phone: ${phone.trim()}`);
+      return res.json({
+        success: true,
+        duplicatePrevented: true,
+        message: 'Thank you! Your inquiry was already received and is being processed.',
+        emailSent: true
+      });
+    }
+
+    try {
+      const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: recentDuplicates } = await supabase
+        .from('leads')
+        .select('id, name, phone, created_at')
+        .eq('phone', phone.trim())
+        .gt('created_at', twoMinsAgo)
+        .limit(1);
+
+      if (recentDuplicates && recentDuplicates.length > 0) {
+        console.warn(`[Leads API] DB duplicate submission prevented for phone: ${phone.trim()} (Recent ID: ${recentDuplicates[0].id})`);
+        recentSubmissionsCache.set(dedupKey, now);
+        return res.json({
+          success: true,
+          duplicatePrevented: true,
+          leadId: recentDuplicates[0].id,
+          message: 'Thank you! Your inquiry was already received and is being processed.',
+          emailSent: true
+        });
+      }
+    } catch (dupErr) {
+      console.warn('[Leads API] Non-fatal error during duplicate check:', dupErr.message);
+    }
+
+    recentSubmissionsCache.set(dedupKey, now);
 
     // 1. Save Lead to Supabase Database
     const { error: dbErr } = await supabase.from('leads').insert([newLeadRecord]);

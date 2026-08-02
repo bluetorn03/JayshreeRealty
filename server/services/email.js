@@ -136,14 +136,27 @@ export const sendLeadEmailNotification = async (leadData) => {
     html: htmlContent,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('[SMTP Success] Email sent:', info.messageId);
-    return { success: true, emailSent: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('[SMTP Error] Failed to send email:', error.message);
-    return { success: true, emailSent: false, error: error.message };
+  let attempts = 0;
+  const maxAttempts = 3;
+  let lastError = null;
+
+  while (attempts < maxAttempts) {
+    attempts++;
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`[SMTP Success] Email sent (attempt ${attempts}/${maxAttempts}):`, info.messageId);
+      return { success: true, emailSent: true, messageId: info.messageId, attempts };
+    } catch (error) {
+      lastError = error;
+      console.error(`[SMTP Warning] Attempt ${attempts}/${maxAttempts} failed:`, error.message);
+      if (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, attempts * 1000)); // 1s, 2s backoff
+      }
+    }
   }
+
+  console.error('[SMTP Error] All email delivery attempts failed:', lastError?.message);
+  return { success: true, emailSent: false, error: lastError?.message, attempts };
 };
 
 export const executeTestEmailAudit = async (customRecipient = null) => {
