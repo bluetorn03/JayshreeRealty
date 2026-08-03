@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useLeads } from '../context/LeadContext';
-import { useData } from '../context/DataContext';
-import { ResumeUploader } from '../components/ResumeUploader';
 import {
   MapPin, Phone, MessageSquare, Clock, CheckCircle2, Send,
   Mail, Briefcase, UserCheck, Instagram, Facebook, Youtube
@@ -10,7 +8,6 @@ import {
 
 export const Contact: React.FC = () => {
   const { addLead } = useLeads();
-  const { siteSettings } = useData();
   const [activeFormTab, setActiveFormTab] = useState<'contact' | 'career'>('contact');
   const [submitted, setSubmitted] = useState(false);
 
@@ -142,8 +139,8 @@ export const Contact: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">Official Email</h4>
-                      <a href={`mailto:${siteSettings.email || 'Jayshreerealty16@gmail.com'}`} className="text-xs font-bold text-[#99732b] hover:underline">
-                        {siteSettings.email || 'Jayshreerealty16@gmail.com'}
+                      <a href="mailto:info@jayshreerealty.com" className="text-xs font-bold text-[#99732b] hover:underline">
+                        info@jayshreerealty.com
                       </a>
                     </div>
                   </div>
@@ -384,9 +381,10 @@ export const Contact: React.FC = () => {
                           className="w-full bg-slate-50 border border-slate-200 focus:border-[#c5a059] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none shadow-sm font-medium"
                         >
                           <option value="Real Estate Sales Executive">Real Estate Sales Executive</option>
-                          <option value="Pre Sales & Telecaller">Pre Sales & Telecaller</option>
-                          <option value="Property Acquisition Executive">Property Acquisition Executive</option>
-                          <option value="Marketing Manager">Marketing Manager</option>
+                          <option value="Senior Property Advisor">Senior Property Advisor</option>
+                          <option value="CIDCO Legal & Documentation Expert">CIDCO Legal & Documentation Expert</option>
+                          <option value="Telecaller & Client Relationship">Telecaller & Client Relationship</option>
+                          <option value="Digital Marketing Specialist">Digital Marketing Specialist</option>
                         </select>
                       </div>
 
@@ -405,10 +403,16 @@ export const Contact: React.FC = () => {
                       </div>
                     </div>
 
-                    <ResumeUploader
-                      currentFileUrl={careerData.resumeUrl}
-                      onUploadSuccess={(fileUrl) => setCareerData({ ...careerData, resumeUrl: fileUrl })}
-                    />
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Resume Link / Google Drive URL</label>
+                      <input
+                        type="url"
+                        value={careerData.resumeUrl}
+                        onChange={(e) => setCareerData({ ...careerData, resumeUrl: e.target.value })}
+                        placeholder="https://drive.google.com/your-resume-link"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-[#c5a059] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none shadow-sm"
+                      />
+                    </div>
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Cover Letter / Experience Summary</label>

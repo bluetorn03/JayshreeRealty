@@ -235,6 +235,31 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.leadership_profiles (
+    id TEXT PRIMARY KEY,
+    role TEXT DEFAULT 'Founder',
+    name TEXT NOT NULL,
+    designation TEXT DEFAULT '',
+    image TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    achievements TEXT DEFAULT '',
+    office_location TEXT DEFAULT '',
+    experience TEXT DEFAULT '',
+    badges_json TEXT DEFAULT '[]',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.video_testimonials (
+    id TEXT PRIMARY KEY,
+    client_name TEXT NOT NULL,
+    location TEXT DEFAULT '',
+    title TEXT DEFAULT '',
+    youtube_url TEXT DEFAULT '',
+    thumbnail TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ================================================================
 -- STEP 2: SAFE COLUMN MIGRATIONS (ADD COLUMN IF NOT EXISTS)
 -- These will not fail if columns already exist

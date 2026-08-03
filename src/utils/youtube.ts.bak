@@ -49,6 +49,6 @@ export function getYouTubeEmbedUrl(url?: string, autoplay: boolean = true): stri
     return `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&rel=0&modestbranding=1`;
   }
 
-  // High quality default real estate walkthrough video fallback if no valid video ID is provided
-  return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=${autoplay ? 1 : 0}&rel=0&modestbranding=1`;
+  // Default channel showcase playlist fallback if no valid video ID is provided
+  return `https://www.youtube.com/embed/videoseries?list=PL3x-videos-jayshree&autoplay=${autoplay ? 1 : 0}`;
 }

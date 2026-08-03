@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeadSubmission } from '../types';
 import { api } from '../services/api';
 import { getLeadAttribution } from '../utils/attribution';
+import { analyticsTracker } from '../services/analyticsTracker';
 
 interface LeadContextType {
   leads: LeadSubmission[];
@@ -144,6 +145,8 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await api.submitLead(enrichedData);
     if (res.success && res.lead) {
       setLeads((prev) => [res.lead, ...prev]);
+      // Track form submission analytics event
+      analyticsTracker.trackFormSubmit('Lead Form', enrichedData.page_name || 'Website');
     } else {
       const fallback: LeadSubmission = {
         ...enrichedData,

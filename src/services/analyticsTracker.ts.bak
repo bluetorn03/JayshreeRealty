@@ -99,22 +99,5 @@ export const analyticsTracker = {
       browser: getBrowser(),
       os: getOS()
     });
-  },
-
-  trackFormSubmit(formName: string, pageName: string) {
-    const visitorId = getVisitorId();
-    const sessionId = getSessionId();
-
-    api.trackEvent({
-      visitorId,
-      sessionId,
-      eventType: 'form_submit',
-      pagePath: window.location.pathname,
-      pageTitle: pageName,
-      referrer: formName,
-      deviceType: getDeviceType(),
-      browser: getBrowser(),
-      os: getOS()
-    });
   }
 };

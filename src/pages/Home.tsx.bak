@@ -20,14 +20,11 @@ export const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchLocation, setSearchLocation] = useState<string>('');
 
-  // Smooth Typewriter Animation State Machine (Zero flickering, zero layout shift)
+  // Smooth Typewriter Animation State
   const keywords = useMemo(() => {
     return heroSettings.keywords && heroSettings.keywords.length > 0
       ? heroSettings.keywords
-      : [
-          "Specialized focus on Navi Mumbai International Airport nearby nodes",
-          ...DEFAULT_KEYWORDS
-        ];
+      : DEFAULT_KEYWORDS;
   }, [heroSettings.keywords]);
 
   const [keywordIndex, setKeywordIndex] = useState(0);
@@ -35,31 +32,23 @@ export const Home: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    const fullText = keywords[keywordIndex % keywords.length] || '';
+    const fullText = keywords[keywordIndex] || '';
+    const speed = isDeleting ? 40 : 90;
 
-    if (!isDeleting && currentText === fullText) {
-      // Pause at full text before deleting
-      timer = setTimeout(() => {
-        setIsDeleting(true);
-      }, 2200);
-    } else if (isDeleting && currentText === '') {
-      // Pause at empty before next keyword
-      setIsDeleting(false);
-      setKeywordIndex((prev) => (prev + 1) % keywords.length);
-    } else {
-      // Type/delete character
-      const speed = isDeleting ? 30 : 60;
-      timer = setTimeout(() => {
-        setCurrentText((prev) =>
-          isDeleting
-            ? fullText.substring(0, prev.length - 1)
-            : fullText.substring(0, prev.length + 1)
+    const timeout = setTimeout(() => {
+      if (!isDeleting && currentText === fullText) {
+        setTimeout(() => setIsDeleting(true), 1800);
+      } else if (isDeleting && currentText === '') {
+        setIsDeleting(false);
+        setKeywordIndex((prev) => (prev + 1) % keywords.length);
+      } else {
+        setCurrentText(
+          fullText.substring(0, isDeleting ? currentText.length - 1 : currentText.length + 1)
         );
-      }, speed);
-    }
+      }
+    }, speed);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timeout);
   }, [currentText, isDeleting, keywordIndex, keywords]);
 
   const featuredProjects = useMemo(() => {
@@ -113,11 +102,10 @@ export const Home: React.FC = () => {
               </h1>
 
               {/* Typewriter Animation for Rotating Keywords */}
-              <div className="flex flex-wrap items-center gap-2 font-outfit text-base sm:text-xl lg:text-2xl text-slate-200 font-semibold min-h-[52px] sm:min-h-[44px]">
-                <span className="text-slate-400 shrink-0">Specialized In:</span>
-                <span className="text-[#e5c178] font-bold inline-flex items-center min-h-[32px] break-words">
-                  <span>{currentText}</span>
-                  <span className="w-0.5 h-6 bg-[#c5a059] ml-1 animate-pulse shrink-0" aria-hidden="true" />
+              <div className="flex items-center gap-2 font-outfit text-lg sm:text-2xl text-slate-200 font-semibold h-10">
+                <span className="text-slate-400">Specialized In:</span>
+                <span className="text-[#e5c178] font-bold border-r-2 border-[#c5a059] pr-1.5 animate-pulse">
+                  {currentText}
                 </span>
               </div>
 

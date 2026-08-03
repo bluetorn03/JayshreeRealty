@@ -1,55 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { PropertyItem, GoogleReviewItem, SiteSettings, CounterItem, LocationNode, ProjectCategory, LeadershipProfile, VideoTestimonialItem } from '../types';
+import { PropertyItem, GoogleReviewItem, SiteSettings, CounterItem, LocationNode, ProjectCategory } from '../types';
 import { GOOGLE_REVIEWS_DATA as INITIAL_REVIEWS } from '../data/reviewsData';
 import { api } from '../services/api';
-
-export const DEFAULT_LEADERSHIP: LeadershipProfile[] = [
-  {
-    id: 'lead-founder',
-    role: 'Founder',
-    name: 'Jayesh Patel',
-    designation: 'Founder & Managing Director',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600',
-    description: 'Pioneered transparent property acquisitions, verified CIDCO title transfers, and luxury real estate investments across Navi Mumbai for over 25 years.',
-    achievements: '450+ Verified Home Allocations, 100% Legal Title Guarantee',
-    officeLocation: 'G-102, Nerul Railway Station Complex, Navi Mumbai',
-    experience: '25+ Years Real Estate Industry Leadership',
-    badges: ['Founder', 'CIDCO Title Specialist', 'Navi Mumbai Expert']
-  },
-  {
-    id: 'lead-ceo',
-    role: 'CEO',
-    name: 'Jayshree Patel',
-    designation: 'Chief Executive Officer',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600',
-    description: 'Spearheading client relationship management, direct developer partnerships, and strategic expansion into airport node developments in Pushpak Nagar & Ulwe.',
-    achievements: 'Best Customer Satisfaction Award 2024, 0% Brokerage Direct Launch Network',
-    officeLocation: 'Head Office, Nerul Railway Station Complex, Navi Mumbai',
-    experience: '18+ Years Strategic Advisory & Client Experience',
-    badges: ['CEO', 'Customer Experience Pioneer', 'Airport Node Specialist']
-  }
-];
-
-export const DEFAULT_VIDEO_TESTIMONIALS: VideoTestimonialItem[] = [
-  {
-    id: 'v1',
-    clientName: 'Rahul & Meera Deshmukh',
-    location: 'Bought 2 BHK in Nerul West',
-    title: 'Seamless CIDCO Title Clear Verification & Zero Brokerage',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    thumbnail: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800',
-    sortOrder: 0
-  },
-  {
-    id: 'v2',
-    clientName: 'Dr. Anish Shetty',
-    location: 'Invested in Pushpak Nagar CIDCO Plot',
-    title: 'Exclusive Airport Node Launch Price Advantage',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    thumbnail: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800',
-    sortOrder: 1
-  }
-];
 
 interface AdminCredentials {
   username: string;
@@ -87,8 +39,6 @@ interface DataContextType {
   categories: ProjectCategory[];
   counters: CounterItem[];
   locations: LocationNode[];
-  leadership: LeadershipProfile[];
-  videoTestimonials: VideoTestimonialItem[];
   mediaLibrary: string[];
   isAdminAuthenticated: boolean;
   
@@ -167,7 +117,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   companyName: 'Jayshree Realty',
   phone: '+91 81690 05579',
   phoneRaw: '+918169005579',
-  email: 'Jayshreerealty16@gmail.com',
+  email: 'info@jayshreerealty.com',
   whatsapp: '+91 81690 05579',
   whatsappRaw: '918169005579',
   address: 'Shop No. 12, Prime Plaza, Sector 19, Nerul West, Navi Mumbai, Maharashtra 400706',
@@ -186,10 +136,10 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   gscVerificationMeta: 'gsc-verification-token',
   robotsTxtContent: "User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml",
   sitemapAutoGenerate: true,
-  smtpHost: 'smtp.gmail.com',
+  smtpHost: 'smtp.hostinger.com',
   smtpPort: '465',
-  smtpUser: 'Jayshreerealty16@gmail.com',
-  smtpFromEmail: 'Jayshreerealty16@gmail.com',
+  smtpUser: 'info@jayshreerealty.com',
+  smtpFromEmail: 'info@jayshreerealty.com',
   maintenanceMode: false,
   maintenanceMessage: 'System undergoes scheduled maintenance. We will be back shortly.'
 };
@@ -244,8 +194,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [categories, setCategories] = useState<ProjectCategory[]>(INITIAL_CATEGORIES);
   const [counters, setCounters] = useState<CounterItem[]>(DEFAULT_COUNTERS);
   const [locations, setLocations] = useState<LocationNode[]>(DEFAULT_LOCATIONS);
-  const [leadership, setLeadership] = useState<LeadershipProfile[]>(DEFAULT_LEADERSHIP);
-  const [videoTestimonials, setVideoTestimonials] = useState<VideoTestimonialItem[]>(DEFAULT_VIDEO_TESTIMONIALS);
   const [mediaLibrary, setMediaLibrary] = useState<string[]>([
     "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000",
@@ -276,26 +224,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(cmsRes.locations) && cmsRes.locations.length > 0) setLocations(cmsRes.locations);
         if (Array.isArray(cmsRes.categories) && cmsRes.categories.length > 0) setCategories(cmsRes.categories);
         if (Array.isArray(cmsRes.reviews) && cmsRes.reviews.length > 0) setReviews(cmsRes.reviews);
-      }
-
-      // 3. Fetch Leadership Profiles
-      const leaderRes = await api.getLeadership();
-      if (leaderRes.success && Array.isArray(leaderRes.leadership) && leaderRes.leadership.length > 0) {
-        setLeadership(leaderRes.leadership);
-      }
-
-      // 4. Fetch Video Testimonials
-      const videoRes = await api.getVideoTestimonials();
-      if (videoRes.success && Array.isArray(videoRes.videos) && videoRes.videos.length > 0) {
-        setVideoTestimonials(videoRes.videos.map((v: any) => ({
-          id: v.id,
-          clientName: v.client_name || v.clientName,
-          location: v.location,
-          title: v.title,
-          youtubeUrl: v.youtube_url || v.youtubeUrl,
-          thumbnail: v.thumbnail,
-          sortOrder: v.sort_order ?? v.sortOrder ?? 0
-        })));
       }
     } catch (e) {
       console.warn('Backend API connection check fallback:', e);
@@ -407,8 +335,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addReview = async (reviewData: Omit<GoogleReviewItem, 'id'>) => {
     const res = await api.addReview(reviewData);
-    if (res.success && res.review) {
-      setReviews(prev => [{ ...reviewData, id: res.review.id } as GoogleReviewItem, ...prev]);
+    if (res.success) {
+      refreshData();
     }
   };
 
@@ -549,8 +477,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         categories,
         counters,
         locations,
-        leadership,
-        videoTestimonials,
         mediaLibrary,
         isAdminAuthenticated,
         loginAdmin,

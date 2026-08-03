@@ -137,10 +137,10 @@ export const LeadManagementView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-            Lead <span className="text-[#c5a059]">Management</span>
+            Lead Management <span className="text-[#c5a059]">& Pipeline</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Real estate buyer & seller inquiries captured directly from website forms and WhatsApp CTAs.
+            Real estate buyer & seller inquiries with status tracking, agent assignment, notes, and follow-ups.
           </p>
         </div>
 
@@ -160,13 +160,13 @@ export const LeadManagementView: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters & Toolbar */}
+      {/* Filters & Bulk Actions Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between bg-[#0d1527] p-4 rounded-2xl border border-slate-800 shadow-xl">
         <div className="flex flex-wrap items-center gap-2">
-          {(['All', 'New', 'Today'] as const).map(tab => (
+          {(['All', 'New', 'Today', 'Follow-up', 'Contacted', 'Closed'] as const).map(tab => (
             <button
               key={tab}
-              onClick={() => setLeadFilterTab(tab as any)}
+              onClick={() => setLeadFilterTab(tab)}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 leadFilterTab === tab ? 'bg-[#c5a059] text-black shadow-md font-bold' : 'bg-[#070b19] text-slate-300 hover:text-white'
               }`}
@@ -194,12 +194,24 @@ export const LeadManagementView: React.FC = () => {
           <span className="font-bold text-[#e5c178]">
             {selectedLeadIds.length} Leads Selected
           </span>
-          <button
-            onClick={handleBulkDelete}
-            className="px-3 py-1 bg-red-950/60 border border-red-500/40 text-red-300 rounded font-bold hover:bg-red-900"
-          >
-            Delete Selected
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Set Status:</span>
+            {(['New', 'Follow-up', 'Contacted', 'Closed'] as const).map(st => (
+              <button
+                key={st}
+                onClick={() => handleBulkStatus(st)}
+                className="px-2.5 py-1 rounded bg-[#070b19] border border-slate-700 hover:border-[#c5a059] text-slate-200 text-[11px]"
+              >
+                {st}
+              </button>
+            ))}
+            <button
+              onClick={handleBulkDelete}
+              className="px-3 py-1 bg-red-950/60 border border-red-500/40 text-red-300 rounded font-bold hover:bg-red-900"
+            >
+              Delete Selected
+            </button>
+          </div>
         </div>
       )}
 
@@ -218,18 +230,15 @@ export const LeadManagementView: React.FC = () => {
                     )}
                   </button>
                 </th>
-                <th className="p-4 font-bold">Client Name</th>
-                <th className="p-4 font-bold">Phone</th>
-                <th className="p-4 font-bold">Email</th>
+                <th className="p-4 font-bold">Client & Phone</th>
                 <th className="p-4 font-bold">Requirement</th>
-                <th className="p-4 font-bold">Property Type</th>
-                <th className="p-4 font-bold">Budget</th>
-                <th className="p-4 font-bold">Preferred Area</th>
-                <th className="p-4 font-bold">Date & Time</th>
-                <th className="p-4 font-bold text-right">Action</th>
+                <th className="p-4 font-bold">Source / Page</th>
+                <th className="p-4 font-bold">Follow Up Date</th>
+                <th className="p-4 font-bold">Status</th>
+                <th className="p-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-outfit">
+            <tbody className="divide-y divide-slate-800/60">
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-[#091122] transition-colors">
                   <td className="p-4">
@@ -241,33 +250,75 @@ export const LeadManagementView: React.FC = () => {
                       )}
                     </button>
                   </td>
-                  <td className="p-4 font-bold text-white text-sm">{lead.name}</td>
-                  <td className="p-4 font-mono text-slate-300">
-                    <a href={`tel:${lead.phone}`} className="hover:text-[#c5a059] flex items-center gap-1">
+                  <td className="p-4">
+                    <div className="font-bold text-white text-sm">{lead.name}</div>
+                    <div className="font-mono text-slate-400 flex items-center gap-1 mt-0.5">
                       <Phone className="w-3 h-3 text-[#c5a059]" /> {lead.phone}
-                    </a>
-                  </td>
-                  <td className="p-4 text-slate-300">
-                    {lead.email ? (
-                      <a href={`mailto:${lead.email}`} className="hover:text-[#c5a059] flex items-center gap-1">
+                    </div>
+                    {lead.email && (
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
                         <Mail className="w-3 h-3 text-slate-500" /> {lead.email}
-                      </a>
-                    ) : (
-                      <span className="text-slate-500 italic">-</span>
+                      </div>
                     )}
                   </td>
-                  <td className="p-4 font-semibold text-amber-200">{lead.requirement || 'Buy'}</td>
-                  <td className="p-4 text-slate-300 font-medium">{lead.propertyType || '-'}</td>
-                  <td className="p-4 text-slate-300 font-semibold">{lead.budget || '-'}</td>
-                  <td className="p-4 text-slate-300">{lead.preferredArea || '-'}</td>
-                  <td className="p-4 text-[11px] text-slate-400 font-mono">{lead.timestamp ? lead.timestamp.slice(0, 16).replace('T', ' ') : '-'}</td>
-                  <td className="p-4 text-right">
+                  <td className="p-4">
+                    <span className="font-semibold text-amber-200">{lead.requirement || 'Buy'}</span>
+                    <div className="text-[11px] text-slate-400">{lead.preferredArea} • {lead.budget}</div>
+                    {lead.message && (
+                      <div className="text-[11px] text-slate-400 italic line-clamp-1 mt-1">
+                        "{lead.message}"
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4 text-[11px] text-slate-400">
+                    <div className="text-slate-200 font-semibold">{lead.lead_source}</div>
+                    <div>{lead.cta_source}</div>
+                    {lead.deviceInfo && (
+                      <div className="text-[10px] text-indigo-400 mt-0.5">{lead.deviceInfo}</div>
+                    )}
+                    {lead.trafficSource && lead.trafficSource !== 'Direct' && (
+                      <div className="text-[10px] text-emerald-400">{lead.trafficSource}</div>
+                    )}
+                    <div className="text-[10px] text-slate-500 font-mono">{lead.timestamp}</div>
+                  </td>
+                  <td className="p-4">
+                    <input
+                      type="date"
+                      value={lead.followUpDate || ''}
+                      onChange={(e) => updateLeadDetails(lead.id, { followUpDate: e.target.value })}
+                      className="bg-[#070b19] border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-[#c5a059]"
+                    />
+                  </td>
+                  <td className="p-4">
+                    <select
+                      value={lead.status}
+                      onChange={(e) => updateLeadStatus(lead.id, e.target.value as any)}
+                      className={`bg-[#070b19] border rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none ${
+                        lead.status === 'New' ? 'border-emerald-500/50 text-emerald-400' :
+                        lead.status === 'Follow-up' ? 'border-amber-500/50 text-amber-400' :
+                        lead.status === 'Contacted' ? 'border-sky-500/50 text-sky-400' : 'border-slate-600 text-slate-400'
+                      }`}
+                    >
+                      <option value="New">New</option>
+                      <option value="Follow-up">Follow-up</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </td>
+                  <td className="p-4 text-right space-x-1.5">
+                    <button
+                      onClick={() => setEditingLead(lead)}
+                      className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200"
+                      title="Edit Lead Details & Notes"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => setConfirmDeleteId(lead.id)}
-                      className="p-2 rounded-lg bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/30 transition-colors"
+                      className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/30"
                       title="Delete Lead"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -275,8 +326,8 @@ export const LeadManagementView: React.FC = () => {
 
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400">
-                    No lead submissions found.
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    No lead submissions matching current search or filters.
                   </td>
                 </tr>
               )}

@@ -290,5 +290,59 @@ export const api = {
       headers: getAuthHeaders(),
     });
     return res.json();
+  },
+
+  // Leadership Profiles & Video Testimonials API
+  async getLeadership() {
+    const res = await fetch(`${API_BASE}/cms/leadership`);
+    return res.json();
+  },
+
+  async addLeadershipProfile(data: any) {
+    const res = await fetch(`${API_BASE}/cms/leadership`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async updateLeadershipProfile(id: string, data: any) {
+    const res = await fetch(`${API_BASE}/cms/leadership/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async deleteLeadershipProfile(id: string) {
+    const res = await fetch(`${API_BASE}/cms/leadership/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  async getVideoTestimonials() {
+    const res = await fetch(`${API_BASE}/cms/video-testimonials`);
+    return res.json();
+  },
+
+  async saveVideoTestimonial(data: any) {
+    const res = await fetch(`${API_BASE}/cms/video-testimonials`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async deleteVideoTestimonial(id: string) {
+    const res = await fetch(`${API_BASE}/cms/video-testimonials/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
   }
 };

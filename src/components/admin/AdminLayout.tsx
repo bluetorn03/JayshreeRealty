@@ -26,9 +26,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: 'analytics', label: 'Real Estate Analytics', icon: BarChart3, category: 'Core Dashboard' },
     { id: 'leads', label: 'Lead Management', icon: Users, category: 'Core Dashboard' },
     { id: 'properties', label: 'Property & Project CMS', icon: Building2, category: 'Content Management' },
-    { id: 'categories', label: 'Project Categories', icon: Layers, category: 'Content Management' },
     { id: 'reviews', label: 'Reviews & Testimonials', icon: Star, category: 'Content Management' },
-    { id: 'locations', label: 'Location Nodes', icon: MapPin, category: 'Content Management' },
     { id: 'settings', label: 'Settings & Security', icon: SettingsIcon, category: 'System & Admin' },
   ];
 

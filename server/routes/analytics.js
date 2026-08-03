@@ -67,59 +67,131 @@ router.post('/event', async (req, res) => {
 // GET /api/analytics/dashboard (Protected Admin)
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
-    const { data: events } = await supabase
-      .from('analytics_events')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(1000);
+    const timeframe = req.query.timeframe || '30d';
+    let dateCutoff = null;
 
-    const { data: leads } = await supabase.from('leads').select('id');
-    const { data: properties } = await supabase.from('properties').select('id, title, category');
+    const now = new Date();
+    if (timeframe === 'today') {
+      dateCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    } else if (timeframe === '7d') {
+      dateCutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (timeframe === '30d') {
+      dateCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
-    const totalPageviews = (events || []).length;
-    const uniqueVisitors = new Set((events || []).map(e => e.visitor_id)).size;
-    const totalLeads = (leads || []).length;
-    const conversionRate = totalPageviews > 0 ? ((totalLeads / totalPageviews) * 100).toFixed(1) : '0.0';
+    let query = supabase.from('analytics_events').select('*').order('timestamp', { ascending: false });
+    if (dateCutoff) {
+      query = query.gte('timestamp', dateCutoff);
+    }
+
+    const { data: events } = await query.limit(5000);
+    const { data: leads } = await supabase.from('leads').select('id, timestamp');
+
+    const totalEvents = events || [];
+    const totalPageviews = totalEvents.filter(e => e.event_type === 'page_view').length;
+    const whatsappClicks = totalEvents.filter(e => e.event_type === 'whatsapp_click').length;
+    const callClicks = totalEvents.filter(e => e.event_type === 'call_click').length;
+    const formSubmissions = totalEvents.filter(e => e.event_type === 'form_submit').length;
+    const ctaClicks = whatsappClicks + callClicks + totalEvents.filter(e => e.event_type === 'button_click').length;
+
+    const allVisitorIds = totalEvents.map(e => e.visitor_id);
+    const uniqueVisitors = new Set(allVisitorIds).size;
+    
+    // Count returning visitors (appeared more than once)
+    const visitorFrequency = {};
+    allVisitorIds.forEach(id => {
+      visitorFrequency[id] = (visitorFrequency[id] || 0) + 1;
+    });
+    const returningVisitors = Object.values(visitorFrequency).filter(count => count > 1).length;
+
+    // Total unique sessions
+    const allSessionIds = totalEvents.map(e => e.session_id);
+    const totalSessions = new Set(allSessionIds).size;
+
+    const filteredLeads = (leads || []).filter(l => !dateCutoff || (l.timestamp && l.timestamp >= dateCutoff));
+    const totalLeads = filteredLeads.length;
+    const conversionRate = totalPageviews > 0 ? ((totalLeads / totalPageviews) * 100).toFixed(1) + '%' : '0.0%';
 
     // Group Top Pages
     const pageCounts = {};
-    (events || []).forEach(e => {
+    totalEvents.filter(e => e.event_type === 'page_view').forEach(e => {
       const p = e.page_path || '/';
       pageCounts[p] = (pageCounts[p] || 0) + 1;
     });
-
     const topPages = Object.keys(pageCounts)
       .map(path => ({ path, views: pageCounts[path] }))
       .sort((a, b) => b.views - a.views)
-      .slice(0, 5);
+      .slice(0, 8);
+
+    // Group Traffic Sources
+    const refCounts = {};
+    totalEvents.forEach(e => {
+      const ref = e.referrer || 'Direct';
+      refCounts[ref] = (refCounts[ref] || 0) + 1;
+    });
+    const trafficSources = Object.keys(refCounts)
+      .map(referrer => ({ referrer, count: refCounts[referrer] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
 
     // Group Device Distribution
     const deviceCounts = {};
-    (events || []).forEach(e => {
+    totalEvents.forEach(e => {
       const d = e.device_type || 'Desktop';
       deviceCounts[d] = (deviceCounts[d] || 0) + 1;
     });
-
+    const totalCountForDevices = totalEvents.length || 1;
     const devices = Object.keys(deviceCounts).map(device => ({
       device,
       count: deviceCounts[device],
-      percentage: totalPageviews > 0 ? Math.round((deviceCounts[device] / totalPageviews) * 100) : 0
+      percentage: Math.round((deviceCounts[device] / totalCountForDevices) * 100)
     }));
+
+    // Group Browser Distribution
+    const browserCounts = {};
+    totalEvents.forEach(e => {
+      const b = e.browser || 'Unknown';
+      browserCounts[b] = (browserCounts[b] || 0) + 1;
+    });
+    const browserBreakdown = Object.keys(browserCounts)
+      .map(browser => ({ browser, count: browserCounts[browser] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    // Group OS Distribution
+    const osCounts = {};
+    totalEvents.forEach(e => {
+      const o = e.os || 'Unknown';
+      osCounts[o] = (osCounts[o] || 0) + 1;
+    });
+    const osBreakdown = Object.keys(osCounts)
+      .map(os => ({ os, count: osCounts[os] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
 
     return res.json({
       success: true,
       metrics: {
-        totalPageviews: totalPageviews || 1240,
-        uniqueVisitors: uniqueVisitors || 480,
-        totalLeads: totalLeads || 34,
-        conversionRate: conversionRate || '2.7',
-        activeProperties: (properties || []).length
+        totalViews: totalPageviews,
+        uniqueVisitors,
+        returningVisitors,
+        totalLeads,
+        totalSessions,
+        ctaClicks,
+        whatsappClicks,
+        callClicks,
+        formSubmissions,
+        conversionRate
       },
       topPages,
+      trafficSources,
       devices,
-      recentEvents: (events || []).slice(0, 10)
+      browserBreakdown,
+      osBreakdown,
+      recentEvents: totalEvents.slice(0, 15)
     });
   } catch (error) {
+    console.error('Analytics dashboard error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch analytics' });
   }
 });

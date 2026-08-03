@@ -1,0 +1,101 @@
+import { PropertyItem } from '../types';
+
+export const SEED_COMMERCIAL_PROPERTIES: PropertyItem[] = [
+  {
+    id: 'comm-nerul-01',
+    slug: 'prime-commercial-spaces-nerul-east',
+    title: 'Prime High-Street Retail & Corporate Suites',
+    category: 'Commercial',
+    location: 'Nerul East, Navi Mumbai',
+    type: 'Commercial',
+    configuration: 'Shops & Office Suites',
+    price: '₹ 85 Lakhs Onwards',
+    area: '350 - 1500 Sq.Ft.',
+    possession: 'Ready to Move',
+    features: ['High Footfall Zone', 'Main Road Frontage', '24/7 Security', 'Power Backup', 'Ample Parking'],
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200'
+    ],
+    highlights: 'Located near Nerul Railway Station with heavy daily footfall and high rental yields.',
+    brokerageFree: true,
+    published: true,
+    placements: ['commercial', 'homepage']
+  },
+  {
+    id: 'comm-ulwe-02',
+    slug: 'airport-express-commercial-hub-ulwe',
+    title: 'Airport Corridor Commercial Hub',
+    category: 'Commercial',
+    location: 'Sector 19, Ulwe, Navi Mumbai',
+    type: 'Commercial',
+    configuration: 'Retail Outlets & IT Spaces',
+    price: '₹ 60 Lakhs Onwards',
+    area: '280 - 1200 Sq.Ft.',
+    possession: 'Dec 2026',
+    features: ['Near NMIA Airport', 'Atal Setu MTHL Connected', 'Modern Elevators', 'Double Height Lobby'],
+    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200'
+    ],
+    highlights: 'Strategic investment opportunity on the 30m wide coastal road near Navi Mumbai Airport.',
+    brokerageFree: true,
+    published: true,
+    placements: ['commercial']
+  },
+  {
+    id: 'comm-pushpak-03',
+    slug: 'aeropolis-commercial-towers-pushpak-nagar',
+    title: 'Aeropolis Business Center',
+    category: 'Commercial',
+    location: 'Pushpak Nagar (Dapoli), Navi Mumbai',
+    type: 'Commercial',
+    configuration: 'Corporate Offices & Showrooms',
+    price: '₹ 55 Lakhs Onwards',
+    area: '300 - 2000 Sq.Ft.',
+    possession: 'June 2026',
+    features: ['CIDCO Smart Node', '05 Mins from Airport Terminal', 'Multi-level Parking', 'High-speed Lifts'],
+    image: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&q=80&w=1200',
+    highlights: 'Pioneer commercial smart node right opposite the Navi Mumbai International Airport terminal entry.',
+    brokerageFree: true,
+    published: true,
+    placements: ['commercial']
+  },
+  {
+    id: 'comm-kharghar-04',
+    slug: 'executive-business-park-kharghar',
+    title: 'Kharghar Executive Financial Park',
+    category: 'Commercial',
+    location: 'Central Park Node, Kharghar',
+    type: 'Commercial',
+    configuration: 'Grade-A Office Spaces',
+    price: '₹ 1.10 Cr Onwards',
+    area: '500 - 3000 Sq.Ft.',
+    possession: 'Ready to Move',
+    features: ['Metro Station Adjacent', 'Central AC', 'Glass Facade Design', 'Cafeteria & Lounge'],
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1200',
+    highlights: 'Pre-leased commercial offices with immediate 7.5% rental returns near Kharghar Metro.',
+    brokerageFree: true,
+    published: true,
+    placements: ['commercial', 'featured']
+  },
+  {
+    id: 'comm-seawoods-05',
+    slug: 'grand-retail-plaza-seawoods',
+    title: 'Grand Seawoods Trade Center',
+    category: 'Commercial',
+    location: 'Grand Central Zone, Seawoods',
+    type: 'Commercial',
+    configuration: 'Boutique Retail & Food Court Suites',
+    price: '₹ 95 Lakhs Onwards',
+    area: '400 - 1800 Sq.Ft.',
+    possession: 'Ready to Move',
+    features: ['Integrated Transit Hub', 'High Footfalls', 'EV Charging Points', '24/7 CCTV Monitoring'],
+    image: 'https://images.unsplash.com/photo-1555636222-cae831e670b3?auto=format&fit=crop&q=80&w=1200',
+    highlights: 'Luxury commercial arcade directly accessible from Seawoods Grand Central Railway Station.',
+    brokerageFree: true,
+    published: true,
+    placements: ['commercial']
+  }
+];

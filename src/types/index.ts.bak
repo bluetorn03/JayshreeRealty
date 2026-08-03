@@ -8,7 +8,7 @@ export interface PropertyItem {
   title: string;
   category: ProjectCategory;
   location: string;
-  type: 'New Launch' | 'Resale' | 'Commercial' | 'Township' | 'Featured' | 'Luxury';
+  type: 'New Launch' | 'Resale' | 'Commercial' | 'Township';
   configuration: string; // e.g. "1 BHK", "2 & 3 BHK", "3 & 4 BHK"
   price: string;
   area: string; // e.g. "650 - 1200 Sq.Ft."
@@ -124,27 +124,4 @@ export interface LocationNode {
   name: string;
   description: string;
   activeCount: number;
-}
-
-export interface LeadershipProfile {
-  id: string;
-  role: 'Founder' | 'CEO';
-  name: string;
-  designation: string;
-  image: string;
-  description: string;
-  achievements: string;
-  officeLocation: string;
-  experience: string;
-  badges: string[];
-}
-
-export interface VideoTestimonialItem {
-  id: string;
-  clientName: string;
-  location: string;
-  title: string;
-  youtubeUrl: string;
-  thumbnail: string;
-  sortOrder?: number;
 }

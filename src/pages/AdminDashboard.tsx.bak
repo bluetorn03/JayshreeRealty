@@ -6,7 +6,9 @@ import { EnterpriseDashboardWidget } from '../components/admin/EnterpriseDashboa
 import { AnalyticsView } from '../components/admin/AnalyticsView';
 import { LeadManagementView } from '../components/admin/LeadManagementView';
 import { PropertyCMSView } from '../components/admin/PropertyCMSView';
+import { CategoryCMSView } from '../components/admin/CategoryCMSView';
 import { ReviewsCMSView } from '../components/admin/ReviewsCMSView';
+import { LocationsCMSView } from '../components/admin/LocationsCMSView';
 import { SettingsSecurityView } from '../components/admin/SettingsSecurityView';
 import logo from '../assets/jayshree-realty-logo.png';
 import { Lock, ShieldAlert } from 'lucide-react';
@@ -22,7 +24,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'analytics' | 'leads' | 'properties' | 'reviews' | 'settings'
+    'overview' | 'analytics' | 'leads' | 'properties' | 'categories' | 'reviews' | 'locations' | 'settings'
   >('overview');
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -121,7 +123,9 @@ export const AdminDashboard: React.FC = () => {
       {activeTab === 'analytics' && <AnalyticsView />}
       {activeTab === 'leads' && <LeadManagementView />}
       {activeTab === 'properties' && <PropertyCMSView />}
+      {activeTab === 'categories' && <CategoryCMSView />}
       {activeTab === 'reviews' && <ReviewsCMSView />}
+      {activeTab === 'locations' && <LocationsCMSView />}
       {activeTab === 'settings' && <SettingsSecurityView />}
     </AdminLayout>
   );
