@@ -13,45 +13,15 @@ export const CommercialProperties: React.FC = () => {
     p => p.published !== false && !p.archived && (p.type === 'Commercial' || (p.placements && p.placements.includes('commercial')))
   );
 
-  const commercialList = dynamicCommercials.length > 0
-    ? dynamicCommercials.map(p => ({
-        id: p.id,
-        title: p.title,
-        location: p.location,
-        price: p.price,
-        area: p.area,
-        features: p.features || ['High Rental Yield', 'Elevator Access'],
-        image: p.image
-      }))
-    : [
-        {
-          id: 'comm-1',
-          title: 'Station Complex Commercial Offices',
-          location: 'Nerul Railway Station Complex, Navi Mumbai',
-          price: '₹ 85 Lakhs*',
-          area: '350 - 1200 Sq.Ft.',
-          features: ['Heavy Footfall', 'High Rental Yield', 'Elevator Access', 'Direct Railway Station Entry'],
-          image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000'
-        },
-        {
-          id: 'comm-2',
-          title: 'Highstreet Retail Shops',
-          location: 'Seawoods Grand Central Corridor',
-          price: '₹ 1.25 Cr*',
-          area: '450 - 900 Sq.Ft.',
-          features: ['Main Road Frontage', 'Glass Frontage', 'Provision for AC', 'Ample Customer Parking'],
-          image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1000'
-        },
-        {
-          id: 'comm-3',
-          title: 'Corporate IT & Executive Suites',
-          location: 'Sanpada / Vashi Highway Hub',
-          price: '₹ 1.85 Cr*',
-          area: '850 - 2500 Sq.Ft.',
-          features: ['24/7 Power Backup', 'Multi-level Car Parking', 'Grand Reception Lobby'],
-          image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1000'
-        }
-      ];
+  const commercialList = dynamicCommercials.map(p => ({
+    id: p.id,
+    title: p.title,
+    location: p.location,
+    price: p.price,
+    area: p.area,
+    features: p.features || ['High Rental Yield', 'Elevator Access'],
+    image: p.image
+  }));
 
   return (
     <div className="min-h-screen font-sans">

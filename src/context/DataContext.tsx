@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PropertyItem, GoogleReviewItem, SiteSettings, CounterItem, LocationNode, ProjectCategory } from '../types';
-import { PROJECTS_DATA as INITIAL_PROJECTS } from '../data/projectsData';
 import { GOOGLE_REVIEWS_DATA as INITIAL_REVIEWS } from '../data/reviewsData';
 import { api } from '../services/api';
 
@@ -93,7 +92,7 @@ const DEFAULT_HERO_SETTINGS: HeroSettings = {
     "Navi Mumbai",
     "Luxury Homes"
   ],
-  backgroundImage: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000"
+  backgroundImage: "https://images.unsplash.com/photo-1462396240927-52058a6a84ec?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8aHVnZSUyMHRvd2VyJTIwb2YlMjBnbGFzcyUyMGZhY2FkZXxlbnwwfHwwfHx8MA%3D%3D"
 };
 
 const DEFAULT_POPUP_SETTINGS: PopupSettings = {
@@ -186,7 +185,7 @@ const INITIAL_CATEGORIES: ProjectCategory[] = [
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<PropertyItem[]>(INITIAL_PROJECTS as PropertyItem[]);
+  const [projects, setProjects] = useState<PropertyItem[]>([]);
   const [reviews, setReviews] = useState<GoogleReviewItem[]>(INITIAL_REVIEWS);
   const [heroSettings, setHeroSettings] = useState<HeroSettings>(DEFAULT_HERO_SETTINGS);
   const [popupSettings, setPopupSettings] = useState<PopupSettings>(DEFAULT_POPUP_SETTINGS);
@@ -211,7 +210,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // 1. Fetch properties from DB
       const propRes = await api.getProperties();
-      if (propRes.success && Array.isArray(propRes.properties) && propRes.properties.length > 0) {
+      if (propRes.success && Array.isArray(propRes.properties)) {
         setProjects(propRes.properties);
       }
 

@@ -252,6 +252,11 @@ h1, h2, h3, .font-serif {
   100% { transform: scale(1.0) translateY(0); }
 }
 
+@keyframes heroUpwardParallax {
+  0% { transform: translate3d(0, 45px, 0) scale(1.15); }
+  100% { transform: translate3d(0, -35px, 0) scale(1.05); }
+}
+
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
@@ -263,6 +268,11 @@ h1, h2, h3, .font-serif {
 
 .animate-hero-zoom {
   animation: heroZoom 12s ease-out forwards;
+}
+
+.animate-hero-parallax {
+  animation: heroUpwardParallax 14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
 }
 
 .pulse-gold {

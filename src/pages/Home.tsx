@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/SEOHead';
 import { AnimatedCounter } from '../components/AnimatedCounter';
@@ -7,9 +7,12 @@ import { ReviewCard } from '../components/ReviewCard';
 import { useData } from '../context/DataContext';
 import { useLeads } from '../context/LeadContext';
 import {
-  Building2, MapPin, ShieldCheck, Award, ArrowRight, CheckCircle2,
-  Sparkles, Star, Phone, MessageSquare, Search, Users
+  Building2, MapPin, ShieldCheck, Award, ArrowRight,
+  Sparkles, Star, Phone, MessageSquare, Users
 } from 'lucide-react';
+
+const HERO_DEFAULT_BG = "https://images.unsplash.com/photo-1462396240927-52058a6a84ec?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8aHVnZSUyMHRvd2VyJTIwb2YlMjBnbGFzcyUyMGZhY2FkZXxlbnwwfHwwfHx8MA%3D%3D";
+const DEFAULT_KEYWORDS = ["Premium Projects", "Buy Property", "Sell Property", "Verified Properties", "Navi Mumbai", "Luxury Homes"];
 
 export const Home: React.FC = () => {
   const { openModal } = useLeads();
@@ -18,16 +21,18 @@ export const Home: React.FC = () => {
   const [searchLocation, setSearchLocation] = useState<string>('');
 
   // Smooth Typewriter Animation State
-  const keywords = heroSettings.keywords && heroSettings.keywords.length > 0
-    ? heroSettings.keywords
-    : ["Premium Projects", "Buy Property", "Sell Property", "Verified Properties", "Navi Mumbai", "Luxury Homes"];
+  const keywords = useMemo(() => {
+    return heroSettings.keywords && heroSettings.keywords.length > 0
+      ? heroSettings.keywords
+      : DEFAULT_KEYWORDS;
+  }, [heroSettings.keywords]);
 
   const [keywordIndex, setKeywordIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const fullText = keywords[keywordIndex];
+    const fullText = keywords[keywordIndex] || '';
     const speed = isDeleting ? 40 : 90;
 
     const timeout = setTimeout(() => {
@@ -46,13 +51,19 @@ export const Home: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [currentText, isDeleting, keywordIndex, keywords]);
 
-  const featuredProjects = projects.filter((p) => {
-    if (p.published === false || p.archived === true) return false;
-    if (p.placements && p.placements.length > 0 && !p.placements.includes('homepage') && !p.placements.includes('featured') && !p.isFeatured) return false;
-    if (selectedCategory === 'All') return true;
-    if (selectedCategory === 'Resale') return p.type === 'Resale';
-    return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
-  }).slice(0, 6);
+  const featuredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      if (p.published === false || p.archived === true) return false;
+      if (p.placements && p.placements.length > 0 && !p.placements.includes('homepage') && !p.placements.includes('featured') && !p.isFeatured) return false;
+      if (selectedCategory === 'All') return true;
+      if (selectedCategory === 'Resale') return p.type === 'Resale';
+      return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+    }).slice(0, 6);
+  }, [projects, selectedCategory]);
+
+  const heroBgUrl = heroSettings.backgroundImage && heroSettings.backgroundImage !== 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000'
+    ? heroSettings.backgroundImage
+    : HERO_DEFAULT_BG;
 
   return (
     <div className="min-h-screen bg-[#070b19] font-sans">
@@ -63,11 +74,11 @@ export const Home: React.FC = () => {
 
       {/* 1. HERO SECTION (Dark Navy Background) */}
       <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden border-b border-[#c5a059]/20 section-navy">
-        {/* Background Image with Lighter Overlay & Entrance Zoom */}
+        {/* Background Image with Lighter Overlay & Smooth Upward Parallax */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-zoom transition-all"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
           style={{
-            backgroundImage: `url('${heroSettings.backgroundImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000'}')`
+            backgroundImage: `url("${heroBgUrl}")`
           }}
         >
           {/* Lighter Gradient Overlay so background image is vibrant and visible */}
