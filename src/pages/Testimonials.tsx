@@ -12,13 +12,15 @@ import { DEFAULT_LEADERSHIP, DEFAULT_VIDEO_TESTIMONIALS } from '../context/DataC
 import { LeadershipProfile, VideoTestimonialItem } from '../types';
 
 export const Testimonials: React.FC = () => {
-  const { reviews } = useData();
+  const { reviews, leadership, videoTestimonials } = useData();
   const { openModal } = useLeads();
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
   // Leadership Profiles (Column 1: Founder, Column 2: CEO)
-  const founder = DEFAULT_LEADERSHIP.find((l: LeadershipProfile) => l.role === 'Founder') || DEFAULT_LEADERSHIP[0];
-  const ceo = DEFAULT_LEADERSHIP.find((l: LeadershipProfile) => l.role === 'CEO') || DEFAULT_LEADERSHIP[1];
+  const activeLeadership = (leadership && leadership.length > 0) ? leadership : DEFAULT_LEADERSHIP;
+  const founder = activeLeadership.find((l: LeadershipProfile) => l.role === 'Founder') || activeLeadership[0];
+  const ceo = activeLeadership.find((l: LeadershipProfile) => l.role === 'CEO') || activeLeadership[1] || activeLeadership[0];
+  const displayVideos = (videoTestimonials && videoTestimonials.length > 0) ? videoTestimonials : DEFAULT_VIDEO_TESTIMONIALS;
 
   const officeGallery = [
     { title: 'Jayshree Realty Head Office Front', img: officeImage },
@@ -259,7 +261,7 @@ export const Testimonials: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {DEFAULT_VIDEO_TESTIMONIALS.map((vid: VideoTestimonialItem) => (
+            {displayVideos.map((vid: VideoTestimonialItem) => (
               <div
                 key={vid.id}
                 className="bg-[#0d1527] border border-[#c5a059]/30 rounded-2xl overflow-hidden shadow-2xl group flex flex-col font-outfit"

@@ -125,6 +125,13 @@ interface DataContextType {
   updateLocation: (id: string, updated: Partial<LocationNode>) => Promise<void>;
   deleteLocation: (id: string) => Promise<void>;
 
+  addLeadershipProfile: (profile: LeadershipProfile) => Promise<void>;
+  updateLeadershipProfile: (id: string, updated: Partial<LeadershipProfile>) => Promise<void>;
+  deleteLeadershipProfile: (id: string) => Promise<void>;
+
+  saveVideoTestimonial: (video: VideoTestimonialItem) => Promise<void>;
+  deleteVideoTestimonial: (id: string) => Promise<void>;
+
   exportBackup: () => void;
   importBackup: (jsonData: string) => boolean;
   refreshData: () => Promise<void>;
@@ -493,6 +500,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await api.deleteLocation(id);
   };
 
+  const addLeadershipProfile = async (profile: LeadershipProfile) => {
+    const res = await api.addLeadershipProfile(profile);
+    if (res.success) {
+      setLeadership(prev => [...prev, { ...profile, id: res.profile?.id || profile.id }]);
+    }
+  };
+
+  const updateLeadershipProfile = async (id: string, updated: Partial<LeadershipProfile>) => {
+    setLeadership(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    await api.updateLeadershipProfile(id, updated);
+  };
+
+  const deleteLeadershipProfile = async (id: string) => {
+    setLeadership(prev => prev.filter(p => p.id !== id));
+    await api.deleteLeadershipProfile(id);
+  };
+
+  const saveVideoTestimonial = async (video: VideoTestimonialItem) => {
+    setVideoTestimonials(prev => {
+      const exists = prev.some(v => v.id === video.id);
+      if (exists) {
+        return prev.map(v => v.id === video.id ? video : v);
+      }
+      return [...prev, video];
+    });
+    await api.saveVideoTestimonial(video);
+  };
+
+  const deleteVideoTestimonial = async (id: string) => {
+    setVideoTestimonials(prev => prev.filter(v => v.id !== id));
+    await api.deleteVideoTestimonial(id);
+  };
+
   const exportBackup = () => {
     const backupData = {
       projects,
@@ -578,6 +618,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addLocation,
         updateLocation,
         deleteLocation,
+        addLeadershipProfile,
+        updateLeadershipProfile,
+        deleteLeadershipProfile,
+        saveVideoTestimonial,
+        deleteVideoTestimonial,
         exportBackup,
         importBackup,
         refreshData

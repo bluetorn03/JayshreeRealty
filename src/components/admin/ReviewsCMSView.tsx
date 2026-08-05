@@ -7,7 +7,11 @@ import { DEFAULT_LEADERSHIP, DEFAULT_VIDEO_TESTIMONIALS } from '../../context/Da
 import { api } from '../../services/api';
 
 export const ReviewsCMSView: React.FC = () => {
-  const { reviews, addReview, updateReview, deleteReview } = useData();
+  const {
+    reviews, addReview, updateReview, deleteReview,
+    leadership, addLeadershipProfile, updateLeadershipProfile, deleteLeadershipProfile,
+    videoTestimonials, saveVideoTestimonial, deleteVideoTestimonial
+  } = useData();
 
   const [activeTab, setActiveTab] = useState<'reviews' | 'leadership' | 'videos'>('reviews');
 
@@ -29,13 +33,13 @@ export const ReviewsCMSView: React.FC = () => {
   });
 
   // Leadership State
-  const [leadershipProfiles, setLeadershipProfiles] = useState<LeadershipProfile[]>(DEFAULT_LEADERSHIP);
+  const activeLeadership = (leadership && leadership.length > 0) ? leadership : DEFAULT_LEADERSHIP;
   const [editingProfile, setEditingProfile] = useState<LeadershipProfile | null>(null);
   const [isLeadershipModalOpen, setIsLeadershipModalOpen] = useState(false);
   const [confirmDeleteProfileId, setConfirmDeleteProfileId] = useState<string | null>(null);
 
   // Video Testimonials State
-  const [videoList, setVideoList] = useState<VideoTestimonialItem[]>(DEFAULT_VIDEO_TESTIMONIALS);
+  const activeVideos = (videoTestimonials && videoTestimonials.length > 0) ? videoTestimonials : DEFAULT_VIDEO_TESTIMONIALS;
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<VideoTestimonialItem | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -47,45 +51,6 @@ export const ReviewsCMSView: React.FC = () => {
     youtubeUrl: '',
     thumbnail: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800'
   });
-
-  // Fetch leadership profiles from Supabase on mount
-  useEffect(() => {
-    const fetchLeadership = async () => {
-      try {
-        const res = await api.getLeadership();
-        if (res.success && res.leadership && res.leadership.length > 0) {
-          setLeadershipProfiles(res.leadership);
-        }
-      } catch (e) {
-        console.error('Failed to load leadership profiles', e);
-      }
-    };
-    fetchLeadership();
-  }, []);
-
-  // Fetch video testimonials from Supabase on mount
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        const res = await api.getVideoTestimonials();
-        if (res.success && res.videos && res.videos.length > 0) {
-          const mapped = res.videos.map((v: any) => ({
-            id: v.id,
-            clientName: v.client_name || v.clientName,
-            location: v.location,
-            title: v.title,
-            youtubeUrl: v.youtube_url || v.youtubeUrl,
-            thumbnail: v.thumbnail,
-            sortOrder: v.sort_order || v.sortOrder || 0
-          }));
-          setVideoList(mapped);
-        }
-      } catch (e) {
-        console.error('Failed to load video testimonials', e);
-      }
-    };
-    fetchVideos();
-  }, []);
 
   // Handle Review Actions
   const handleOpenAddReview = () => {
@@ -119,16 +84,12 @@ export const ReviewsCMSView: React.FC = () => {
     e.preventDefault();
     if (!editingProfile) return;
 
-    const isNew = !leadershipProfiles.find(p => p.id === editingProfile.id);
+    const isNew = !activeLeadership.find(p => p.id === editingProfile.id);
     
     if (isNew) {
-      const res = await api.addLeadershipProfile(editingProfile);
-      if (res.success) {
-        setLeadershipProfiles(prev => [...prev, { ...editingProfile, id: res.profile?.id || editingProfile.id }]);
-      }
+      await addLeadershipProfile(editingProfile);
     } else {
-      setLeadershipProfiles(prev => prev.map(p => p.id === editingProfile.id ? editingProfile : p));
-      await api.updateLeadershipProfile(editingProfile.id, editingProfile);
+      await updateLeadershipProfile(editingProfile.id, editingProfile);
     }
     setIsLeadershipModalOpen(false);
   };
@@ -151,8 +112,7 @@ export const ReviewsCMSView: React.FC = () => {
   };
 
   const handleDeleteLeadership = async (id: string) => {
-    setLeadershipProfiles(prev => prev.filter(p => p.id !== id));
-    await api.deleteLeadershipProfile(id);
+    await deleteLeadershipProfile(id);
     setConfirmDeleteProfileId(null);
   };
 
@@ -177,21 +137,15 @@ export const ReviewsCMSView: React.FC = () => {
       title: videoForm.title,
       youtubeUrl: videoForm.youtubeUrl,
       thumbnail: videoForm.thumbnail || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800',
-      sortOrder: editingVideo ? editingVideo.sortOrder : videoList.length
+      sortOrder: editingVideo ? editingVideo.sortOrder : activeVideos.length
     };
 
-    if (editingVideo) {
-      setVideoList(prev => prev.map(v => v.id === editingVideo.id ? newVideo : v));
-    } else {
-      setVideoList(prev => [...prev, newVideo]);
-    }
-    await api.saveVideoTestimonial(newVideo);
+    await saveVideoTestimonial(newVideo);
     setIsVideoModalOpen(false);
   };
 
   const handleDeleteVideo = async (id: string) => {
-    setVideoList(prev => prev.filter(v => v.id !== id));
-    await api.deleteVideoTestimonial(id);
+    await deleteVideoTestimonial(id);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'thumbnail' | 'image') => {
@@ -201,11 +155,12 @@ export const ReviewsCMSView: React.FC = () => {
     try {
       setUploading(true);
       const res = await api.uploadFile(file);
-      if (res.success && res.fileUrl) {
+      const uploadedUrl = res.url || res.fileUrl;
+      if (res.success && uploadedUrl) {
         if (field === 'thumbnail') {
-          setVideoForm(prev => ({ ...prev, thumbnail: res.fileUrl }));
+          setVideoForm(prev => ({ ...prev, thumbnail: uploadedUrl }));
         } else if (editingProfile) {
-          setEditingProfile(prev => prev ? { ...prev, image: res.fileUrl } : prev);
+          setEditingProfile(prev => prev ? { ...prev, image: uploadedUrl } : prev);
         }
       }
     } catch (err) {
@@ -252,7 +207,7 @@ export const ReviewsCMSView: React.FC = () => {
               activeTab === 'videos' ? 'bg-[#c5a059] text-[#070b19]' : 'text-slate-300 hover:text-white'
             }`}
           >
-            Video Reviews ({videoList.length})
+            Video Reviews ({activeVideos.length})
           </button>
         </div>
       </div>
@@ -335,7 +290,7 @@ export const ReviewsCMSView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {leadershipProfiles.map((prof) => (
+            {activeLeadership.map((prof) => (
               <div key={prof.id} className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-6 shadow-2xl space-y-4 font-outfit">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <span className="badge-gold text-xs">{prof.role} Profile</span>
@@ -419,7 +374,7 @@ export const ReviewsCMSView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {videoList.map((vid) => (
+            {activeVideos.map((vid) => (
               <div key={vid.id} className="bg-[#0d1527] border border-[#c5a059]/30 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between font-outfit">
                 <div className="relative h-48 bg-black">
                   <img src={vid.thumbnail} alt={vid.title} className="w-full h-full object-cover opacity-80" />
@@ -597,6 +552,158 @@ export const ReviewsCMSView: React.FC = () => {
               <div className="flex justify-end gap-2 pt-3">
                 <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Cancel</button>
                 <button type="submit" className="btn-gold px-4 py-2 rounded-xl font-bold">Save Video Review</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Google Review Edit/Add Modal */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-outfit">
+          <div className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-serif font-bold text-xl text-white">
+                {editingReview ? 'Edit Google Review' : 'Add New Google Review'}
+              </h3>
+              <button
+                onClick={() => setIsReviewModalOpen(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveReview} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 mb-1">Author Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={reviewForm.author || ''}
+                  onChange={(e) => setReviewForm({ ...reviewForm, author: e.target.value })}
+                  placeholder="e.g. Satish Gamare"
+                  className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 mb-1">Rating (1 to 5 Stars)</label>
+                  <select
+                    value={reviewForm.rating || 5}
+                    onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
+                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                  >
+                    <option value={5}>5 Stars (★★★★★)</option>
+                    <option value={4}>4 Stars (★★★★☆)</option>
+                    <option value={3}>3 Stars (★★★☆☆)</option>
+                    <option value={2}>2 Stars (★★☆☆☆)</option>
+                    <option value={1}>1 Star (★☆☆☆☆)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 mb-1">Time Ago</label>
+                  <input
+                    type="text"
+                    value={reviewForm.timeAgo || 'Recently'}
+                    onChange={(e) => setReviewForm({ ...reviewForm, timeAgo: e.target.value })}
+                    placeholder="e.g. 2 weeks ago"
+                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1">Review Content *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={reviewForm.content || ''}
+                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  placeholder="Write full review comment..."
+                  className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 mb-1">Avatar Color</label>
+                  <select
+                    value={reviewForm.avatarColor || 'bg-amber-600'}
+                    onChange={(e) => setReviewForm({ ...reviewForm, avatarColor: e.target.value })}
+                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                  >
+                    <option value="bg-amber-600">Amber / Gold</option>
+                    <option value="bg-purple-600">Purple</option>
+                    <option value="bg-indigo-600">Indigo</option>
+                    <option value="bg-[#E91E63]">Pink</option>
+                    <option value="bg-[#009688]">Teal</option>
+                    <option value="bg-[#FF5722]">Orange</option>
+                    <option value="bg-[#4CAF50]">Green</option>
+                    <option value="bg-[#2196F3]">Blue</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 mb-1">Reviews Sub-text</label>
+                  <input
+                    type="text"
+                    value={reviewForm.reviewsCount || '1 review'}
+                    onChange={(e) => setReviewForm({ ...reviewForm, reviewsCount: e.target.value })}
+                    placeholder="e.g. 5 reviews • 2 photos"
+                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:border-[#c5a059] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 pt-2">
+                <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reviewForm.verified !== false}
+                    onChange={(e) => setReviewForm({ ...reviewForm, verified: e.target.checked })}
+                    className="accent-[#c5a059] w-4 h-4"
+                  />
+                  <span>Verified Buyer</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(reviewForm.isLocalGuide)}
+                    onChange={(e) => setReviewForm({ ...reviewForm, isLocalGuide: e.target.checked })}
+                    className="accent-[#c5a059] w-4 h-4"
+                  />
+                  <span>Local Guide</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reviewForm.published !== false}
+                    onChange={(e) => setReviewForm({ ...reviewForm, published: e.target.checked })}
+                    className="accent-[#c5a059] w-4 h-4"
+                  />
+                  <span>Published</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsReviewModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-gold px-5 py-2 rounded-xl font-bold"
+                >
+                  Save Review
+                </button>
               </div>
             </form>
           </div>

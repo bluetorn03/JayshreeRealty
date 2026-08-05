@@ -50,10 +50,11 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess,
       const res = await api.uploadFile(fileToUpload);
       clearInterval(timer);
 
-      if (res.success && res.fileUrl) {
+      const targetUrl = res.url || res.fileUrl;
+      if (res.success && targetUrl) {
         setUploadProgress(100);
-        setUploadedUrl(res.fileUrl);
-        onUploadSuccess(res.fileUrl, fileToUpload.name);
+        setUploadedUrl(targetUrl);
+        onUploadSuccess(targetUrl, fileToUpload.name);
       } else {
         setError('Upload failed. Please try again.');
       }

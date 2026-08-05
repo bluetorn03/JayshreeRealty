@@ -20,10 +20,51 @@ export const AdminDashboard: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
-  // Navigation tab state
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'analytics' | 'leads' | 'properties' | 'reviews' | 'settings'
-  >('overview');
+  type AdminTab = 'overview' | 'analytics' | 'leads' | 'properties' | 'reviews' | 'settings';
+
+  const getInitialTab = (): AdminTab => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('/admin/reviews')) return 'reviews';
+    if (path.includes('/admin/leads')) return 'leads';
+    if (path.includes('/admin/properties')) return 'properties';
+    if (path.includes('/admin/analytics')) return 'analytics';
+    if (path.includes('/admin/settings')) return 'settings';
+    if (path.includes('/admin/overview')) return 'overview';
+
+    const stored = localStorage.getItem('jayshree_admin_active_tab') as AdminTab;
+    if (['overview', 'analytics', 'leads', 'properties', 'reviews', 'settings'].includes(stored)) {
+      return stored;
+    }
+    return 'overview';
+  };
+
+  // Navigation tab state with route persistence
+  const [activeTab, setActiveTab] = useState<AdminTab>(getInitialTab);
+
+  React.useEffect(() => {
+    const syncTabFromUrl = () => {
+      const currentTab = getInitialTab();
+      setActiveTab(currentTab);
+      localStorage.setItem('jayshree_admin_active_tab', currentTab);
+      const targetPath = `/admin/${currentTab}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.replaceState({ tab: currentTab }, '', targetPath);
+      }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener('popstate', syncTabFromUrl);
+    return () => window.removeEventListener('popstate', syncTabFromUrl);
+  }, []);
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab);
+    localStorage.setItem('jayshree_admin_active_tab', tab);
+    const targetPath = `/admin/${tab}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ tab }, '', targetPath);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,8 +157,8 @@ export const AdminDashboard: React.FC = () => {
 
   // 2. AUTHENTICATED ADMIN CONSOLE
   return (
-    <AdminLayout activeTab={activeTab} setActiveTab={(tab: any) => setActiveTab(tab)} onLogout={logoutAdmin}>
-      {activeTab === 'overview' && <EnterpriseDashboardWidget onNavigateTab={(tab: any) => setActiveTab(tab)} />}
+    <AdminLayout activeTab={activeTab} setActiveTab={(tab: any) => handleTabChange(tab)} onLogout={logoutAdmin}>
+      {activeTab === 'overview' && <EnterpriseDashboardWidget onNavigateTab={(tab: any) => handleTabChange(tab)} />}
       {activeTab === 'analytics' && <AnalyticsView />}
       {activeTab === 'leads' && <LeadManagementView />}
       {activeTab === 'properties' && <PropertyCMSView />}

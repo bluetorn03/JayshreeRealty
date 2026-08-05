@@ -52,6 +52,7 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
     return res.json({
       success: true,
       url: publicUrl,
+      fileUrl: publicUrl,
       filename: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size
@@ -71,6 +72,7 @@ router.post('/multiple', authenticateToken, upload.array('files', 10), (req, res
     return res.json({
       success: true,
       urls,
+      fileUrls: urls,
       count: req.files.length
     });
   } catch (error) {
