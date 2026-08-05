@@ -13,6 +13,31 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = localStorage.getItem('jayshree_admin_token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (options.body && typeof options.body === 'string') {
+    headers['Content-Type'] = 'application/json';
+  }
+  const mergedOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...headers,
+      ...(options.headers as Record<string, string> || {}),
+    },
+  };
+  const res = await fetch(url, mergedOptions);
+  if (res.status === 401 || res.status === 403) {
+    console.warn(`[API Auth Interceptor] ${res.status} Unauthorized / Forbidden response from ${url}`);
+    localStorage.removeItem('jayshree_admin_token');
+    window.dispatchEvent(new Event('jayshree_auth_invalidated'));
+  }
+  return res;
+}
+
 export const api = {
   // Auth API
   async login(username: string, password: string) {
@@ -28,12 +53,22 @@ export const api = {
     const token = localStorage.getItem('jayshree_admin_token');
     if (!token) return { success: false };
     try {
-      const res = await fetch(`${API_BASE}/auth/me`, {
-        headers: getAuthHeaders(),
-      });
+      const res = await fetchWithAuth(`${API_BASE}/auth/me`);
       return res.json();
     } catch (e) {
       return { success: false };
+    }
+  },
+
+  async updateAdminCredentials(newUsername: string, newPassword: string) {
+    try {
+      const res = await fetchWithAuth(`${API_BASE}/auth/update-credentials`, {
+        method: 'POST',
+        body: JSON.stringify({ newUsername, newPassword }),
+      });
+      return res.json();
+    } catch (e) {
+      return { success: false, message: 'Failed to update credentials' };
     }
   },
 
@@ -44,36 +79,31 @@ export const api = {
   },
 
   async createProperty(propertyData: any) {
-    const res = await fetch(`${API_BASE}/properties`, {
+    const res = await fetchWithAuth(`${API_BASE}/properties`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(propertyData),
     });
     return res.json();
   },
 
   async updateProperty(id: string, propertyData: any) {
-    const res = await fetch(`${API_BASE}/properties/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/properties/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(propertyData),
     });
     return res.json();
   },
 
   async deleteProperty(id: string) {
-    const res = await fetch(`${API_BASE}/properties/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/properties/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
 
   // Leads API
   async getLeads() {
-    const res = await fetch(`${API_BASE}/leads`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetchWithAuth(`${API_BASE}/leads`);
     return res.json();
   },
 
@@ -87,53 +117,46 @@ export const api = {
   },
 
   async createLeadManual(leadData: any) {
-    const res = await fetch(`${API_BASE}/leads/admin-create`, {
+    const res = await fetchWithAuth(`${API_BASE}/leads/admin-create`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(leadData),
     });
     return res.json();
   },
 
   async updateLead(id: string, leadData: any) {
-    const res = await fetch(`${API_BASE}/leads/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/leads/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(leadData),
     });
     return res.json();
   },
 
   async deleteLead(id: string) {
-    const res = await fetch(`${API_BASE}/leads/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/leads/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
 
   async bulkDeleteLeads(ids: string[]) {
-    const res = await fetch(`${API_BASE}/leads/bulk-delete`, {
+    const res = await fetchWithAuth(`${API_BASE}/leads/bulk-delete`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ ids }),
     });
     return res.json();
   },
 
   async bulkStatusLeads(ids: string[], status: string) {
-    const res = await fetch(`${API_BASE}/leads/bulk-status`, {
+    const res = await fetchWithAuth(`${API_BASE}/leads/bulk-status`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ ids, status }),
     });
     return res.json();
   },
 
   async getLeadHistory(id: string) {
-    const res = await fetch(`${API_BASE}/leads/${id}/history`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetchWithAuth(`${API_BASE}/leads/${id}/history`);
     return res.json();
   },
 
@@ -144,115 +167,102 @@ export const api = {
   },
 
   async updateHeroSettings(heroData: any) {
-    const res = await fetch(`${API_BASE}/cms/hero`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/hero`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(heroData),
     });
     return res.json();
   },
 
   async updatePopupSettings(popupData: any) {
-    const res = await fetch(`${API_BASE}/cms/popup`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/popup`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(popupData),
     });
     return res.json();
   },
 
   async updateSiteSettings(siteData: any) {
-    const res = await fetch(`${API_BASE}/cms/site-settings`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/site-settings`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(siteData),
     });
     return res.json();
   },
 
   async updateCounters(counters: any[]) {
-    const res = await fetch(`${API_BASE}/cms/counters`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/counters`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ counters }),
     });
     return res.json();
   },
 
   async addCategory(name: string) {
-    const res = await fetch(`${API_BASE}/cms/categories`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/categories`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ name }),
     });
     return res.json();
   },
 
   async updateCategory(oldName: string, newName: string) {
-    const res = await fetch(`${API_BASE}/cms/categories/edit`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/categories/edit`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ oldName, newName }),
     });
     return res.json();
   },
 
   async deleteCategory(name: string) {
-    const res = await fetch(`${API_BASE}/cms/categories/${encodeURIComponent(name)}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/categories/${encodeURIComponent(name)}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
 
   async addReview(reviewData: any) {
-    const res = await fetch(`${API_BASE}/cms/reviews`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/reviews`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(reviewData),
     });
     return res.json();
   },
 
   async updateReview(id: string, reviewData: any) {
-    const res = await fetch(`${API_BASE}/cms/reviews/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/reviews/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(reviewData),
     });
     return res.json();
   },
 
   async deleteReview(id: string) {
-    const res = await fetch(`${API_BASE}/cms/reviews/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/reviews/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
 
   async addLocation(locationData: any) {
-    const res = await fetch(`${API_BASE}/cms/locations`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/locations`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(locationData),
     });
     return res.json();
   },
 
   async updateLocation(id: string, locationData: any) {
-    const res = await fetch(`${API_BASE}/cms/locations/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/locations/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(locationData),
     });
     return res.json();
   },
 
   async deleteLocation(id: string) {
-    const res = await fetch(`${API_BASE}/cms/locations/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/locations/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
@@ -262,10 +272,8 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('jayshree_admin_token');
-    const res = await fetch(`${API_BASE}/upload`, {
+    const res = await fetchWithAuth(`${API_BASE}/upload`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
     return res.json();
@@ -286,9 +294,7 @@ export const api = {
   },
 
   async getAnalyticsDashboard(timeframe: string = '30d') {
-    const res = await fetch(`${API_BASE}/analytics/dashboard?timeframe=${timeframe}`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetchWithAuth(`${API_BASE}/analytics/dashboard?timeframe=${timeframe}`);
     return res.json();
   },
 
@@ -299,27 +305,24 @@ export const api = {
   },
 
   async addLeadershipProfile(data: any) {
-    const res = await fetch(`${API_BASE}/cms/leadership`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/leadership`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
 
   async updateLeadershipProfile(id: string, data: any) {
-    const res = await fetch(`${API_BASE}/cms/leadership/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/leadership/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
 
   async deleteLeadershipProfile(id: string) {
-    const res = await fetch(`${API_BASE}/cms/leadership/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/leadership/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   },
@@ -330,19 +333,18 @@ export const api = {
   },
 
   async saveVideoTestimonial(data: any) {
-    const res = await fetch(`${API_BASE}/cms/video-testimonials`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/video-testimonials`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return res.json();
   },
 
   async deleteVideoTestimonial(id: string) {
-    const res = await fetch(`${API_BASE}/cms/video-testimonials/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/cms/video-testimonials/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     });
     return res.json();
   }
 };
+

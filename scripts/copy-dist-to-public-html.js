@@ -60,9 +60,15 @@ for (const targetDir of potentialPublicHtmlDirs) {
     // Also ensure .htaccess exists in target public_html
     const htaccessSrc = path.join(projectRoot, 'public', '.htaccess');
     const htaccessDest = path.join(targetDir, '.htaccess');
-    if (fs.existsSync(htaccessSrc) && !fs.existsSync(htaccessDest)) {
+    if (fs.existsSync(htaccessSrc)) {
       fs.copyFileSync(htaccessSrc, htaccessDest);
       console.log(`Copied .htaccess to: ${htaccessDest}`);
+    }
+
+    // Ensure uploads directory exists in target
+    const uploadsTarget = path.join(targetDir, 'uploads');
+    if (!fs.existsSync(uploadsTarget)) {
+      fs.mkdirSync(uploadsTarget, { recursive: true });
     }
 
     console.log(`✅ Successfully synced dist -> ${targetDir}`);

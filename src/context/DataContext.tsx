@@ -313,8 +313,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshData();
   }, []);
 
-  // Verify auth on mount
+  // Verify auth on mount & listen for auth invalidation events
   useEffect(() => {
+    const handleAuthInvalidated = () => {
+      setIsAdminAuthenticated(false);
+    };
+    window.addEventListener('jayshree_auth_invalidated', handleAuthInvalidated);
+
     const token = localStorage.getItem('jayshree_admin_token');
     if (token) {
       api.verifyAuth().then(res => {
@@ -326,6 +331,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
     }
+
+    return () => {
+      window.removeEventListener('jayshree_auth_invalidated', handleAuthInvalidated);
+    };
   }, []);
 
   const loginAdmin = async (username: string, pass: string): Promise<boolean> => {
@@ -350,15 +359,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateAdminCredentials = async (newUsername: string, newPass: string): Promise<boolean> => {
     try {
-      const token = localStorage.getItem('jayshree_admin_token');
-      if (!token) return false;
-      const res = await fetch('/api/auth/update-credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ newUsername, newPassword: newPass }),
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.updateAdminCredentials(newUsername, newPass);
+      if (res.success) {
         setAdminCredentials({ username: newUsername, passwordHash: '***' });
         return true;
       }

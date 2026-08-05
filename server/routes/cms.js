@@ -445,11 +445,42 @@ router.delete('/leadership/:id', authenticateToken, async (req, res) => {
   }
 });
 
+function formatYouTubeUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.includes('/shorts/')) {
+    const videoId = trimmed.split('/shorts/')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('/embed/')) {
+    const videoId = trimmed.split('/embed/')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('watch?v=')) {
+    const videoId = trimmed.split('watch?v=')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (trimmed.includes('youtu.be/')) {
+    const videoId = trimmed.split('youtu.be/')[1]?.split(/[?&#]/)[0];
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+  }
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return `https://www.youtube.com/embed/${trimmed}`;
+  }
+  return trimmed;
+}
+
 // GET /api/cms/video-testimonials (Public)
 router.get('/video-testimonials', async (req, res) => {
   try {
     const { data } = await supabase.from('video_testimonials').select('*').order('sort_order', { ascending: true });
-    return res.json({ success: true, videos: data || [] });
+    const formatted = (data || []).map(v => ({
+      ...v,
+      youtube_url: formatYouTubeUrl(v.youtube_url)
+    }));
+    return res.json({ success: true, videos: formatted });
   } catch (error) {
     return res.json({ success: true, videos: [] });
   }
@@ -465,12 +496,12 @@ router.post('/video-testimonials', authenticateToken, async (req, res) => {
       client_name: v.clientName,
       location: v.location,
       title: v.title,
-      youtube_url: v.youtubeUrl,
+      youtube_url: formatYouTubeUrl(v.youtubeUrl),
       thumbnail: v.thumbnail,
       sort_order: v.sortOrder || 0
     };
     await supabase.from('video_testimonials').upsert([record]);
-    return res.json({ success: true, video: { ...v, id }, message: 'Video testimonial saved' });
+    return res.json({ success: true, video: { ...v, id, youtubeUrl: record.youtube_url }, message: 'Video testimonial saved' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to save video testimonial' });
   }

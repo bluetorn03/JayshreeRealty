@@ -61,10 +61,14 @@ export function App() {
               <Route path="/about" element={<About />} />
               <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/buy" element={<BuyProperty />} />
+              <Route path="/buy-property" element={<Navigate to="/buy" replace />} />
               <Route path="/sell" element={<SellProperty />} />
+              <Route path="/sell-property" element={<Navigate to="/sell" replace />} />
               <Route path="/commercial" element={<CommercialProperties />} />
               <Route path="/projects" element={<FeaturedProjects />} />
+              <Route path="/featured-projects" element={<Navigate to="/projects" replace />} />
               <Route path="/listings" element={<PropertyListings />} />
+              <Route path="/properties" element={<Navigate to="/listings" replace />} />
               <Route path="/reviews" element={<Navigate to="/testimonials" replace />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
