@@ -171,6 +171,11 @@ if (fs.existsSync(distUploads)) {
   app.use('/uploads', express.static(distUploads));
 }
 
+const publicHtmlUploads = path.resolve(process.cwd(), 'public_html', 'uploads');
+if (fs.existsSync(publicHtmlUploads)) {
+  app.use('/uploads', express.static(publicHtmlUploads));
+}
+
 // ================================================================
 // 5. EXPRESS.STATIC (Frontend Built Assets in dist / public_html)
 // ================================================================

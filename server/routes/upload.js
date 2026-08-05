@@ -42,12 +42,32 @@ const upload = multer({
 
 const router = express.Router();
 
+// Helper to sync uploaded file across public/uploads, dist/uploads, and public_html/uploads
+const syncUploadedFile = (filePath, filename) => {
+  const targetDirs = [
+    path.resolve(process.cwd(), 'dist', 'uploads'),
+    path.resolve(process.cwd(), 'public_html', 'uploads'),
+    path.resolve(__dirname, '..', '..', 'public_html', 'uploads')
+  ];
+  for (const targetDir of targetDirs) {
+    try {
+      if (fs.existsSync(path.dirname(targetDir))) {
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+        fs.copyFileSync(filePath, path.join(targetDir, filename));
+      }
+    } catch (e) {}
+  }
+};
+
 // POST /api/upload (Single File Upload)
 router.post('/', authenticateToken, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
+    syncUploadedFile(req.file.path, req.file.filename);
     const publicUrl = `/uploads/${req.file.filename}`;
     return res.json({
       success: true,
