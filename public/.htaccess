@@ -12,6 +12,10 @@ DirectoryIndex index.html
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
+  # NEVER rewrite /api or /uploads to index.html - pass through to Node.js backend
+  RewriteCond %{REQUEST_URI} ^/(api|uploads) [NC]
+  RewriteRule ^ - [L]
+
   # Route all other SPA and clean URL requests to index.html
   RewriteRule ^ index.html [L]
 </IfModule>

@@ -553,6 +553,12 @@ const syncHostingerPublicHtml = () => {
         fs.copyFileSync(srcIndex, dstIndex);
         try { fs.chmodSync(dstIndex, 0o644); } catch (_) {}
       }
+      const srcHtaccess = path.join(distPath, '.htaccess');
+      const dstHtaccess = path.join(targetPublicHtml, '.htaccess');
+      if (fs.existsSync(srcHtaccess)) {
+        fs.copyFileSync(srcHtaccess, dstHtaccess);
+        try { fs.chmodSync(dstHtaccess, 0o644); } catch (_) {}
+      }
       const srcAssets = path.join(distPath, 'assets');
       const dstAssets = path.join(targetPublicHtml, 'assets');
       if (fs.existsSync(srcAssets)) {
