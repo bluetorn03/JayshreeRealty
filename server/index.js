@@ -284,6 +284,78 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Server-wide Uploads Discovery & Recovery Endpoint
+app.get('/api/find-uploads', async (req, res) => {
+  const doSync = req.query.sync === 'true';
+  const found = [];
+  const synced = [];
+  const searchRoots = [
+    '/home/u168098130/domains/jayshreerealty.com',
+    '/home/u168098130/domains',
+    '/home/u168098130'
+  ];
+
+  const persistentUploads = '/home/u168098130/domains/jayshreerealty.com/public_html/uploads';
+  if (doSync && !fs.existsSync(persistentUploads)) {
+    try { fs.mkdirSync(persistentUploads, { recursive: true }); } catch (_) {}
+  }
+
+  function scan(dir, depth = 0) {
+    if (depth > 6 || found.length > 500) return;
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        if (item === 'node_modules' || item === '.git' || item === '.cache') continue;
+        const full = path.join(dir, item);
+        try {
+          const st = fs.statSync(full);
+          if (st.isDirectory()) {
+            if (item === 'uploads') {
+              const files = fs.readdirSync(full);
+              found.push({ type: 'uploads_dir', path: full, count: files.length, sample: files.slice(0, 15) });
+              if (doSync && full !== persistentUploads) {
+                for (const f of files) {
+                  try {
+                    const src = path.join(full, f);
+                    const dest = path.join(persistentUploads, f);
+                    if (!fs.existsSync(dest) && fs.statSync(src).isFile()) {
+                      fs.copyFileSync(src, dest);
+                      synced.push(f);
+                    }
+                  } catch (_) {}
+                }
+              }
+            }
+            scan(full, depth + 1);
+          } else if (item.endsWith('.png') || item.endsWith('.jpg') || item.endsWith('.jpeg') || item.endsWith('.webp') || item.endsWith('.pdf')) {
+            if (item.includes('178') || item.includes('179') || item.includes('Renucorp') || item.includes('Vanaha') || item.includes('download')) {
+              found.push({ type: 'file', path: full, name: item, size: st.size });
+              if (doSync) {
+                try {
+                  const dest = path.join(persistentUploads, item);
+                  if (!fs.existsSync(dest)) {
+                    fs.copyFileSync(full, dest);
+                    synced.push(item);
+                  }
+                } catch (_) {}
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  for (const root of searchRoots) {
+    if (fs.existsSync(root)) {
+      scan(root);
+      break;
+    }
+  }
+
+  res.json({ success: true, count: found.length, synced_count: synced.length, synced, found });
+});
+
 // Detailed Production Health Endpoint with Hostinger Audit Metrics
 app.get('/api/health', (req, res) => {
   const activeDist = resolveDistFolder();

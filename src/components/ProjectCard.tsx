@@ -196,10 +196,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
             )}
           </div>
 
-          {/* Highlights */}
-          {property.highlights && (
-            <p className={`text-xs font-outfit italic pt-3 line-clamp-2 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-              "{property.highlights}"
+          {/* Property Description / Long Description Overview */}
+          {(property.longDescription || property.description || property.shortDescription || property.highlights) && (
+            <p className={`text-xs font-outfit pt-3 line-clamp-2 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+              {property.longDescription || property.description || property.shortDescription || property.highlights}
             </p>
           )}
         </div>
