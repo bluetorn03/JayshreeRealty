@@ -163,12 +163,16 @@ const authLimiter = rateLimit({
 // ================================================================
 const candidateUploadDirs = [
   path.join(__dirname, '..', 'public', 'uploads'),
+  '/home/u168098130/public_html/uploads',
+  '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
+  '/home/u168098130/persistent_uploads',
+  '/home/u168098130/public_html/uploads/curated-fallbacks',
+  '/home/u168098130/domains/jayshreerealty.com/public_html/uploads/curated-fallbacks',
   path.join(distPath, 'uploads'),
   path.resolve(process.cwd(), 'public_html', 'uploads'),
   path.resolve(process.cwd(), 'uploads'),
   path.resolve(__dirname, '..', '..', 'public_html', 'uploads'),
   path.resolve(__dirname, '..', '..', 'uploads'),
-  '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
   '/home/u168098130/domains/jayshreerealty.com/uploads'
 ];
 
@@ -401,31 +405,43 @@ app.get('/api/forensic-audit', async (req, res) => {
     103068, 141026, 175848, 215342, 173603, 271398, 237567, 161912
   ]);
 
-  // 1. Move fallbacks to dedicated curated-fallbacks directory
-  const publicHtmlUploads = '/home/u168098130/domains/jayshreerealty.com/public_html/uploads';
-  const curatedSubdir = path.join(publicHtmlUploads, 'curated-fallbacks');
-  try {
-    if (fs.existsSync(publicHtmlUploads)) {
+  // 1. Move fallbacks to dedicated curated-fallbacks directory in ALL public_html directories
+  const uploadRoots = [
+    '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
+    '/home/u168098130/public_html/uploads'
+  ];
+
+  for (const uploadDir of uploadRoots) {
+    const curatedSubdir = path.join(uploadDir, 'curated-fallbacks');
+    try {
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
       if (!fs.existsSync(curatedSubdir)) fs.mkdirSync(curatedSubdir, { recursive: true });
-      const files = fs.readdirSync(publicHtmlUploads);
+
+      const files = fs.readdirSync(uploadDir);
       for (const f of files) {
         if (f === 'curated-fallbacks') continue;
-        const p = path.join(publicHtmlUploads, f);
+        const p = path.join(uploadDir, f);
         if (fs.statSync(p).isFile()) {
           const sz = fs.statSync(p).size;
           if (knownFallbackSizes.has(sz)) {
-            // Move fallback to curated-fallbacks
             const dest = path.join(curatedSubdir, f);
             fs.renameSync(p, dest);
             auditReport.segregatedFallbacksCount++;
           } else {
-            auditReport.preservedUploads.push({ name: f, size: sz });
+            auditReport.preservedUploads.push({ name: f, size: sz, inDir: uploadDir });
           }
         }
       }
+
+      // Ensure curated-fallbacks has informational index
+      const infoFile = path.join(curatedSubdir, 'README_FALLBACK_INDEX.json');
+      fs.writeFileSync(infoFile, JSON.stringify({
+        purpose: 'Segregated fallback architectural photos. Client uploads remain in parent /uploads folder.',
+        updatedAt: new Date().toISOString()
+      }, null, 2));
+    } catch (err) {
+      auditReport.segregationError = err.message;
     }
-  } catch (err) {
-    auditReport.segregationError = err.message;
   }
 
   // 2. Scan Hostinger filesystem deeply for historical versions & old uploads
@@ -651,43 +667,79 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Automatic background sync of dist files to real Hostinger public_html
+// Automatic background sync of dist files & uploads to both Hostinger public_html directories
 const syncHostingerPublicHtml = () => {
-  const targetPublicHtml = '/home/u168098130/domains/jayshreerealty.com/public_html';
-  try {
-    if (fs.existsSync(targetPublicHtml) && fs.existsSync(distPath)) {
-      const srcIndex = path.join(distPath, 'index.html');
-      const dstIndex = path.join(targetPublicHtml, 'index.html');
-      if (fs.existsSync(srcIndex)) {
-        fs.copyFileSync(srcIndex, dstIndex);
-        try { fs.chmodSync(dstIndex, 0o644); } catch (_) {}
+  const targetDirs = [
+    '/home/u168098130/domains/jayshreerealty.com/public_html',
+    '/home/u168098130/public_html',
+    '/home/u168098130/persistent_uploads'
+  ];
+
+  for (const targetDir of targetDirs) {
+    try {
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
       }
-      const srcHtaccess = path.join(distPath, '.htaccess');
-      const dstHtaccess = path.join(targetPublicHtml, '.htaccess');
-      if (fs.existsSync(srcHtaccess)) {
-        fs.copyFileSync(srcHtaccess, dstHtaccess);
-        try { fs.chmodSync(dstHtaccess, 0o644); } catch (_) {}
-      }
-      const srcAssets = path.join(distPath, 'assets');
-      const dstAssets = path.join(targetPublicHtml, 'assets');
-      if (fs.existsSync(srcAssets)) {
-        if (!fs.existsSync(dstAssets)) fs.mkdirSync(dstAssets, { recursive: true });
-        for (const file of fs.readdirSync(srcAssets)) {
-          const s = path.join(srcAssets, file);
-          const d = path.join(dstAssets, file);
-          if (fs.statSync(s).isFile()) {
-            fs.copyFileSync(s, d);
-            try { fs.chmodSync(d, 0o644); } catch (_) {}
+
+      // If it is a web root (public_html), sync index.html, .htaccess, and assets
+      if (targetDir.endsWith('public_html') && fs.existsSync(distPath)) {
+        const srcIndex = path.join(distPath, 'index.html');
+        const dstIndex = path.join(targetDir, 'index.html');
+        if (fs.existsSync(srcIndex)) {
+          fs.copyFileSync(srcIndex, dstIndex);
+          try { fs.chmodSync(dstIndex, 0o644); } catch (_) {}
+        }
+        const srcHtaccess = path.join(distPath, '.htaccess');
+        const dstHtaccess = path.join(targetDir, '.htaccess');
+        if (fs.existsSync(srcHtaccess)) {
+          fs.copyFileSync(srcHtaccess, dstHtaccess);
+          try { fs.chmodSync(dstHtaccess, 0o644); } catch (_) {}
+        }
+        const srcAssets = path.join(distPath, 'assets');
+        const dstAssets = path.join(targetDir, 'assets');
+        if (fs.existsSync(srcAssets)) {
+          if (!fs.existsSync(dstAssets)) fs.mkdirSync(dstAssets, { recursive: true });
+          for (const file of fs.readdirSync(srcAssets)) {
+            const s = path.join(srcAssets, file);
+            const d = path.join(dstAssets, file);
+            if (fs.statSync(s).isFile()) {
+              fs.copyFileSync(s, d);
+              try { fs.chmodSync(d, 0o644); } catch (_) {}
+            }
           }
         }
       }
-      // Ensure target public_html/uploads exists and syncs
-      const dstUploads = path.join(targetPublicHtml, 'uploads');
+
+      // Sync uploads to target
+      const dstUploads = targetDir.endsWith('uploads') ? targetDir : path.join(targetDir, 'uploads');
       if (!fs.existsSync(dstUploads)) fs.mkdirSync(dstUploads, { recursive: true });
-      if (fs.existsSync(publicUploads)) {
-        for (const file of fs.readdirSync(publicUploads)) {
-          const s = path.join(publicUploads, file);
-          const d = path.join(dstUploads, file);
+
+      const dstCurated = path.join(dstUploads, 'curated-fallbacks');
+      if (!fs.existsSync(dstCurated)) fs.mkdirSync(dstCurated, { recursive: true });
+
+      // Copy from candidate directories
+      for (const cand of candidateUploadDirs) {
+        if (fs.existsSync(cand) && cand !== dstUploads && cand !== dstCurated) {
+          for (const file of fs.readdirSync(cand)) {
+            if (file === 'curated-fallbacks') continue;
+            const s = path.join(cand, file);
+            const d = path.join(dstUploads, file);
+            if (fs.existsSync(s) && fs.statSync(s).isFile() && !fs.existsSync(d)) {
+              try {
+                fs.copyFileSync(s, d);
+                fs.chmodSync(d, 0o644);
+              } catch (_) {}
+            }
+          }
+        }
+      }
+
+      // Also sync curated-fallbacks if present
+      const srcCurated = path.join(publicUploads, 'curated-fallbacks');
+      if (fs.existsSync(srcCurated)) {
+        for (const file of fs.readdirSync(srcCurated)) {
+          const s = path.join(srcCurated, file);
+          const d = path.join(dstCurated, file);
           if (fs.existsSync(s) && fs.statSync(s).isFile() && !fs.existsSync(d)) {
             try {
               fs.copyFileSync(s, d);
@@ -696,11 +748,11 @@ const syncHostingerPublicHtml = () => {
           }
         }
       }
-      console.log('✅ Synchronized static index.html, assets & uploads to Hostinger public_html');
+    } catch (e) {
+      console.warn(`[Hostinger Sync Warning for ${targetDir}]:`, e.message);
     }
-  } catch (e) {
-    console.warn('[Hostinger Sync Warning]:', e.message);
   }
+  console.log('✅ Synchronized static index.html, assets & uploads across all Hostinger webroots');
 };
 
 // Keep Passenger & Node.js process perpetually hot & prevent idle sleep/shutdown

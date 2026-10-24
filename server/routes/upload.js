@@ -46,21 +46,22 @@ const router = express.Router();
 // Helper to sync uploaded file across all potential directories & Supabase Storage
 const syncUploadedFile = async (filePath, filename, mimetype) => {
   const targetDirs = [
+    '/home/u168098130/public_html/uploads',
+    '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
+    '/home/u168098130/persistent_uploads',
     path.resolve(process.cwd(), 'dist', 'uploads'),
     path.resolve(process.cwd(), 'public_html', 'uploads'),
     path.resolve(__dirname, '..', '..', 'public_html', 'uploads'),
     path.resolve(process.cwd(), 'uploads'),
-    '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
-    '/home/u168098130/domains/jayshreerealty.com/uploads'
+    path.join(__dirname, '..', '..', 'public', 'uploads')
   ];
   for (const targetDir of targetDirs) {
     try {
-      if (fs.existsSync(path.dirname(targetDir))) {
-        if (!fs.existsSync(targetDir)) {
-          fs.mkdirSync(targetDir, { recursive: true });
-        }
-        fs.copyFileSync(filePath, path.join(targetDir, filename));
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
       }
+      fs.copyFileSync(filePath, path.join(targetDir, filename));
+      try { fs.chmodSync(path.join(targetDir, filename), 0o644); } catch (_) {}
     } catch (e) {}
   }
 

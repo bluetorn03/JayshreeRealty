@@ -14,7 +14,8 @@ const potentialPublicHtmlDirs = [
   path.resolve(projectRoot, '..', 'public_html'),
   path.resolve(projectRoot, '../..', 'public_html'),
   path.resolve(projectRoot, '../../..', 'public_html'),
-  '/home/u168098130/domains/jayshreerealty.com/public_html'
+  '/home/u168098130/domains/jayshreerealty.com/public_html',
+  '/home/u168098130/public_html'
 ];
 
 console.log('='.repeat(65));
@@ -55,8 +56,8 @@ let copiedCount = 0;
 for (const targetDir of potentialPublicHtmlDirs) {
   try {
     if (!fs.existsSync(targetDir)) {
-      // Only create if within repository or parent domain
-      if (targetDir.includes('jayshreerealty.com') || targetDir.includes(projectRoot)) {
+      // Only create if within repository or hosting directories
+      if (targetDir.includes('jayshreerealty.com') || targetDir.includes(projectRoot) || targetDir.includes('u168098130')) {
         fs.mkdirSync(targetDir, { recursive: true });
       } else {
         continue;

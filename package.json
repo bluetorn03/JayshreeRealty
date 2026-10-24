@@ -12,6 +12,7 @@
     "migrate": "node server/migrate.js",
     "build": "tsc && vite build",
     "postbuild": "node scripts/copy-dist-to-public-html.js",
+    "sync:uploads": "node scripts/sync-live-uploads.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
