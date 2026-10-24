@@ -66,25 +66,30 @@ for (const targetDir of potentialPublicHtmlDirs) {
     console.log(`Syncing dist contents to: ${targetDir}`);
     copyRecursiveSync(distDir, targetDir);
 
-    // Safely ensure .htaccess exists in target public_html without destroying Passenger config
+    // Ensure .htaccess with Hostinger Passenger config is present in target directory
     const htaccessSrc = path.join(projectRoot, 'public', '.htaccess');
     const htaccessDest = path.join(targetDir, '.htaccess');
-    if (fs.existsSync(htaccessDest)) {
-      const existing = fs.readFileSync(htaccessDest, 'utf8');
-      if (existing.includes('Passenger') || existing.includes('passenger') || existing.includes('lsapi')) {
-        console.log(`ℹ️ Preserved server-specific Passenger config in: ${htaccessDest}`);
-      } else if (fs.existsSync(htaccessSrc)) {
-        fs.copyFileSync(htaccessSrc, htaccessDest);
-      }
-    } else if (fs.existsSync(htaccessSrc)) {
+    if (fs.existsSync(htaccessSrc)) {
       fs.copyFileSync(htaccessSrc, htaccessDest);
-      console.log(`Copied .htaccess to: ${htaccessDest}`);
+      try { fs.chmodSync(htaccessDest, 0o644); } catch (_) {}
+      console.log(`✅ Configured Passenger .htaccess in: ${htaccessDest}`);
     }
 
-    // Ensure uploads directory exists in target
+    // Ensure uploads directory exists in target and sync bundled uploads
     const uploadsTarget = path.join(targetDir, 'uploads');
     if (!fs.existsSync(uploadsTarget)) {
       fs.mkdirSync(uploadsTarget, { recursive: true });
+    }
+    const uploadsSrc = path.join(projectRoot, 'public', 'uploads');
+    if (fs.existsSync(uploadsSrc)) {
+      for (const item of fs.readdirSync(uploadsSrc)) {
+        const s = path.join(uploadsSrc, item);
+        const d = path.join(uploadsTarget, item);
+        if (fs.existsSync(s) && fs.statSync(s).isFile() && !fs.existsSync(d)) {
+          fs.copyFileSync(s, d);
+          try { fs.chmodSync(d, 0o644); } catch (_) {}
+        }
+      }
     }
 
     console.log(`✅ Successfully synced dist -> ${targetDir}`);

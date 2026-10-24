@@ -572,7 +572,22 @@ const syncHostingerPublicHtml = () => {
           }
         }
       }
-      console.log('✅ Synchronized static index.html & assets to Hostinger public_html');
+      // Ensure target public_html/uploads exists and syncs
+      const dstUploads = path.join(targetPublicHtml, 'uploads');
+      if (!fs.existsSync(dstUploads)) fs.mkdirSync(dstUploads, { recursive: true });
+      if (fs.existsSync(publicUploads)) {
+        for (const file of fs.readdirSync(publicUploads)) {
+          const s = path.join(publicUploads, file);
+          const d = path.join(dstUploads, file);
+          if (fs.existsSync(s) && fs.statSync(s).isFile() && !fs.existsSync(d)) {
+            try {
+              fs.copyFileSync(s, d);
+              fs.chmodSync(d, 0o644);
+            } catch (_) {}
+          }
+        }
+      }
+      console.log('✅ Synchronized static index.html, assets & uploads to Hostinger public_html');
     }
   } catch (e) {
     console.warn('[Hostinger Sync Warning]:', e.message);

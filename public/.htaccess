@@ -1,24 +1,13 @@
-# LiteSpeed / Apache SPA Rewrite & Security Rules for Hostinger
-DirectoryIndex index.html
-
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-
-  # Prevent directory browsing
-  Options -Indexes
-
-  # Serve existing files directly
-  RewriteCond %{REQUEST_FILENAME} -f
-  RewriteRule ^ - [L]
-
-  # NEVER rewrite /api or /uploads to index.html - pass through to Node.js backend
-  RewriteCond %{REQUEST_URI} ^/(api|uploads) [NC]
-  RewriteRule ^ - [L]
-
-  # Route all other SPA and clean URL requests to index.html
-  RewriteRule ^ index.html [L]
-</IfModule>
+# Hostinger CloudLinux LiteSpeed Node.js Passenger Configuration
+PassengerAppRoot /home/u168098130/domains/jayshreerealty.com/hbuilds/current/nodejs
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile server/index.js
+PassengerBaseURI /
+PassengerRestartDir /home/u168098130/domains/jayshreerealty.com/hbuilds/current/nodejs/tmp
+SetEnv NODE_OPTIONS "--require /home/u168098130/domains/jayshreerealty.com/hbuilds/config/preload-timestamp.js"
+SetEnv LSNODE_CONSOLE_LOG console.log
+SetEnv TOKIO_WORKER_THREADS 2
 
 # MIME Types
 <IfModule mod_mime.c>
@@ -31,19 +20,14 @@ DirectoryIndex index.html
 
 # Caching & Optimization Headers
 <IfModule mod_headers.c>
-  # Cache static assets for 1 year
   <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot)$">
     Header set Cache-Control "max-age=31536000, public, immutable"
   </FilesMatch>
-
-  # Do not cache index.html to ensure instant updates
   <FilesMatch "index\.html$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
-
-  # Security Headers
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
