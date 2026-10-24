@@ -177,6 +177,37 @@ if (fs.existsSync(publicHtmlUploads)) {
   app.use('/uploads', express.static(publicHtmlUploads));
 }
 
+// Fallback: If uploaded image is not found on local machine (e.g. uploaded on live server),
+// fetch and stream from live production domain and cache locally in public/uploads.
+app.use('/uploads', async (req, res, next) => {
+  try {
+    const rawPath = req.path.replace(/^\/+/, '');
+    if (!rawPath) return next();
+
+    const prodBase = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
+    const remoteUrl = `${prodBase}/uploads/${encodeURI(rawPath)}`;
+
+    const remoteRes = await fetch(remoteUrl);
+    if (remoteRes.ok) {
+      const contentType = remoteRes.headers.get('content-type') || 'application/octet-stream';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+
+      const buffer = Buffer.from(await remoteRes.arrayBuffer());
+      try {
+        const localSavePath = path.join(publicUploads, path.basename(rawPath));
+        fs.writeFileSync(localSavePath, buffer);
+      } catch (cacheErr) {
+        // Non-fatal caching error
+      }
+      return res.send(buffer);
+    }
+  } catch (err) {
+    // proceed to next
+  }
+  return res.status(404).send('Upload not found');
+});
+
 // ================================================================
 // 5. EXPRESS.STATIC (Frontend Built Assets in dist / public_html)
 // ================================================================

@@ -65,6 +65,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
               idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
             }`}
             loading="lazy"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.dataset.triedLive && target.src.includes('/uploads/')) {
+                target.dataset.triedLive = 'true';
+                const uploadIdx = target.src.indexOf('/uploads/');
+                target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
+                return;
+              }
+              if (!target.dataset.triedDefault) {
+                target.dataset.triedDefault = 'true';
+                target.src = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000';
+              }
+            }}
           />
         ))}
 
