@@ -286,8 +286,15 @@ app.use('/uploads', async (req, res, next) => {
       }
     } catch (_) {}
 
-    // 3. Dynamic Category-Matched Luxury Real Estate Imagery Fallback
-    // Serves real high-res architectural photos matching property filename keywords and caches to disk
+    // 3. Check curated-fallbacks directory
+    const fallbackDirTarget = '/home/u168098130/domains/jayshreerealty.com/public_html/uploads/curated-fallbacks';
+    const localFallbackFile = path.join(fallbackDirTarget, rawPath);
+    if (fs.existsSync(localFallbackFile) && fs.statSync(localFallbackFile).isFile()) {
+      return res.sendFile(localFallbackFile);
+    }
+
+    // 4. Dynamic Category-Matched Luxury Real Estate Imagery Fallback
+    // Saved strictly into curated-fallbacks/ subdirectory so client uploads remain segregated
     try {
       const fallbackUrl = getLuxuryFallbackUrl(rawPath);
       const remoteRes = await fetch(fallbackUrl, {
@@ -296,9 +303,9 @@ app.use('/uploads', async (req, res, next) => {
       if (remoteRes.ok) {
         const buffer = Buffer.from(await remoteRes.arrayBuffer());
         const saveTargets = [
-          path.join(publicUploads, rawPath),
-          path.resolve(process.cwd(), 'public_html', 'uploads', rawPath),
-          '/home/u168098130/domains/jayshreerealty.com/public_html/uploads/' + rawPath
+          path.join(publicUploads, 'curated-fallbacks', rawPath),
+          path.resolve(process.cwd(), 'public_html', 'uploads', 'curated-fallbacks', rawPath),
+          path.join(fallbackDirTarget, rawPath)
         ];
         for (const target of saveTargets) {
           try {
@@ -376,6 +383,98 @@ app.get('/api/health', (req, res) => {
       public_html_parent_readdir: safeReaddir(path.resolve(__dirname, '..', 'public_html'))
     }
   });
+});
+
+// Deep Forensic Audit & Fallback Image Segregation Route
+app.get('/api/forensic-audit', async (req, res) => {
+  const auditReport = {
+    timestamp: new Date().toISOString(),
+    accountDirs: {},
+    versionsFound: [],
+    candidateUploads: [],
+    segregatedFallbacksCount: 0,
+    preservedUploads: []
+  };
+
+  const knownFallbackSizes = new Set([
+    240466, 215123, 153207, 167457, 163156, 220359, 133308, 277071, 303597,
+    103068, 141026, 175848, 215342, 173603, 271398, 237567, 161912
+  ]);
+
+  // 1. Move fallbacks to dedicated curated-fallbacks directory
+  const publicHtmlUploads = '/home/u168098130/domains/jayshreerealty.com/public_html/uploads';
+  const curatedSubdir = path.join(publicHtmlUploads, 'curated-fallbacks');
+  try {
+    if (fs.existsSync(publicHtmlUploads)) {
+      if (!fs.existsSync(curatedSubdir)) fs.mkdirSync(curatedSubdir, { recursive: true });
+      const files = fs.readdirSync(publicHtmlUploads);
+      for (const f of files) {
+        if (f === 'curated-fallbacks') continue;
+        const p = path.join(publicHtmlUploads, f);
+        if (fs.statSync(p).isFile()) {
+          const sz = fs.statSync(p).size;
+          if (knownFallbackSizes.has(sz)) {
+            // Move fallback to curated-fallbacks
+            const dest = path.join(curatedSubdir, f);
+            fs.renameSync(p, dest);
+            auditReport.segregatedFallbacksCount++;
+          } else {
+            auditReport.preservedUploads.push({ name: f, size: sz });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    auditReport.segregationError = err.message;
+  }
+
+  // 2. Scan Hostinger filesystem for historical versions & old uploads
+  const scanRoots = [
+    '/home/u168098130',
+    '/home/u168098130/domains',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/versions',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/source',
+    '/home/u168098130/domains/realestate.bluetorn.com',
+    '/home/u168098130/domains/bluetorn.com'
+  ];
+
+  for (const root of scanRoots) {
+    try {
+      if (fs.existsSync(root)) {
+        auditReport.accountDirs[root] = fs.readdirSync(root);
+      }
+    } catch (e) {
+      auditReport.accountDirs[root] = `Error: ${e.message}`;
+    }
+  }
+
+  // 3. Scan each version in hbuilds/versions for previous uploads
+  const versionsRoot = '/home/u168098130/domains/jayshreerealty.com/hbuilds/versions';
+  try {
+    if (fs.existsSync(versionsRoot)) {
+      const vers = fs.readdirSync(versionsRoot);
+      for (const v of vers) {
+        const vPath = path.join(versionsRoot, v);
+        const checkDirs = [
+          path.join(vPath, 'nodejs', 'public', 'uploads'),
+          path.join(vPath, 'nodejs', 'uploads'),
+          path.join(vPath, 'public_html', 'uploads'),
+          path.join(vPath, 'uploads')
+        ];
+        for (const cd of checkDirs) {
+          if (fs.existsSync(cd)) {
+            const files = fs.readdirSync(cd);
+            auditReport.versionsFound.push({ version: v, path: cd, fileCount: files.length, sample: files.slice(0, 10) });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    auditReport.versionScanError = err.message;
+  }
+
+  res.json(auditReport);
 });
 
 // Production Audit Test Email Route
