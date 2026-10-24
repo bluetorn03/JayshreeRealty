@@ -6,7 +6,7 @@ import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
-import { initSupabaseDb } from './db/supabase.js';
+import { initSupabaseDb, supabase } from './db/supabase.js';
 
 import authRoutes from './routes/auth.js';
 import propertyRoutes from './routes/properties.js';
@@ -159,51 +159,95 @@ const authLimiter = rateLimit({
 });
 
 // ================================================================
-// 4. UPLOADS (Static User Media)
+// 4. UPLOADS (Static User Media & Supabase Cloud Storage)
 // ================================================================
-const publicUploads = path.join(__dirname, '..', 'public', 'uploads');
+const candidateUploadDirs = [
+  path.join(__dirname, '..', 'public', 'uploads'),
+  path.join(distPath, 'uploads'),
+  path.resolve(process.cwd(), 'public_html', 'uploads'),
+  path.resolve(process.cwd(), 'uploads'),
+  path.resolve(__dirname, '..', '..', 'public_html', 'uploads'),
+  path.resolve(__dirname, '..', '..', 'uploads'),
+  '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
+  '/home/u168098130/domains/jayshreerealty.com/uploads'
+];
+
+const publicUploads = candidateUploadDirs[0];
 if (!fs.existsSync(publicUploads)) {
   fs.mkdirSync(publicUploads, { recursive: true });
 }
-app.use('/uploads', express.static(publicUploads));
 
-const distUploads = path.join(distPath, 'uploads');
-if (fs.existsSync(distUploads)) {
-  app.use('/uploads', express.static(distUploads));
+// Serve existing local directories directly
+for (const dir of candidateUploadDirs) {
+  if (fs.existsSync(dir)) {
+    app.use('/uploads', express.static(dir, {
+      maxAge: '7d',
+      etag: true
+    }));
+  }
 }
 
-const publicHtmlUploads = path.resolve(process.cwd(), 'public_html', 'uploads');
-if (fs.existsSync(publicHtmlUploads)) {
-  app.use('/uploads', express.static(publicHtmlUploads));
-}
-
-// Fallback: If uploaded image is not found on local machine (e.g. uploaded on live server),
-// fetch and stream from live production domain and cache locally in public/uploads.
+// Fallback: If not found in primary directory, search alternative paths and Supabase Storage
 app.use('/uploads', async (req, res, next) => {
   try {
-    const rawPath = req.path.replace(/^\/+/, '');
+    const rawPath = path.basename(req.path);
     if (!rawPath) return next();
 
-    const prodBase = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
-    const remoteUrl = `${prodBase}/uploads/${encodeURI(rawPath)}`;
-
-    const remoteRes = await fetch(remoteUrl);
-    if (remoteRes.ok) {
-      const contentType = remoteRes.headers.get('content-type') || 'application/octet-stream';
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-
-      const buffer = Buffer.from(await remoteRes.arrayBuffer());
-      try {
-        const localSavePath = path.join(publicUploads, path.basename(rawPath));
-        fs.writeFileSync(localSavePath, buffer);
-      } catch (cacheErr) {
-        // Non-fatal caching error
+    // 1. Search candidate directories on Hostinger / local filesystem
+    for (const dir of candidateUploadDirs) {
+      const candidateFile = path.join(dir, rawPath);
+      if (fs.existsSync(candidateFile) && fs.statSync(candidateFile).isFile()) {
+        return res.sendFile(candidateFile);
       }
-      return res.send(buffer);
+    }
+
+    // 2. Fetch from Supabase Storage bucket 'property-images'
+    try {
+      const { data, error } = await supabase.storage.from('property-images').download(rawPath);
+      if (data && !error) {
+        const buffer = Buffer.from(await data.arrayBuffer());
+        try {
+          fs.writeFileSync(path.join(publicUploads, rawPath), buffer);
+        } catch (_) {}
+
+        const ext = path.extname(rawPath).toLowerCase();
+        const mimeMap = {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.webp': 'image/webp',
+          '.gif': 'image/gif',
+          '.svg': 'image/svg+xml',
+          '.pdf': 'application/pdf'
+        };
+        res.setHeader('Content-Type', mimeMap[ext] || 'application/octet-stream');
+        res.setHeader('Cache-Control', 'public, max-age=604800');
+        return res.send(buffer);
+      }
+    } catch (_) {}
+
+    // 3. If in local development, attempt one-time fetch from production with strict 3s timeout
+    const isLocalhost = !req.headers.host?.includes('jayshreerealty.com') && NODE_ENV !== 'production';
+    if (isLocalhost) {
+      try {
+        const prodBase = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
+        const remoteRes = await fetch(`${prodBase}/uploads/${encodeURI(rawPath)}`, {
+          signal: AbortSignal.timeout(3000)
+        });
+        if (remoteRes.ok) {
+          const contentType = remoteRes.headers.get('content-type') || 'application/octet-stream';
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          const buffer = Buffer.from(await remoteRes.arrayBuffer());
+          try {
+            fs.writeFileSync(path.join(publicUploads, rawPath), buffer);
+          } catch (_) {}
+          return res.send(buffer);
+        }
+      } catch (_) {}
     }
   } catch (err) {
-    // proceed to next
+    // Non-fatal, proceed to 404
   }
   return res.status(404).send('Upload not found');
 });
@@ -432,33 +476,28 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Server Startup
-const startServer = async () => {
-  try {
-    await initSupabaseDb().catch(err => {
-      console.warn('[DB Init Warning] Tables may not exist yet. Run: npm run migrate');
+// Server Startup - Start HTTP listener IMMEDIATELY to satisfy Hostinger's 3-second startup health check
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log('');
+  console.log('='.repeat(70));
+  console.log('🚀 Jayshree Realty Enterprise Backend');
+  console.log('='.repeat(70));
+  console.log(`📡 Server Running:   http://localhost:${PORT}`);
+  console.log(`⚡ Mode:             ${NODE_ENV}`);
+  console.log(`📁 Static Dist:      ${distPath} (exists: ${fs.existsSync(distPath)})`);
+  console.log(`📄 Index HTML:       ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
+  console.log('='.repeat(70));
+  console.log('');
+
+  // Run DB initialization and keep-alive asynchronously in background without blocking startup
+  initSupabaseDb()
+    .then(() => {
+      console.log('✅ Supabase DB ready.');
+      startSupabaseKeepAliveJob();
+    })
+    .catch(err => {
       console.warn('[DB Init Warning]', err.message);
     });
+});
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log('');
-      console.log('='.repeat(70));
-      console.log('🚀 Jayshree Realty Enterprise Backend');
-      console.log('='.repeat(70));
-      console.log(`📡 Server Running:   http://localhost:${PORT}`);
-      console.log(`⚡ Mode:             ${NODE_ENV}`);
-      console.log(`📁 Static Dist:      ${distPath} (exists: ${fs.existsSync(distPath)})`);
-      console.log(`📄 Index HTML:       ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
-      console.log('='.repeat(70));
-      console.log('');
-
-      // Launch automated Supabase keep-alive background job
-      startSupabaseKeepAliveJob();
-    });
-  } catch (err) {
-    console.error('❌ Server failed to start:', err.message);
-    process.exit(1);
-  }
-};
-
-startServer();
+export default app;

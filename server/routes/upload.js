@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { authenticateToken } from '../middleware/auth.js';
+import { supabase } from '../db/supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,12 +43,15 @@ const upload = multer({
 
 const router = express.Router();
 
-// Helper to sync uploaded file across public/uploads, dist/uploads, and public_html/uploads
-const syncUploadedFile = (filePath, filename) => {
+// Helper to sync uploaded file across all potential directories & Supabase Storage
+const syncUploadedFile = async (filePath, filename, mimetype) => {
   const targetDirs = [
     path.resolve(process.cwd(), 'dist', 'uploads'),
     path.resolve(process.cwd(), 'public_html', 'uploads'),
-    path.resolve(__dirname, '..', '..', 'public_html', 'uploads')
+    path.resolve(__dirname, '..', '..', 'public_html', 'uploads'),
+    path.resolve(process.cwd(), 'uploads'),
+    '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
+    '/home/u168098130/domains/jayshreerealty.com/uploads'
   ];
   for (const targetDir of targetDirs) {
     try {
@@ -59,15 +63,26 @@ const syncUploadedFile = (filePath, filename) => {
       }
     } catch (e) {}
   }
+
+  // Backup to Supabase Storage bucket 'property-images' for permanent cross-deployment persistence
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    await supabase.storage.from('property-images').upload(filename, fileBuffer, {
+      contentType: mimetype || 'application/octet-stream',
+      upsert: true
+    });
+  } catch (err) {
+    // Non-fatal if offline
+  }
 };
 
 // POST /api/upload (Single File Upload)
-router.post('/', authenticateToken, upload.single('file'), (req, res) => {
+router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
-    syncUploadedFile(req.file.path, req.file.filename);
+    await syncUploadedFile(req.file.path, req.file.filename, req.file.mimetype);
     const publicUrl = `/uploads/${req.file.filename}`;
     return res.json({
       success: true,
@@ -83,11 +98,12 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
 });
 
 // POST /api/upload/multiple (Multiple Files Upload)
-router.post('/multiple', authenticateToken, upload.array('files', 10), (req, res) => {
+router.post('/multiple', authenticateToken, upload.array('files', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded.' });
     }
+    await Promise.all(req.files.map(file => syncUploadedFile(file.path, file.filename, file.mimetype)));
     const urls = req.files.map(file => `/uploads/${file.filename}`);
     return res.json({
       success: true,

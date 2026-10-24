@@ -38,10 +38,8 @@ export const PropertyCMSView: React.FC = () => {
     placements: ['homepage', 'featured', 'buy'],
     features: ['Podium Parking', 'Rooftop Garden', 'Clubhouse'],
     highlights: 'Prime luxury tower located opposite metro station.',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000'
-    ],
+    image: '',
+    galleryImages: [],
     brochureUrl: '',
     floorPlanUrl: '',
     builderName: 'Jayshree Developers',
@@ -297,7 +295,24 @@ export const PropertyCMSView: React.FC = () => {
           <div key={proj.id} className="bg-[#0d1527] border border-[#c5a059]/30 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between">
             <div>
               <div className="relative h-48 bg-slate-900">
-                <img src={proj.image} alt={proj.title} className="w-full h-full object-cover" />
+                <img
+                  src={proj.image || (proj.galleryImages && proj.galleryImages.length > 0 ? proj.galleryImages[0] : '')}
+                  alt={proj.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
+                      target.dataset.triedLive = 'true';
+                      const uploadIdx = target.src.indexOf('/uploads/');
+                      target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
+                      return;
+                    }
+                    if (!target.dataset.triedDefault) {
+                      target.dataset.triedDefault = 'true';
+                      target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="%230b132b"/><circle cx="400" cy="270" r="100" fill="%231c2541" opacity="0.6"/><g transform="translate(350,210)" stroke="%23c5a059" stroke-width="3" fill="none"><path d="M50 10 L95 48 L95 130 L5 130 L5 48 Z"/><line x1="25" y1="65" x2="42" y2="65"/><line x1="25" y1="90" x2="42" y2="90"/><line x1="58" y1="65" x2="75" y2="65"/><line x1="58" y1="90" x2="75" y2="90"/></g><text x="400" y="380" fill="%23c5a059" font-family="Cinzel, serif" font-size="22" font-weight="700" text-anchor="middle" letter-spacing="4">JAYSHREE REALTY</text><text x="400" y="410" fill="%2394a3b8" font-family="Outfit, sans-serif" font-size="14" text-anchor="middle" letter-spacing="1">PREMIUM REAL ESTATE</text></svg>';
+                    }
+                  }}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
 
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1">

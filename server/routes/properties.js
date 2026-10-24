@@ -46,7 +46,14 @@ function formatProperty(row) {
     area: row.area || '',
     possession: row.possession || '',
     features: row.features_json ? (typeof row.features_json === 'string' ? JSON.parse(row.features_json) : row.features_json) : [],
-    image: row.image,
+    image: (() => {
+      const galleryArr = row.gallery_images_json ? (typeof row.gallery_images_json === 'string' ? JSON.parse(row.gallery_images_json) : row.gallery_images_json) : [];
+      // Prefer first gallery image over stale placeholder
+      if (galleryArr.length > 0 && galleryArr[0] && galleryArr[0].startsWith('/uploads/')) {
+        return galleryArr[0];
+      }
+      return row.image;
+    })(),
     galleryImages: row.gallery_images_json ? (typeof row.gallery_images_json === 'string' ? JSON.parse(row.gallery_images_json) : row.gallery_images_json) : [row.image],
     youtubeUrl: row.youtube_url || '',
     description: row.description || '',
@@ -133,8 +140,8 @@ router.post('/', authenticateToken, async (req, res) => {
       area: p.area || '',
       possession: p.possession || '',
       features_json: JSON.stringify(p.features || []),
-      image: p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000',
-      gallery_images_json: JSON.stringify(p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages : [p.image || '']),
+      image: (p.galleryImages && p.galleryImages.length > 0 && p.galleryImages[0]) ? p.galleryImages[0] : (p.image || ''),
+      gallery_images_json: JSON.stringify(p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages : (p.image ? [p.image] : [])),
       is_featured: p.isFeatured ? 1 : 0,
       code: p.code || `JR-${Math.floor(1000 + Math.random() * 9000)}`,
       highlights: p.highlights || '',
@@ -193,8 +200,15 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (p.area !== undefined) updates.area = p.area;
     if (p.possession !== undefined) updates.possession = p.possession;
     if (p.features !== undefined) updates.features_json = JSON.stringify(p.features);
-    if (p.image !== undefined) updates.image = p.image;
-    if (p.galleryImages !== undefined) updates.gallery_images_json = JSON.stringify(p.galleryImages);
+    if (p.galleryImages !== undefined) {
+      updates.gallery_images_json = JSON.stringify(p.galleryImages);
+      if (p.galleryImages.length > 0 && (!p.image || p.image.includes('unsplash.com'))) {
+        updates.image = p.galleryImages[0];
+      }
+    }
+    if (p.image !== undefined && !p.image.includes('unsplash.com')) {
+      updates.image = p.image;
+    }
     if (p.isFeatured !== undefined) updates.is_featured = p.isFeatured ? 1 : 0;
     if (p.code !== undefined) updates.code = p.code;
     if (p.highlights !== undefined) updates.highlights = p.highlights;
