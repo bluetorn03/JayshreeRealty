@@ -428,21 +428,31 @@ app.get('/api/forensic-audit', async (req, res) => {
     auditReport.segregationError = err.message;
   }
 
-  // 2. Scan Hostinger filesystem for historical versions & old uploads
+  // 2. Scan Hostinger filesystem deeply for historical versions & old uploads
   const scanRoots = [
-    '/home/u168098130',
-    '/home/u168098130/domains',
-    '/home/u168098130/domains/jayshreerealty.com/hbuilds',
-    '/home/u168098130/domains/jayshreerealty.com/hbuilds/versions',
-    '/home/u168098130/domains/jayshreerealty.com/hbuilds/source',
-    '/home/u168098130/domains/realestate.bluetorn.com',
-    '/home/u168098130/domains/bluetorn.com'
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/last-source',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/last-source/nodejs',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/last-source/nodejs/public',
+    '/home/u168098130/domains/jayshreerealty.com/hbuilds/last-source/nodejs/public/uploads',
+    '/home/u168098130/domains/realestate.bluetorn.com/hbuilds',
+    '/home/u168098130/domains/realestate.bluetorn.com/hbuilds/versions',
+    '/home/u168098130/domains/realestate.bluetorn.com/hbuilds/current',
+    '/home/u168098130/domains/realestate.bluetorn.com/public_html',
+    '/home/u168098130/domains/bluetorn.com/nodejs',
+    '/home/u168098130/domains/bluetorn.com/.builds'
   ];
+
+  if (req.query.scanPath) {
+    scanRoots.push(req.query.scanPath);
+  }
 
   for (const root of scanRoots) {
     try {
       if (fs.existsSync(root)) {
-        auditReport.accountDirs[root] = fs.readdirSync(root);
+        const items = fs.readdirSync(root);
+        auditReport.accountDirs[root] = { exists: true, count: items.length, items: items.slice(0, 30) };
+      } else {
+        auditReport.accountDirs[root] = { exists: false };
       }
     } catch (e) {
       auditReport.accountDirs[root] = `Error: ${e.message}`;
