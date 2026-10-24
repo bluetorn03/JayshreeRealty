@@ -21,61 +21,10 @@ interface LeadContextType {
   refreshLeads: () => Promise<void>;
 }
 
-const INITIAL_DEMO_LEADS: LeadSubmission[] = [
-  {
-    id: 'lead-101',
-    name: 'Rajesh Sharma',
-    phone: '+91 98201 45892',
-    email: 'rajesh.sharma@example.com',
-    requirement: 'Buy',
-    budget: '₹ 80 Lakhs - ₹ 1 Cr',
-    preferredArea: 'Nerul East',
-    propertyType: '2 BHK',
-    message: 'Interested in ready possession 2 BHK near Nerul Station.',
-    lead_source: 'Website Hero Form',
-    cta_source: 'Hero CTA',
-    page_name: 'Home',
-    timestamp: '2026-07-27 09:30:00',
-    status: 'New'
-  },
-  {
-    id: 'lead-102',
-    name: 'Sneha Kulkarni',
-    phone: '+91 98192 33410',
-    email: 'sneha.k@example.com',
-    requirement: 'Buy',
-    budget: '₹ 40 Lakhs - ₹ 50 Lakhs',
-    preferredArea: 'Pushpak Nagar',
-    propertyType: '1 BHK',
-    message: 'Looking for 1 BHK investment near upcoming Navi Mumbai Airport.',
-    lead_source: 'Pop-up Modal',
-    cta_source: 'Scroll Trigger 25%',
-    page_name: 'Featured Projects',
-    timestamp: '2026-07-27 10:05:00',
-    status: 'Contacted'
-  },
-  {
-    id: 'lead-103',
-    name: 'Vikram Mehta',
-    phone: '+91 97690 12099',
-    email: 'v.mehta@example.com',
-    requirement: 'Sell',
-    budget: '₹ 1.5 Cr+',
-    preferredArea: 'Seawoods West',
-    propertyType: '3 BHK',
-    message: 'Want to sell my 3 BHK in Seawoods Sector 44.',
-    lead_source: 'Sell Property Page',
-    cta_source: 'Evaluation Request',
-    page_name: 'Sell Property',
-    timestamp: '2026-07-26 18:45:00',
-    status: 'Follow-up'
-  }
-];
-
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
 
 export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [leads, setLeads] = useState<LeadSubmission[]>(INITIAL_DEMO_LEADS);
+  const [leads, setLeads] = useState<LeadSubmission[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCtaSource, setModalCtaSource] = useState('General CTA');
   const [modalRequirement, setModalRequirement] = useState('');
@@ -84,7 +33,7 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshLeads = async () => {
     try {
       const res = await api.getLeads();
-      if (res.success && Array.isArray(res.leads)) {
+      if (res && res.success && Array.isArray(res.leads)) {
         setLeads(res.leads);
       }
     } catch (e) {
@@ -94,6 +43,17 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshLeads();
+
+    const handleAuthOrFocus = () => {
+      refreshLeads();
+    };
+
+    window.addEventListener('jayshree_admin_logged_in', handleAuthOrFocus);
+    window.addEventListener('focus', handleAuthOrFocus);
+    return () => {
+      window.removeEventListener('jayshree_admin_logged_in', handleAuthOrFocus);
+      window.removeEventListener('focus', handleAuthOrFocus);
+    };
   }, []);
 
   // Popup Triggers

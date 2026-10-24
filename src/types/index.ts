@@ -78,6 +78,8 @@ export interface LeadSubmission {
   notes?: string;
   assignedTo?: string;
   followUpDate?: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface SiteSettings {

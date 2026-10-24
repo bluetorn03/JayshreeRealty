@@ -1,6 +1,21 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 
-export const sendLeadEmailNotification = async (leadData) => {
+// Dynamically read environment configuration on every send
+// so that any change in .env takes effect immediately without needing server restart
+function getMailConfig() {
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const parsed = dotenv.parse(fs.readFileSync(envPath));
+      Object.assign(process.env, parsed);
+    }
+  } catch (e) {
+    // Fall back to existing process.env
+  }
+
   const host = (process.env.SMTP_HOST || 'smtp.gmail.com').replace(/["']/g, '').trim();
   const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
   const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
@@ -9,8 +24,14 @@ export const sendLeadEmailNotification = async (leadData) => {
   const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
   const receiver = (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
 
+  return { host, port, user, pass, fromEmail, receiver };
+}
+
+export const sendLeadEmailNotification = async (leadData) => {
+  const { host, port, user, pass, fromEmail, receiver } = getMailConfig();
+
   if (!pass || pass === 'your_app_password_here' || pass === 'your_gmail_app_password_here' || pass === 'HostingerEmailPassword') {
-    console.warn('[SMTP Warning] SMTP_PASS is not fully configured in .env. Lead saved to database.');
+    console.warn('[SMTP Warning] SMTP_PASS is not configured in .env. Lead saved to database.');
     return { success: true, emailSent: false, note: 'Lead saved to database, SMTP password placeholder skipped' };
   }
 
@@ -160,13 +181,13 @@ export const sendLeadEmailNotification = async (leadData) => {
 };
 
 export const executeTestEmailAudit = async (customRecipient = null) => {
-  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').replace(/["']/g, '').trim();
-  const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
-  const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
-  const rawPass = process.env.SMTP_PASS || '';
-  const pass = rawPass.replace(/["']/g, '').replace(/\s+/g, '').trim();
-  const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
-  const receiver = customRecipient || (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
+  const config = getMailConfig();
+  const host = config.host;
+  const port = config.port;
+  const user = config.user;
+  const pass = config.pass;
+  const fromEmail = config.fromEmail;
+  const receiver = customRecipient || config.receiver;
 
   const auditLog = {
     smtp_host: host,

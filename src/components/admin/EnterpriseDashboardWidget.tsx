@@ -12,13 +12,14 @@ interface EnterpriseDashboardWidgetProps {
 }
 
 export const EnterpriseDashboardWidget: React.FC<EnterpriseDashboardWidgetProps> = ({ onNavigateTab }) => {
-  const { leads } = useLeads();
+  const { leads, refreshLeads } = useLeads();
   const { projects } = useData();
 
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   useEffect(() => {
+    refreshLeads();
     api.getAnalyticsDashboard('30d').then(res => {
       if (res.success) {
         setAnalyticsData(res);
@@ -27,9 +28,34 @@ export const EnterpriseDashboardWidget: React.FC<EnterpriseDashboardWidgetProps>
     }).catch(() => setLoadingAnalytics(false));
   }, []);
 
-  // Compute lead KPIs
+  // Compute lead KPIs with robust date parsing
+  const isTodayLead = (l: any) => {
+    const today = new Date();
+    const todayISO = today.toISOString().slice(0, 10);
+    const d = today.getDate();
+    const m = today.getMonth() + 1;
+    const y = today.getFullYear();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    if (l.createdAt && l.createdAt.startsWith(todayISO)) return true;
+    if (l.created_at && l.created_at.startsWith(todayISO)) return true;
+
+    const timeStr = l.timestamp || '';
+    if (!timeStr) return false;
+    if (timeStr.includes(todayISO)) return true;
+    if (timeStr.includes(`${pad(d)}/${pad(m)}/${y}`)) return true;
+    if (timeStr.includes(`${d}/${m}/${y}`)) return true;
+    if (timeStr.includes(`${d}/${pad(m)}/${y}`)) return true;
+    if (timeStr.includes(`${pad(d)}/${m}/${y}`)) return true;
+
+    const parsed = new Date(timeStr);
+    if (!isNaN(parsed.getTime()) && parsed.toDateString() === today.toDateString()) return true;
+
+    return false;
+  };
+
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todaysLeads = leads.filter(l => l.timestamp && l.timestamp.includes(todayStr));
+  const todaysLeads = leads.filter(isTodayLead);
   const pendingFollowups = leads.filter(l => l.status === 'Follow-up' || l.status === 'New');
   const todayFollowups = leads.filter(l => l.followUpDate && l.followUpDate === todayStr);
 

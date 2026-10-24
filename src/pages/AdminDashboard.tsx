@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useData } from '../context/DataContext';
+import { useLeads } from '../context/LeadContext';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { EnterpriseDashboardWidget } from '../components/admin/EnterpriseDashboardWidget';
 import { AnalyticsView } from '../components/admin/AnalyticsView';
@@ -13,6 +14,13 @@ import { Lock, ShieldAlert } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const { isAdminAuthenticated, loginAdmin, logoutAdmin } = useData();
+  const { refreshLeads } = useLeads();
+
+  React.useEffect(() => {
+    if (isAdminAuthenticated) {
+      refreshLeads();
+    }
+  }, [isAdminAuthenticated]);
 
   // Login form state
   const [loginUser, setLoginUser] = useState('');

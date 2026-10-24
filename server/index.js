@@ -14,6 +14,7 @@ import leadRoutes from './routes/leads.js';
 import cmsRoutes from './routes/cms.js';
 import analyticsRoutes from './routes/analytics.js';
 import uploadRoutes from './routes/upload.js';
+import { startSupabaseKeepAliveJob } from './services/supabaseKeepAlive.js';
 
 dotenv.config();
 
@@ -419,6 +420,9 @@ const startServer = async () => {
       console.log(`📄 Index HTML:       ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
       console.log('='.repeat(70));
       console.log('');
+
+      // Launch automated Supabase keep-alive background job
+      startSupabaseKeepAliveJob();
     });
   } catch (err) {
     console.error('❌ Server failed to start:', err.message);

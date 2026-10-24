@@ -194,7 +194,8 @@ router.post('/', async (req, res) => {
       timestamp: timestampStr,
       status: 'New',
       notes: '',
-      assignedTo: 'Unassigned'
+      assignedTo: 'Unassigned',
+      createdAt: newLeadRecord.created_at
     };
 
     return res.json({

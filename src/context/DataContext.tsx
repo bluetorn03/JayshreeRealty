@@ -344,6 +344,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('jayshree_admin_token', res.token);
         setIsAdminAuthenticated(true);
         refreshData();
+        window.dispatchEvent(new Event('jayshree_admin_logged_in'));
         return true;
       }
     } catch (e) {

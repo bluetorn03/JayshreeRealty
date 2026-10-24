@@ -10,7 +10,7 @@ import {
 export const LeadManagementView: React.FC = () => {
   const {
     leads, addLeadManual, updateLeadStatus, updateLeadDetails,
-    deleteLead, bulkDeleteLeads, bulkStatusLeads
+    deleteLead, bulkDeleteLeads, bulkStatusLeads, refreshLeads
   } = useLeads();
 
   const [leadFilterTab, setLeadFilterTab] = useState<'All' | 'New' | 'Today' | 'Follow-up' | 'Contacted' | 'Closed'>('All');
@@ -18,6 +18,17 @@ export const LeadManagementView: React.FC = () => {
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  React.useEffect(() => {
+    refreshLeads();
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshLeads();
+    setTimeout(() => setIsRefreshing(false), 400);
+  };
   
   // Lead Details / Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -40,6 +51,31 @@ export const LeadManagementView: React.FC = () => {
     followUpDate: ''
   });
 
+  const isTodayLead = (l: LeadSubmission) => {
+    const today = new Date();
+    const todayISO = today.toISOString().slice(0, 10);
+    const d = today.getDate();
+    const m = today.getMonth() + 1;
+    const y = today.getFullYear();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    if (l.createdAt && l.createdAt.startsWith(todayISO)) return true;
+    if (l.created_at && l.created_at.startsWith(todayISO)) return true;
+
+    const timeStr = l.timestamp || '';
+    if (!timeStr) return false;
+    if (timeStr.includes(todayISO)) return true;
+    if (timeStr.includes(`${pad(d)}/${pad(m)}/${y}`)) return true;
+    if (timeStr.includes(`${d}/${m}/${y}`)) return true;
+    if (timeStr.includes(`${d}/${pad(m)}/${y}`)) return true;
+    if (timeStr.includes(`${pad(d)}/${m}/${y}`)) return true;
+
+    const parsed = new Date(timeStr);
+    if (!isNaN(parsed.getTime()) && parsed.toDateString() === today.toDateString()) return true;
+
+    return false;
+  };
+
   const filteredLeads = leads.filter((l) => {
     const matchesSearch =
       l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,7 +89,7 @@ export const LeadManagementView: React.FC = () => {
     if (leadFilterTab === 'Contacted') return l.status === 'Contacted';
     if (leadFilterTab === 'Closed') return l.status === 'Closed';
     if (leadFilterTab === 'Follow-up') return l.status === 'Follow-up';
-    if (leadFilterTab === 'Today') return l.timestamp && l.timestamp.includes(new Date().toISOString().slice(0, 10));
+    if (leadFilterTab === 'Today') return isTodayLead(l);
 
     return true;
   });
@@ -145,6 +181,15 @@ export const LeadManagementView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="bg-[#0d1527] border border-slate-700 hover:border-[#c5a059] text-slate-300 hover:text-white px-3.5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-colors disabled:opacity-60"
+            title="Sync latest leads from database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#c5a059] ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Syncing...' : 'Sync Leads'}
+          </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="btn-gold px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg flex items-center gap-2"
