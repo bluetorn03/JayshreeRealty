@@ -83,10 +83,8 @@ export const PropertyCMSView: React.FC = () => {
       placements: ['homepage', 'featured', 'buy'],
       features: ['Podium Swimming Pool', 'Gymnasium'],
       highlights: 'Prime location near Palm Beach Road.',
-      image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
-      galleryImages: [
-        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000'
-      ],
+      image: '',
+      galleryImages: [],
       brochureUrl: '',
       floorPlanUrl: '',
       builderName: 'Jayshree Realty',
@@ -112,10 +110,17 @@ export const PropertyCMSView: React.FC = () => {
     e.preventDefault();
     if (!form.title || !form.location) return;
 
+    const finalImage = form.image || (form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages[0] : '');
+    const payload = {
+      ...form,
+      image: finalImage,
+      galleryImages: form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages : (finalImage ? [finalImage] : [])
+    };
+
     if (editingId) {
-      await updateProject(editingId, form);
+      await updateProject(editingId, payload);
     } else {
-      await addProject(form as Omit<PropertyItem, 'id'>);
+      await addProject(payload as Omit<PropertyItem, 'id'>);
     }
     setIsModalOpen(false);
     setEditingId(null);
@@ -180,10 +185,14 @@ export const PropertyCMSView: React.FC = () => {
       for (let i = 0; i < files.length; i++) {
         const res = await api.uploadFile(files[i]);
         if (res.success && res.url) {
-          setForm(prev => ({
-            ...prev,
-            galleryImages: [...(prev.galleryImages || []), res.url]
-          }));
+          setForm(prev => {
+            const nextGallery = [...(prev.galleryImages || []), res.url];
+            return {
+              ...prev,
+              galleryImages: nextGallery,
+              image: prev.image || nextGallery[0] || res.url
+            };
+          });
         }
       }
     } catch (err) {
@@ -218,11 +227,14 @@ export const PropertyCMSView: React.FC = () => {
       for (let i = 0; i < files.length; i++) {
         const res = await api.uploadFile(files[i]);
         if (res.success && res.url) {
-          setForm(prev => ({
-            ...prev,
-            galleryImages: [...(prev.galleryImages || []), res.url],
-            image: prev.image || res.url
-          }));
+          setForm(prev => {
+            const nextGallery = [...(prev.galleryImages || []), res.url];
+            return {
+              ...prev,
+              galleryImages: nextGallery,
+              image: prev.image || nextGallery[0] || res.url
+            };
+          });
         }
       }
     } catch (err) {
@@ -533,7 +545,12 @@ export const PropertyCMSView: React.FC = () => {
                 <div className="p-4 bg-[#070b19] border border-slate-800 rounded-2xl space-y-3">
                   <div className="text-xs font-bold text-slate-300">Property Image Gallery List ({ (form.galleryImages || []).length } Images):</div>
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {(form.galleryImages || []).map((url, idx) => (
+                    {(form.galleryImages || []).length === 0 ? (
+                      <div className="py-4 text-center text-xs text-slate-500 border border-dashed border-slate-800/80 rounded-xl bg-[#090e1f]/50">
+                        No images added yet. Click &quot;+ ADD ANOTHER IMAGE FIELD&quot; or upload files above.
+                      </div>
+                    ) : (
+                      (form.galleryImages || []).map((url, idx) => (
                       <div key={idx} className="flex items-center gap-2 bg-[#0d1527] p-2 rounded-xl border border-slate-800">
                         <span className="font-mono text-slate-400 text-[10px] w-6">#{idx + 1}</span>
                         <input
@@ -587,7 +604,7 @@ export const PropertyCMSView: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    ))}
+                    )))}
                   </div>
                 </div>
               </div>
