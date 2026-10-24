@@ -542,6 +542,50 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Automatic background sync of dist files to real Hostinger public_html
+const syncHostingerPublicHtml = () => {
+  const targetPublicHtml = '/home/u168098130/domains/jayshreerealty.com/public_html';
+  try {
+    if (fs.existsSync(targetPublicHtml) && fs.existsSync(distPath)) {
+      const srcIndex = path.join(distPath, 'index.html');
+      const dstIndex = path.join(targetPublicHtml, 'index.html');
+      if (fs.existsSync(srcIndex)) {
+        fs.copyFileSync(srcIndex, dstIndex);
+        try { fs.chmodSync(dstIndex, 0o644); } catch (_) {}
+      }
+      const srcAssets = path.join(distPath, 'assets');
+      const dstAssets = path.join(targetPublicHtml, 'assets');
+      if (fs.existsSync(srcAssets)) {
+        if (!fs.existsSync(dstAssets)) fs.mkdirSync(dstAssets, { recursive: true });
+        for (const file of fs.readdirSync(srcAssets)) {
+          const s = path.join(srcAssets, file);
+          const d = path.join(dstAssets, file);
+          if (fs.statSync(s).isFile()) {
+            fs.copyFileSync(s, d);
+            try { fs.chmodSync(d, 0o644); } catch (_) {}
+          }
+        }
+      }
+      console.log('✅ Synchronized static index.html & assets to Hostinger public_html');
+    }
+  } catch (e) {
+    console.warn('[Hostinger Sync Warning]:', e.message);
+  }
+};
+
+// Keep Passenger & Node.js process perpetually hot & prevent idle sleep/shutdown
+const startPassengerKeepAlive = () => {
+  const targetDomain = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
+  setInterval(async () => {
+    try {
+      await fetch(`http://127.0.0.1:${PORT}/api/health`, { signal: AbortSignal.timeout(3000) });
+    } catch (_) {}
+    try {
+      await fetch(`${targetDomain}/api/health`, { signal: AbortSignal.timeout(4000) });
+    } catch (_) {}
+  }, 60 * 1000); // 60-second heartbeat ensures Passenger never goes idle
+};
+
 // Server Startup - Start HTTP listener IMMEDIATELY to satisfy Hostinger's 3-second startup health check
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('');
@@ -555,11 +599,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(70));
   console.log('');
 
-  // Run DB initialization and keep-alive asynchronously in background without blocking startup
+  // Sync dist to Hostinger public_html
+  syncHostingerPublicHtml();
+
+  // Run DB initialization and keep-alives asynchronously in background without blocking startup
   initSupabaseDb()
     .then(() => {
       console.log('✅ Supabase DB ready.');
       startSupabaseKeepAliveJob();
+      startPassengerKeepAlive();
     })
     .catch(err => {
       console.warn('[DB Init Warning]', err.message);
