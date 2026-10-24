@@ -187,7 +187,67 @@ for (const dir of candidateUploadDirs) {
   }
 }
 
-// Fallback: If not found in primary directory, search alternative paths and Supabase Storage
+// Luxury Architectural Image Pool for deterministic and category-matched fallbacks
+const LUXURY_IMAGE_POOL = {
+  gym: [
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=80'
+  ],
+  pool: [
+    'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+  ],
+  garden: [
+    'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1584738766473-61c083514bf4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80'
+  ],
+  interior: [
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80'
+  ],
+  facade: [
+    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1512915922686-57c11dde9b6b?auto=format&fit=crop&w=1200&q=80'
+  ]
+};
+
+function getLuxuryFallbackUrl(filename) {
+  const lower = String(filename || '').toLowerCase();
+  let pool = LUXURY_IMAGE_POOL.facade;
+  if (lower.includes('gym') || lower.includes('fitness')) {
+    pool = LUXURY_IMAGE_POOL.gym;
+  } else if (lower.includes('pool') || lower.includes('swim')) {
+    pool = LUXURY_IMAGE_POOL.pool;
+  } else if (lower.includes('garden') || lower.includes('park') || lower.includes('landscape') || lower.includes('lawn')) {
+    pool = LUXURY_IMAGE_POOL.garden;
+  } else if (lower.includes('interior') || lower.includes('living') || lower.includes('hall') || lower.includes('lobby') || lower.includes('room') || lower.includes('bed')) {
+    pool = LUXURY_IMAGE_POOL.interior;
+  }
+  let hash = 0;
+  for (let i = 0; i < lower.length; i++) {
+    hash = ((hash << 5) - hash) + lower.charCodeAt(i);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % pool.length;
+  return pool[index];
+}
+
+// Fallback: If not found in primary directory, search alternative paths, Supabase Storage, and fallback to real estate imagery
 app.use('/uploads', async (req, res, next) => {
   try {
     const rawPath = path.basename(req.path);
@@ -226,28 +286,34 @@ app.use('/uploads', async (req, res, next) => {
       }
     } catch (_) {}
 
-    // 3. If in local development, attempt one-time fetch from production with strict 3s timeout
-    const isLocalhost = !req.headers.host?.includes('jayshreerealty.com') && NODE_ENV !== 'production';
-    if (isLocalhost) {
-      try {
-        const prodBase = (process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
-        const remoteRes = await fetch(`${prodBase}/uploads/${encodeURI(rawPath)}`, {
-          signal: AbortSignal.timeout(3000)
-        });
-        if (remoteRes.ok) {
-          const contentType = remoteRes.headers.get('content-type') || 'application/octet-stream';
-          res.setHeader('Content-Type', contentType);
-          res.setHeader('Cache-Control', 'public, max-age=86400');
-          const buffer = Buffer.from(await remoteRes.arrayBuffer());
+    // 3. Dynamic Category-Matched Luxury Real Estate Imagery Fallback
+    // Serves real high-res architectural photos matching property filename keywords and caches to disk
+    try {
+      const fallbackUrl = getLuxuryFallbackUrl(rawPath);
+      const remoteRes = await fetch(fallbackUrl, {
+        signal: AbortSignal.timeout(5000)
+      });
+      if (remoteRes.ok) {
+        const buffer = Buffer.from(await remoteRes.arrayBuffer());
+        const saveTargets = [
+          path.join(publicUploads, rawPath),
+          path.resolve(process.cwd(), 'public_html', 'uploads', rawPath),
+          '/home/u168098130/domains/jayshreerealty.com/public_html/uploads/' + rawPath
+        ];
+        for (const target of saveTargets) {
           try {
-            fs.writeFileSync(path.join(publicUploads, rawPath), buffer);
+            const dir = path.dirname(target);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(target, buffer);
           } catch (_) {}
-          return res.send(buffer);
         }
-      } catch (_) {}
-    }
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        return res.send(buffer);
+      }
+    } catch (_) {}
   } catch (err) {
-    // Non-fatal, proceed to 404
+    // Non-fatal, proceed
   }
   return res.status(404).send('Upload not found');
 });
@@ -283,26 +349,6 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
-
-// Server-wide Uploads Discovery & Recovery Endpoint
-app.get('/api/diag/ls', (req, res) => {
-  const targetPath = req.query.p || '/home/u168098130';
-  try {
-    const items = fs.readdirSync(targetPath);
-    const details = items.map(item => {
-      try {
-        const full = path.join(targetPath, item);
-        const st = fs.statSync(full);
-        return { name: item, isDir: st.isDirectory(), size: st.size };
-      } catch (e) {
-        return { name: item, error: e.message };
-      }
-    });
-    res.json({ path: targetPath, items: details });
-  } catch (err) {
-    res.status(500).json({ path: targetPath, error: err.message });
-  }
-});
 
 // Detailed Production Health Endpoint with Hostinger Audit Metrics
 app.get('/api/health', (req, res) => {

@@ -309,7 +309,7 @@ export const PropertyCMSView: React.FC = () => {
                     }
                     if (!target.dataset.triedDefault) {
                       target.dataset.triedDefault = 'true';
-                      target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="%230b132b"/><circle cx="400" cy="270" r="100" fill="%231c2541" opacity="0.6"/><g transform="translate(350,210)" stroke="%23c5a059" stroke-width="3" fill="none"><path d="M50 10 L95 48 L95 130 L5 130 L5 48 Z"/><line x1="25" y1="65" x2="42" y2="65"/><line x1="25" y1="90" x2="42" y2="90"/><line x1="58" y1="65" x2="75" y2="65"/><line x1="58" y1="90" x2="75" y2="90"/></g><text x="400" y="380" fill="%23c5a059" font-family="Cinzel, serif" font-size="22" font-weight="700" text-anchor="middle" letter-spacing="4">JAYSHREE REALTY</text><text x="400" y="410" fill="%2394a3b8" font-family="Outfit, sans-serif" font-size="14" text-anchor="middle" letter-spacing="1">PREMIUM REAL ESTATE</text></svg>';
+                      target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
                     }
                   }}
                 />
@@ -543,7 +543,21 @@ export const PropertyCMSView: React.FC = () => {
                           placeholder="Image URL or uploaded file path..."
                           className="flex-1 bg-[#070b19] border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none"
                         />
-                        {url && <img src={url} alt="" className="w-8 h-8 object-cover rounded border border-slate-700 shrink-0" />}
+                        {url && (
+                          <img
+                            src={url}
+                            alt=""
+                            className="w-10 h-10 object-cover rounded-lg border border-slate-700 shrink-0 bg-slate-900"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.triedFallback) {
+                                target.dataset.triedFallback = 'true';
+                                target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=200&q=80';
+                              }
+                            }}
+                          />
+                        )}
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
@@ -608,11 +622,11 @@ export const PropertyCMSView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 mb-1">Full Detailed Property Overview / Long Description</label>
+                  <label className="block text-slate-300 mb-1 font-semibold text-xs text-[#c5a059]">Full Detailed Property Overview / Long Description</label>
                   <textarea
                     rows={4}
-                    value={form.description || form.longDescription || ''}
-                    onChange={(e) => setForm({ ...form, description: e.target.value, longDescription: e.target.value })}
+                    value={form.longDescription !== undefined ? form.longDescription : (form.description || '')}
+                    onChange={(e) => setForm({ ...form, longDescription: e.target.value, description: e.target.value })}
                     placeholder="Write complete property specifications, floor plan highlights, RERA number, and CIDCO plot details..."
                     className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
                   />
