@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useData } from '../context/DataContext';
 import { useLeads } from '../context/LeadContext';
@@ -10,13 +10,13 @@ import { PropertyCMSView } from '../components/admin/PropertyCMSView';
 import { ReviewsCMSView } from '../components/admin/ReviewsCMSView';
 import { SettingsSecurityView } from '../components/admin/SettingsSecurityView';
 import logo from '../assets/jayshree-realty-logo.png';
-import { Lock, ShieldAlert } from 'lucide-react';
+import { Lock, ShieldAlert, LogOut } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const { isAdminAuthenticated, loginAdmin, logoutAdmin } = useData();
   const { refreshLeads } = useLeads();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAdminAuthenticated) {
       refreshLeads();
     }
@@ -27,6 +27,7 @@ export const AdminDashboard: React.FC = () => {
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
 
   type AdminTab = 'overview' | 'analytics' | 'leads' | 'properties' | 'reviews' | 'settings';
 
@@ -49,28 +50,47 @@ export const AdminDashboard: React.FC = () => {
   // Navigation tab state with route persistence
   const [activeTab, setActiveTab] = useState<AdminTab>(getInitialTab);
 
-  React.useEffect(() => {
+  // Synchronize route and handle browser Back button safely
+  useEffect(() => {
     const syncTabFromUrl = () => {
       const currentTab = getInitialTab();
       setActiveTab(currentTab);
       localStorage.setItem('jayshree_admin_active_tab', currentTab);
       const targetPath = `/admin/${currentTab}`;
-      if (window.location.pathname !== targetPath) {
-        window.history.replaceState({ tab: currentTab }, '', targetPath);
+      if (window.location.pathname !== targetPath && window.location.pathname.startsWith('/admin')) {
+        window.history.replaceState({ tab: currentTab, inAdmin: true }, '', targetPath);
       }
     };
 
     syncTabFromUrl();
-    window.addEventListener('popstate', syncTabFromUrl);
-    return () => window.removeEventListener('popstate', syncTabFromUrl);
-  }, []);
+
+    if (isAdminAuthenticated) {
+      // Ensure there's a barrier history entry inside /admin so back button doesn't silently dump user outside
+      window.history.pushState({ inAdmin: true, tab: activeTab }, '', window.location.pathname);
+
+      const handlePopState = (e: PopStateEvent) => {
+        const path = window.location.pathname.toLowerCase();
+        // If back button tries to navigate away from /admin
+        if (!path.startsWith('/admin')) {
+          // Re-push current admin state so session doesn't accidentally terminate
+          window.history.pushState({ inAdmin: true, tab: activeTab }, '', `/admin/${activeTab}`);
+          setShowBackConfirm(true);
+        } else {
+          syncTabFromUrl();
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isAdminAuthenticated, activeTab]);
 
   const handleTabChange = (tab: AdminTab) => {
     setActiveTab(tab);
     localStorage.setItem('jayshree_admin_active_tab', tab);
     const targetPath = `/admin/${tab}`;
     if (window.location.pathname !== targetPath) {
-      window.history.pushState({ tab }, '', targetPath);
+      window.history.pushState({ tab, inAdmin: true }, '', targetPath);
     }
   };
 
@@ -83,6 +103,9 @@ export const AdminDashboard: React.FC = () => {
       const success = await loginAdmin(loginUser, loginPass);
       if (!success) {
         setLoginError('Invalid username or password.');
+      } else {
+        // Set clean admin URL on login
+        window.history.replaceState({ inAdmin: true, tab: 'overview' }, '', '/admin/overview');
       }
     } catch (err) {
       setLoginError('Invalid username or password.');
@@ -165,14 +188,66 @@ export const AdminDashboard: React.FC = () => {
 
   // 2. AUTHENTICATED ADMIN CONSOLE
   return (
-    <AdminLayout activeTab={activeTab} setActiveTab={(tab: any) => handleTabChange(tab)} onLogout={logoutAdmin}>
-      {activeTab === 'overview' && <EnterpriseDashboardWidget onNavigateTab={(tab: any) => handleTabChange(tab)} />}
-      {activeTab === 'analytics' && <AnalyticsView />}
-      {activeTab === 'leads' && <LeadManagementView />}
-      {activeTab === 'properties' && <PropertyCMSView />}
-      {activeTab === 'reviews' && <ReviewsCMSView />}
-      {activeTab === 'settings' && <SettingsSecurityView />}
-    </AdminLayout>
+    <>
+      <AdminLayout activeTab={activeTab} setActiveTab={(tab: any) => handleTabChange(tab)} onLogout={logoutAdmin}>
+        {activeTab === 'overview' && <EnterpriseDashboardWidget onNavigateTab={(tab: any) => handleTabChange(tab)} />}
+        {activeTab === 'analytics' && <AnalyticsView />}
+        {activeTab === 'leads' && <LeadManagementView />}
+        {activeTab === 'properties' && <PropertyCMSView />}
+        {activeTab === 'reviews' && <ReviewsCMSView />}
+        {activeTab === 'settings' && <SettingsSecurityView />}
+      </AdminLayout>
+
+      {/* Browser Back Navigation Protection Modal */}
+      {showBackConfirm && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowBackConfirm(false)}
+        >
+          <div
+            className="bg-[#0d1527] border border-[#c5a059]/50 rounded-2xl p-6 max-w-md w-full shadow-2xl relative text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-red-600/10 border border-red-500/30 rounded-xl text-red-500">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-white">
+                  Confirm Admin Navigation
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">You pressed the browser back button</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 mb-6 leading-relaxed">
+              Do you want to log out of the Admin Console and return to the main website, or stay in your current session?
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBackConfirm(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+              >
+                Stay in Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBackConfirm(false);
+                  logoutAdmin();
+                  window.location.href = '/';
+                }}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-lg transition-colors flex items-center gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Logout & Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

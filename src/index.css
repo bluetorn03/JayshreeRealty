@@ -409,3 +409,109 @@ h1, h2, h3, .font-serif {
   background: var(--accent-gold-gradient);
   color: #070b19;
 }
+
+/* ==========================================================================
+   ADMIN LIGHT MODE SYSTEM
+   ========================================================================== */
+.admin-light-mode {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode header {
+  background-color: #ffffff !important;
+  border-bottom-color: #e2e8f0 !important;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.admin-light-mode header h1,
+.admin-light-mode header span {
+  color: #0f172a !important;
+}
+
+.admin-light-mode header .text-\[\#c5a059\] {
+  color: #b48530 !important;
+}
+
+.admin-light-mode aside {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+.admin-light-mode aside button:not(.bg-\[\#c5a059\]) {
+  color: #475569 !important;
+}
+
+.admin-light-mode aside button:not(.bg-\[\#c5a059\]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode main {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode .bg-\[\#070b19\],
+.admin-light-mode .bg-\[\#0d1527\],
+.admin-light-mode .bg-\[\#0b132b\],
+.admin-light-mode .bg-\[\#0a1022\],
+.admin-light-mode .bg-\[\#060a16\],
+.admin-light-mode .bg-\[\#0f172a\],
+.admin-light-mode .bg-\[\#090f20\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.admin-light-mode .text-white,
+.admin-light-mode .text-slate-100,
+.admin-light-mode .text-slate-200 {
+  color: #0f172a !important;
+}
+
+.admin-light-mode .text-slate-300,
+.admin-light-mode .text-slate-400 {
+  color: #475569 !important;
+}
+
+.admin-light-mode .border-slate-800,
+.admin-light-mode .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+
+.admin-light-mode input:not([type="checkbox"]):not([type="radio"]),
+.admin-light-mode textarea,
+.admin-light-mode select {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode input:focus,
+.admin-light-mode textarea:focus,
+.admin-light-mode select:focus {
+  border-color: #c5a059 !important;
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.2) !important;
+}
+
+.admin-light-mode table {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.admin-light-mode th {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.admin-light-mode td {
+  border-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+.admin-light-mode tr:hover td {
+  background-color: #f8fafc !important;
+}

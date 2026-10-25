@@ -148,20 +148,20 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-[#0b132b] text-white border border-[#c5a059]/40 rounded-2xl md:rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative"
+        className="bg-[#faf8f5] text-slate-900 border border-amber-200/90 rounded-2xl md:rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-[#070b19]/90 shrink-0">
-          <div className="flex items-center gap-2 truncate pr-4">
+        {/* Top Header Bar - Luxury Light Theme */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-amber-200/70 bg-white/95 shrink-0 shadow-xs">
+          <div className="flex items-center gap-2 truncate pr-3">
             <span className="badge-gold text-[10px] font-bold shrink-0">
               {property.category}
             </span>
-            <span className="bg-[#0b132b] border border-[#c5a059]/40 text-[#e5c178] px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0">
+            <span className="bg-amber-50 border border-amber-300/80 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0">
               {property.type}
             </span>
             {property.brokerageFree && (
@@ -170,7 +170,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               </span>
             )}
             {property.code && (
-              <span className="bg-slate-800 text-amber-300 border border-amber-400/30 font-mono text-[11px] px-2 py-0.5 rounded font-bold shrink-0">
+              <span className="bg-slate-100 text-slate-800 border border-slate-300 font-mono text-[11px] px-2 py-0.5 rounded font-bold shrink-0">
                 {property.code}
               </span>
             )}
@@ -180,13 +180,13 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             <button
               onClick={handleShare}
               title="Share Property"
-              className="p-2 rounded-full bg-slate-800 hover:bg-[#c5a059] text-slate-300 hover:text-[#070b19] transition-colors"
+              className="p-2 rounded-full bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 transition-colors"
             >
-              {copiedShare ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              {copiedShare ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4" />}
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
+              className="p-2 rounded-full bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
               title="Close (Esc)"
             >
               <X className="w-5 h-5" />
@@ -195,13 +195,13 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
         </div>
 
         {/* Scrollable Modal Body */}
-        <div className="overflow-y-auto flex-1 p-4 md:p-6 space-y-6 custom-scrollbar">
+        <div className="overflow-y-auto flex-1 p-4 md:p-6 space-y-6 custom-scrollbar bg-[#faf8f5]">
           
           {/* 1. FULL SIZE IMAGE GALLERY SECTION */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
+          <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 shadow-md">
             {/* Main Active Image Viewport */}
             <div
-              className="relative w-full h-64 sm:h-80 md:h-96 lg:h-[420px] bg-black flex items-center justify-center select-none"
+              className="relative w-full h-64 sm:h-80 md:h-96 lg:h-[420px] bg-slate-900 flex items-center justify-center select-none"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -225,8 +225,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 }}
               />
 
-              {/* Gradient Scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+              {/* Gradient Scrim for crisp text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
 
               {/* Photo Counter Badge */}
               {imagesList.length > 0 && (
@@ -270,10 +270,10 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                   </h2>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-300 uppercase tracking-widest block font-outfit">
+                  <span className="text-[10px] text-slate-200 uppercase tracking-widest block font-outfit">
                     Starting Price
                   </span>
-                  <span className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#c5a059] drop-shadow-md">
+                  <span className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#e5c178] drop-shadow-md">
                     {property.price}
                   </span>
                 </div>
@@ -284,7 +284,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             {imagesList.length > 1 && (
               <div
                 ref={thumbnailsRef}
-                className="p-2.5 bg-[#070b19] border-t border-slate-800 flex items-center gap-2 overflow-x-auto custom-scrollbar select-none"
+                className="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 overflow-x-auto custom-scrollbar select-none"
               >
                 {imagesList.map((imgSrc, idx) => (
                   <button
@@ -293,8 +293,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`relative shrink-0 w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
                       idx === currentImageIndex
-                        ? 'border-[#c5a059] scale-105 shadow-lg shadow-[#c5a059]/30 ring-2 ring-[#c5a059]/40'
-                        : 'border-slate-800 opacity-60 hover:opacity-100 hover:border-slate-600'
+                        ? 'border-[#c5a059] scale-105 shadow-md ring-2 ring-[#c5a059]/50'
+                        : 'border-slate-200 opacity-60 hover:opacity-100 hover:border-slate-400'
                     }`}
                   >
                     <img
@@ -303,7 +303,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
-                    <span className="absolute bottom-1 right-1 text-[9px] font-mono bg-black/80 text-white px-1 rounded">
+                    <span className="absolute bottom-1 right-1 text-[9px] font-mono bg-black/75 text-white px-1 rounded">
                       #{idx + 1}
                     </span>
                   </button>
@@ -314,59 +314,59 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
           {/* 2. SPECIFICATIONS GRID */}
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium mb-3">
               <MapPin className="w-4 h-4 text-[#c5a059] shrink-0" />
-              <span className="text-sm text-slate-200 font-semibold">{property.location}</span>
+              <span className="text-sm text-slate-900 font-semibold">{property.location}</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-[#070b19]/80 border border-slate-800 rounded-xl p-3 text-center">
-                <span className="text-[10px] uppercase block font-semibold text-slate-400">Configuration</span>
-                <span className="font-bold text-sm text-white font-serif">{property.configuration || 'Customizable'}</span>
+              <div className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-xs">
+                <span className="text-[10px] uppercase block font-semibold text-slate-500">Configuration</span>
+                <span className="font-bold text-sm text-slate-900 font-serif">{property.configuration || 'Customizable'}</span>
               </div>
-              <div className="bg-[#070b19]/80 border border-slate-800 rounded-xl p-3 text-center">
-                <span className="text-[10px] uppercase block font-semibold text-slate-400">Carpet Area</span>
-                <span className="font-bold text-sm text-[#e5c178]">{property.area || 'On Request'}</span>
+              <div className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-xs">
+                <span className="text-[10px] uppercase block font-semibold text-slate-500">Carpet Area</span>
+                <span className="font-bold text-sm text-amber-800">{property.area || 'On Request'}</span>
               </div>
-              <div className="bg-[#070b19]/80 border border-slate-800 rounded-xl p-3 text-center">
-                <span className="text-[10px] uppercase block font-semibold text-slate-400">Possession</span>
-                <span className="font-bold text-sm text-white flex items-center justify-center gap-1">
+              <div className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-xs">
+                <span className="text-[10px] uppercase block font-semibold text-slate-500">Possession</span>
+                <span className="font-bold text-sm text-slate-900 flex items-center justify-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-[#c5a059]" />
                   {property.possession || 'Ready / Under Construction'}
                 </span>
               </div>
-              <div className="bg-[#070b19]/80 border border-slate-800 rounded-xl p-3 text-center">
-                <span className="text-[10px] uppercase block font-semibold text-slate-400">Consultancy</span>
-                <span className="font-bold text-sm text-[#c5a059]">{property.builderName || 'Jayshree Realty'}</span>
+              <div className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-xs">
+                <span className="text-[10px] uppercase block font-semibold text-slate-500">Consultancy</span>
+                <span className="font-bold text-sm text-[#99732b]">{property.builderName || 'Jayshree Realty'}</span>
               </div>
             </div>
           </div>
 
           {/* 3. SHORT DESCRIPTION / HIGHLIGHTS BANNER */}
           {shortDesc && (
-            <div className="bg-gradient-to-r from-[#c5a059]/20 via-[#c5a059]/10 to-transparent border-l-4 border-[#c5a059] p-4 rounded-r-2xl">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#e5c178] uppercase tracking-wider mb-1">
+            <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border-l-4 border-[#c5a059] p-4 rounded-r-2xl bg-amber-50/70 border border-amber-200/60">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">
                 <Sparkles className="w-4 h-4 text-[#c5a059]" /> Project Highlights & Short Summary
               </div>
-              <p className="text-sm font-outfit text-slate-100 font-medium leading-relaxed">
+              <p className="text-sm font-outfit text-slate-800 font-medium leading-relaxed">
                 {shortDesc}
               </p>
             </div>
           )}
 
-          {/* 4. FULL DETAILED OVERVIEW / LONG DESCRIPTION (Formatted with headings, enters, bullets) */}
+          {/* 4. FULL DETAILED OVERVIEW / LONG DESCRIPTION (Formatted with headings, enters, bullets, colors) */}
           {longDesc && (
-            <div className="bg-[#070b19]/70 border border-slate-800/90 rounded-2xl p-5 md:p-6 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <h3 className="font-serif text-lg font-bold text-[#c5a059] flex items-center gap-2">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-[#c5a059]" /> Complete Detailed Property Overview
                 </h3>
-                <span className="text-[11px] text-slate-400 font-mono">Detailed Specifications</span>
+                <span className="text-[11px] text-slate-500 font-mono">Detailed Specifications</span>
               </div>
 
-              {/* Formatted Content Renderer */}
-              <div className="pt-2 text-slate-200">
-                <FormattedDescription text={longDesc} isLight={false} />
+              {/* Formatted Content Renderer in Light Mode */}
+              <div className="pt-2 text-slate-800">
+                <FormattedDescription text={longDesc} isLight={true} />
               </div>
             </div>
           )}
@@ -374,14 +374,14 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           {/* 5. AMENITIES & FEATURES */}
           {((property.amenities && property.amenities.length > 0) || (property.features && property.features.length > 0)) && (
             <div className="space-y-3">
-              <h4 className="font-serif text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="font-serif text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Award className="w-4 h-4 text-[#c5a059]" /> Luxury Amenities & Key Features
               </h4>
               <div className="flex flex-wrap gap-2">
                 {[...(property.amenities || []), ...(property.features || [])].filter((v, i, a) => a.indexOf(v) === i).map((item, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-800 shadow-2xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#c5a059]" />
                     {item}
@@ -394,10 +394,10 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           {/* 6. YOUTUBE WALKTHROUGH VIDEO IF AVAILABLE */}
           {property.youtubeUrl && (
             <div className="space-y-2 pt-2">
-              <h4 className="font-serif text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="font-serif text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Play className="w-4 h-4 text-red-500 fill-red-500" /> Official Video Walkthrough
               </h4>
-              <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-xl">
+              <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black border border-slate-200 shadow-md">
                 <iframe
                   src={getYouTubeEmbedUrl(property.youtubeUrl, false)}
                   title={`${property.title} Video Tour`}
@@ -411,8 +411,8 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
         </div>
 
-        {/* Bottom Action Buttons (Sticky & Responsive) */}
-        <div className="p-4 bg-[#070b19] border-t border-slate-800 flex flex-wrap items-center gap-3 shrink-0">
+        {/* Bottom Action Buttons (Sticky & Responsive in Light Theme) */}
+        <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200 flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0 shadow-sm">
           <button
             onClick={() => {
               onClose();
@@ -420,7 +420,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 onOpenLeadModal(`Full Property View (${property.title})`, property.configuration);
               }
             }}
-            className="btn-gold flex-1 py-3 text-xs md:text-sm font-bold shadow-xl flex items-center justify-center gap-1.5"
+            className="btn-gold flex-1 py-3 text-xs md:text-sm font-bold shadow-md flex items-center justify-center gap-1.5"
           >
             Get Best Offer & Priority Visit <ArrowUpRight className="w-4 h-4" />
           </button>
@@ -429,7 +429,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-3 rounded-xl bg-[#25d366]/20 text-[#25d366] hover:bg-[#25d366] hover:text-white transition-colors border border-[#25d366]/40 flex items-center gap-2 font-bold text-xs"
+            className="px-4 py-3 rounded-xl bg-[#25d366]/15 text-[#1b8a43] hover:bg-[#25d366] hover:text-white transition-colors border border-[#25d366]/30 flex items-center gap-2 font-bold text-xs"
             title="Chat on WhatsApp"
           >
             <MessageSquare className="w-4 h-4" />
@@ -438,7 +438,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
 
           <a
             href="tel:+918169005579"
-            className="px-4 py-3 rounded-xl bg-slate-800 text-slate-200 hover:bg-[#c5a059] hover:text-[#070b19] transition-colors border border-slate-700 flex items-center gap-2 font-bold text-xs"
+            className="px-4 py-3 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors border border-slate-200 flex items-center gap-2 font-bold text-xs"
             title="Call Jayshree Realty"
           >
             <Phone className="w-4 h-4" />

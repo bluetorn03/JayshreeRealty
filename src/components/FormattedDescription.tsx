@@ -16,8 +16,55 @@ export const FormattedDescription: React.FC<FormattedDescriptionProps> = ({
 
   const lines = text.split(/\r?\n/);
 
+  // Helper to get color classes based on color name and light/dark theme
+  const getColorClass = (colorName: string) => {
+    switch (colorName.toLowerCase()) {
+      case 'gold':
+        return isLight ? 'text-[#99732b] font-semibold' : 'text-[#e5c178] font-semibold';
+      case 'emerald':
+      case 'green':
+        return isLight ? 'text-emerald-700 font-semibold' : 'text-emerald-400 font-semibold';
+      case 'blue':
+        return isLight ? 'text-blue-700 font-semibold' : 'text-blue-400 font-semibold';
+      case 'red':
+      case 'crimson':
+        return isLight ? 'text-rose-700 font-semibold' : 'text-rose-400 font-semibold';
+      case 'amber':
+      case 'orange':
+        return isLight ? 'text-amber-700 font-semibold' : 'text-amber-400 font-semibold';
+      case 'purple':
+      case 'violet':
+        return isLight ? 'text-purple-700 font-semibold' : 'text-purple-400 font-semibold';
+      case 'gray':
+      case 'muted':
+        return isLight ? 'text-slate-500' : 'text-slate-400';
+      default:
+        return isLight ? 'text-[#99732b] font-semibold' : 'text-[#e5c178] font-semibold';
+    }
+  };
+
   const parseInline = (content: string) => {
-    // Parse **bold** and *italic*
+    // 1. Parse [color:COLOR_NAME]text[/color] tags
+    const colorRegex = /(\[color:[a-zA-Z]+\][\s\S]*?\[\/color\])/g;
+    const partsWithColor = content.split(colorRegex);
+
+    return partsWithColor.map((chunk, chunkIdx) => {
+      const match = chunk.match(/^\[color:([a-zA-Z]+)\]([\s\S]*?)\[\/color\]$/);
+      if (match) {
+        const colorName = match[1];
+        const innerText = match[2];
+        return (
+          <span key={`col-${chunkIdx}`} className={getColorClass(colorName)}>
+            {parseBasicInline(innerText)}
+          </span>
+        );
+      }
+      return <React.Fragment key={`txt-${chunkIdx}`}>{parseBasicInline(chunk)}</React.Fragment>;
+    });
+  };
+
+  // Helper to parse **bold** and *italic*
+  const parseBasicInline = (content: string) => {
     const parts = content.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
@@ -73,7 +120,9 @@ export const FormattedDescription: React.FC<FormattedDescriptionProps> = ({
           return (
             <h4
               key={idx}
-              className="font-serif text-base md:text-lg font-bold pt-2 text-[#c5a059]"
+              className={`font-serif text-base md:text-lg font-bold pt-2 ${
+                isLight ? 'text-amber-800' : 'text-[#c5a059]'
+              }`}
             >
               {parseInline(trimmed.substring(3))}
             </h4>
@@ -86,7 +135,7 @@ export const FormattedDescription: React.FC<FormattedDescriptionProps> = ({
             <h5
               key={idx}
               className={`font-serif text-sm md:text-base font-semibold pt-1.5 ${
-                isLight ? 'text-amber-800' : 'text-[#e5c178]'
+                isLight ? 'text-amber-900 font-bold' : 'text-[#e5c178]'
               }`}
             >
               {parseInline(trimmed.substring(4))}
@@ -129,7 +178,7 @@ export const FormattedDescription: React.FC<FormattedDescriptionProps> = ({
           <p
             key={idx}
             className={`text-xs md:text-sm leading-relaxed ${
-              isLight ? 'text-slate-600' : 'text-slate-300'
+              isLight ? 'text-slate-700' : 'text-slate-300'
             }`}
           >
             {parseInline(line)}

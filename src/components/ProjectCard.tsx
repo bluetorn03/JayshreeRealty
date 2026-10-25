@@ -1,5 +1,8 @@
-import React from 'react';
-import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2, Play, X, Youtube, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles,
+  Building2, Play, X, Youtube, Maximize2, ChevronLeft, ChevronRight
+} from 'lucide-react';
 import { PropertyItem } from '../types';
 import { useLeads } from '../context/LeadContext';
 import { getYouTubeEmbedUrl } from '../utils/youtube';
@@ -12,29 +15,88 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'light' }) => {
   const { openModal } = useLeads();
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [showVideoModal, setShowVideoModal] = React.useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const imagesList = React.useMemo(() => {
+  // Touch swipe states
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const imagesList = useMemo(() => {
     if (property.galleryImages && property.galleryImages.length > 0) {
-      return property.galleryImages;
+      return property.galleryImages.filter(Boolean);
     }
-    return [property.image];
+    return property.image ? [property.image] : [];
   }, [property]);
 
-  React.useEffect(() => {
-    if (!isHovered || imagesList.length <= 1) return;
+  // Mobile Viewport Visibility Observer for Infinite Autoloop
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting);
+      },
+      {
+        threshold: 0.35 // triggers when at least 35% visible on mobile screen
+      }
+    );
+
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Infinite Image Autoloop: Runs when hovered on desktop OR when visible in mobile viewport
+  useEffect(() => {
+    if (imagesList.length <= 1) return;
+    const shouldLoop = isHovered || isInViewport;
+    if (!shouldLoop) return;
 
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % imagesList.length);
-    }, 1800);
+    }, 2200);
 
     return () => clearInterval(interval);
-  }, [isHovered, imagesList]);
+  }, [isHovered, isInViewport, imagesList.length]);
 
-  const currentDisplayImage = imagesList[currentImageIndex] || property.image;
+  const handlePrevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (imagesList.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? imagesList.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (imagesList.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev === imagesList.length - 1 ? 0 : prev + 1));
+  };
+
+  // Touch Swipe handlers for mobile cards
+  const minSwipeDistance = 40;
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      e.stopPropagation();
+      handleNextImage();
+    } else if (isRightSwipe) {
+      e.stopPropagation();
+      handlePrevImage();
+    }
+  };
 
   const whatsappUrl = `https://wa.me/918169005579?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
     property.title + ' (' + property.location + ')'
@@ -48,6 +110,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
   return (
     <>
       <div
+        ref={cardRef}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
           setIsHovered(false);
@@ -62,7 +125,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
         {/* Image & Carousel Container - Clickable to open Big Screen Modal */}
         <div
           onClick={() => setIsDetailModalOpen(true)}
-          className="relative h-56 w-full overflow-hidden bg-slate-900 cursor-pointer"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          className="relative h-56 w-full overflow-hidden bg-slate-900 cursor-pointer select-none"
           title="Click to view full property photos & details"
         >
           {/* Image Carousel with Fade Transition */}
@@ -77,14 +143,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
               loading="lazy"
               onError={(e) => {
                 const target = e.currentTarget;
-                // If local image failed and we're on localhost, try the live server once
                 if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
                   target.dataset.triedLive = 'true';
                   const uploadIdx = target.src.indexOf('/uploads/');
                   target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
                   return;
                 }
-                // Fallback to real architectural photo (never vector badge)
                 if (!target.dataset.triedDefault) {
                   target.dataset.triedDefault = 'true';
                   target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
@@ -95,19 +159,43 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
 
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/90 via-black/20 to-black/30 pointer-events-none z-[2]"></div>
 
-          {/* Quick View Floating Hint on Hover */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/75 backdrop-blur-md border border-[#c5a059]/60 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl z-10 scale-90 group-hover:scale-100">
+          {/* Quick View Floating Hint on Desktop Hover */}
+          <div className="hidden sm:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/75 backdrop-blur-md border border-[#c5a059]/60 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl z-10 scale-90 group-hover:scale-100">
             <Maximize2 className="w-3.5 h-3.5 text-[#c5a059]" /> Quick View
           </div>
 
-          {/* Gallery Dots Indicator on Hover */}
+          {/* Manual Left Slide Button on Card (Visible on mobile or hover) */}
           {imagesList.length > 1 && (
-            <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <button
+              type="button"
+              onClick={handlePrevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-[#c5a059] text-white hover:text-[#070b19] border border-white/20 hover:border-[#c5a059] flex items-center justify-center shadow-lg transition-all z-20 active:scale-90"
+              title="Previous photo"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Manual Right Slide Button on Card (Visible on mobile or hover) */}
+          {imagesList.length > 1 && (
+            <button
+              type="button"
+              onClick={handleNextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-[#c5a059] text-white hover:text-[#070b19] border border-white/20 hover:border-[#c5a059] flex items-center justify-center shadow-lg transition-all z-20 active:scale-90"
+              title="Next photo"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Gallery Dots Indicator */}
+          {imagesList.length > 1 && (
+            <div className="absolute bottom-11 left-0 right-0 flex justify-center gap-1 z-10 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
               {imagesList.map((_, idx) => (
                 <span
                   key={idx}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    idx === currentImageIndex ? 'w-4 bg-[#c5a059]' : 'w-1.5 bg-white/50'
+                    idx === currentImageIndex ? 'w-4 bg-[#c5a059]' : 'w-1.5 bg-white/60'
                   }`}
                 />
               ))}
@@ -142,10 +230,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
           )}
 
           {/* Price Overlay on Image */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between" style={{zIndex: 3}}>
+          <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between" style={{zIndex: 3}}>
             <div>
               <span className="text-[10px] text-slate-300 uppercase tracking-widest block font-outfit font-medium">Starting Price</span>
-              <span className="font-serif text-xl font-bold text-white tracking-wide">{property.price}</span>
+              <span className="font-serif text-lg sm:text-xl font-bold text-white tracking-wide">{property.price}</span>
             </div>
             {/* YouTube Video Button */}
             {property.youtubeUrl && (
@@ -153,7 +241,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  e.preventDefault();
                   setShowVideoModal(true);
                 }}
                 className="text-[11px] bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-full font-bold flex items-center gap-1 font-outfit shadow-lg transition-transform hover:scale-105 z-20 pointer-events-auto"
@@ -214,7 +301,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
               )}
             </div>
 
-            {/* 1. Highlights / Short Description (Shows properly if present) */}
+            {/* 1. Highlights / Short Description */}
             {shortDesc && (
               <div
                 className={`mt-3 text-xs font-outfit flex items-start gap-1.5 p-2 rounded-lg border font-medium ${
@@ -228,7 +315,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
               </div>
             )}
 
-            {/* 2. Full Detailed Property Overview / Long Description (Shows properly if present, with enters & more...) */}
+            {/* 2. Full Detailed Property Overview / Long Description */}
             {longDesc && (
               <div className={`text-xs font-outfit pt-2.5 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                 <div className="line-clamp-2 whitespace-pre-line">
@@ -318,7 +405,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
         )}
       </div>
 
-      {/* FULL SCREEN PROPERTY DETAILS & GALLERY MODAL */}
+      {/* FULL SCREEN PROPERTY DETAILS & GALLERY MODAL (LUXURY LIGHT THEME) */}
       <PropertyDetailModal
         property={property}
         isOpen={isDetailModalOpen}

@@ -27,6 +27,31 @@ export const PropertyCMSView: React.FC = () => {
   const [longDescTab, setLongDescTab] = useState<'edit' | 'preview'>('edit');
   const longDescRef = useRef<HTMLTextAreaElement | null>(null);
 
+  const [newAmenityInput, setNewAmenityInput] = useState('');
+
+  const POPULAR_AMENITIES = [
+    'Swimming Pool', 'Gymnasium', 'Clubhouse', '24/7 Security', 'Podium Swimming Pool',
+    'Rooftop Garden', "Children's Play Area", 'Jogging Track', 'EV Charging Station',
+    'Grand Entrance Lobby', 'Indoor Games Arena', 'High-Speed Elevators', 'Power Backup',
+    'Landscaped Gardens', 'Intercom Facility', 'CCTV Surveillance'
+  ];
+
+  const handleAddAmenity = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const current = form.amenities || [];
+    if (!current.includes(trimmed)) {
+      const updated = [...current, trimmed];
+      setForm({ ...form, amenities: updated, features: updated });
+    }
+    setNewAmenityInput('');
+  };
+
+  const handleRemoveAmenity = (name: string) => {
+    const updated = (form.amenities || []).filter(a => a !== name);
+    setForm({ ...form, amenities: updated, features: updated });
+  };
+
   const [form, setForm] = useState<Partial<PropertyItem>>({
     title: '',
     slug: '',
@@ -41,7 +66,7 @@ export const PropertyCMSView: React.FC = () => {
     published: true,
     isFeatured: true,
     placements: ['homepage', 'featured', 'buy'],
-    features: ['Podium Parking', 'Rooftop Garden', 'Clubhouse'],
+    features: [],
     highlights: 'Prime luxury tower located opposite metro station.',
     shortDescription: 'Prime luxury tower located opposite metro station.',
     longDescription: '',
@@ -52,7 +77,7 @@ export const PropertyCMSView: React.FC = () => {
     floorPlanUrl: '',
     builderName: 'Jayshree Developers',
     builderExperience: '12+ Years',
-    amenities: ['Swimming Pool', 'Gymnasium', '24/7 Security', 'Clubhouse'],
+    amenities: [],
     seoTitle: '',
     seoDescription: '',
     seoKeywords: ''
@@ -108,7 +133,7 @@ export const PropertyCMSView: React.FC = () => {
       published: true,
       isFeatured: true,
       placements: ['homepage', 'featured', 'buy'],
-      features: ['Podium Swimming Pool', 'Gymnasium'],
+      features: [],
       highlights: 'Prime location near Palm Beach Road.',
       shortDescription: 'Prime location near Palm Beach Road.',
       longDescription: '',
@@ -119,11 +144,12 @@ export const PropertyCMSView: React.FC = () => {
       floorPlanUrl: '',
       builderName: 'Jayshree Realty',
       builderExperience: '12+ Years',
-      amenities: ['Swimming Pool', 'Gymnasium', '24/7 Security', 'Clubhouse'],
+      amenities: [],
       seoTitle: '',
       seoDescription: '',
       seoKeywords: ''
     });
+    setNewAmenityInput('');
     setLongDescTab('edit');
     setIsModalOpen(true);
   };
@@ -132,14 +158,18 @@ export const PropertyCMSView: React.FC = () => {
     setEditingId(proj.id);
     const shortVal = proj.highlights || proj.shortDescription || '';
     const longVal = proj.longDescription !== undefined ? proj.longDescription : (proj.description || '');
+    const currentAmenities = proj.amenities && proj.amenities.length > 0 ? proj.amenities : (proj.features || []);
     setForm({
       ...proj,
       highlights: shortVal,
       shortDescription: shortVal,
       longDescription: longVal,
       description: longVal,
+      amenities: currentAmenities,
+      features: currentAmenities,
       galleryImages: proj.galleryImages && proj.galleryImages.length > 0 ? proj.galleryImages : [proj.image]
     });
+    setNewAmenityInput('');
     setLongDescTab('edit');
     setIsModalOpen(true);
   };
@@ -151,6 +181,7 @@ export const PropertyCMSView: React.FC = () => {
     const finalImage = form.image || (form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages[0] : '');
     const shortVal = (form.highlights || form.shortDescription || '').trim();
     const longVal = (form.longDescription !== undefined ? form.longDescription : (form.description || '')).trim();
+    const finalAmenities = form.amenities || [];
 
     const payload = {
       ...form,
@@ -158,6 +189,8 @@ export const PropertyCMSView: React.FC = () => {
       shortDescription: shortVal,
       longDescription: longVal,
       description: longVal,
+      amenities: finalAmenities,
+      features: finalAmenities,
       image: finalImage,
       galleryImages: form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages : (finalImage ? [finalImage] : [])
     };
@@ -778,6 +811,74 @@ export const PropertyCMSView: React.FC = () => {
                       >
                         <ShieldCheck className="w-3 h-3 text-[#c5a059]" /> RERA Badge
                       </button>
+
+                      {/* Color Formatting Tools */}
+                      <div className="w-full pt-2 mt-1 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-mono text-[#c5a059] uppercase tracking-wider mr-1">Color Tools:</span>
+                        
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:gold]', '[/color]', 'Gold Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[#e5c178] rounded text-xs font-semibold border border-[#c5a059]/40 flex items-center gap-1 transition-colors"
+                          title="Gold Accent ([color:gold]text[/color])"
+                        >
+                          🟡 Gold
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:emerald]', '[/color]', 'Green Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded text-xs font-semibold border border-emerald-500/30 flex items-center gap-1 transition-colors"
+                          title="Emerald Green ([color:emerald]text[/color])"
+                        >
+                          🟢 Emerald
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:blue]', '[/color]', 'Blue Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded text-xs font-semibold border border-blue-500/30 flex items-center gap-1 transition-colors"
+                          title="Royal Blue ([color:blue]text[/color])"
+                        >
+                          🔵 Blue
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:red]', '[/color]', 'Red Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded text-xs font-semibold border border-rose-500/30 flex items-center gap-1 transition-colors"
+                          title="Crimson Red ([color:red]text[/color])"
+                        >
+                          🔴 Red
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:amber]', '[/color]', 'Amber Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded text-xs font-semibold border border-amber-500/30 flex items-center gap-1 transition-colors"
+                          title="Warm Amber ([color:amber]text[/color])"
+                        >
+                          🟠 Amber
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:purple]', '[/color]', 'Purple Text')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-400 rounded text-xs font-semibold border border-purple-500/30 flex items-center gap-1 transition-colors"
+                          title="Purple ([color:purple]text[/color])"
+                        >
+                          🟣 Purple
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => insertLongDescFormat('[color:gray]', '[/color]', 'Muted Note')}
+                          className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded text-xs font-normal border border-slate-700 flex items-center gap-1 transition-colors"
+                          title="Muted Gray ([color:gray]text[/color])"
+                        >
+                          ⚪ Gray
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -788,7 +889,7 @@ export const PropertyCMSView: React.FC = () => {
                       rows={6}
                       value={form.longDescription !== undefined ? form.longDescription : (form.description || '')}
                       onChange={(e) => setForm({ ...form, longDescription: e.target.value, description: e.target.value })}
-                      placeholder={"Write complete property overview, RERA details, and project highlights...\n\nExample:\nRera-PMI270002500457\n\n### Exclusive Highlights:\n• Prime 30m Coastal Road frontage\n• State-of-the-art Italian marble flooring\n• Grand double-height entrance lobby"}
+                      placeholder={"Write complete property overview, RERA details, and project highlights...\n\nExample:\nRera-PMI270002500457\n\n### Exclusive Highlights:\n• [color:gold]Prime 30m Coastal Road frontage[/color]\n• State-of-the-art Italian marble flooring\n• Grand double-height entrance lobby"}
                       className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-3 text-white font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-[#c5a059]"
                     />
                   ) : (
@@ -808,10 +909,104 @@ export const PropertyCMSView: React.FC = () => {
                   )}
 
                   <p className="text-[10px] text-slate-400">
-                    💡 <strong>Enter key</strong> press karne par website card aur full view mai automatic new line banegi. Card par text neatly limit hoga aur <em>more...</em> click karne par complete formatted text open hoga.
+                    💡 <strong>Enter key</strong> press karne par website card aur full view mai automatic new line banegi. Text select karke <strong>Style Tools</strong> ya <strong>Color Tools</strong> click karein.
                   </p>
                 </div>
 
+              </div>
+
+              {/* 4. Luxury Amenities & Key Features Management */}
+              <div className="space-y-3 pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="font-serif font-bold text-slate-300 uppercase text-[11px] tracking-wider text-[#c5a059]">
+                    4. Luxury Amenities & Key Features Management
+                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    {(form.amenities || []).length} Amenities Added
+                  </span>
+                </div>
+
+                {/* Currently Assigned Amenities List */}
+                <div className="bg-[#070b19] border border-slate-700/80 rounded-xl p-3.5 space-y-2">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                    Active Property Amenities (Click ✕ to remove):
+                  </span>
+                  
+                  {(form.amenities && form.amenities.length > 0) ? (
+                    <div className="flex flex-wrap gap-2">
+                      {form.amenities.map((amenity, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-800 border border-[#c5a059]/40 text-xs font-medium text-slate-200 shadow-sm"
+                        >
+                          <Check className="w-3 h-3 text-[#c5a059]" />
+                          <span>{amenity}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAmenity(amenity)}
+                            className="p-0.5 hover:bg-red-500/20 hover:text-red-400 rounded-full text-slate-400 transition-colors ml-0.5"
+                            title={`Remove ${amenity}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 italic">No amenities added yet. Type below or click popular suggestions to add.</p>
+                  )}
+                </div>
+
+                {/* Add Custom Amenity Input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newAmenityInput}
+                    onChange={(e) => setNewAmenityInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddAmenity(newAmenityInput);
+                      }
+                    }}
+                    placeholder="Type custom amenity (e.g. Italian Marble Flooring, Infinity Pool...)"
+                    className="flex-1 bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#c5a059]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddAmenity(newAmenityInput)}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-[#c5a059] text-white hover:text-[#070b19] rounded-xl text-xs font-bold border border-slate-700 transition-colors shrink-0 flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Amenity
+                  </button>
+                </div>
+
+                {/* Popular Amenities Suggestions */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-mono block">
+                    Quick Add Suggestions (Click to Add / Toggle):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {POPULAR_AMENITIES.map((name, idx) => {
+                      const isAdded = (form.amenities || []).includes(name);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => isAdded ? handleRemoveAmenity(name) : handleAddAmenity(name)}
+                          className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 ${
+                            isAdded
+                              ? 'bg-[#c5a059]/20 border-[#c5a059] text-[#e5c178] font-bold'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'
+                          }`}
+                        >
+                          {isAdded ? <Check className="w-3 h-3 text-[#c5a059]" /> : <Plus className="w-3 h-3" />}
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Toggles & SEO */}
