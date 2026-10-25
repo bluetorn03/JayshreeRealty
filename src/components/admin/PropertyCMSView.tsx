@@ -3,9 +3,11 @@ import { useData } from '../../context/DataContext';
 import { PropertyItem, ProjectCategory } from '../../types';
 import { api } from '../../services/api';
 import { ConfirmModal } from './ConfirmModal';
+import { FormattedDescription } from '../FormattedDescription';
 import {
   Building2, Plus, Edit3, Trash2, Eye, EyeOff, Sparkles, Upload,
-  Image as ImageIcon, FileText, Check, X, Layers, MapPin, Search, ArrowUpRight
+  Image as ImageIcon, FileText, Check, X, Layers, MapPin, Search, ArrowUpRight,
+  Bold, Heading, List, CornerDownLeft, ShieldCheck, Tag
 } from 'lucide-react';
 
 export const PropertyCMSView: React.FC = () => {
@@ -21,6 +23,9 @@ export const PropertyCMSView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const [longDescTab, setLongDescTab] = useState<'edit' | 'preview'>('edit');
+  const longDescRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [form, setForm] = useState<Partial<PropertyItem>>({
     title: '',
@@ -38,6 +43,9 @@ export const PropertyCMSView: React.FC = () => {
     placements: ['homepage', 'featured', 'buy'],
     features: ['Podium Parking', 'Rooftop Garden', 'Clubhouse'],
     highlights: 'Prime luxury tower located opposite metro station.',
+    shortDescription: 'Prime luxury tower located opposite metro station.',
+    longDescription: '',
+    description: '',
     image: '',
     galleryImages: [],
     brochureUrl: '',
@@ -53,6 +61,25 @@ export const PropertyCMSView: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const insertLongDescFormat = (prefix: string, suffix: string = '', placeholder: string = '') => {
+    if (!longDescRef.current) return;
+    const textarea = longDescRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentVal = form.longDescription !== undefined ? form.longDescription : (form.description || '');
+    const selectedText = currentVal.substring(start, end);
+    const replacement = selectedText ? `${prefix}${selectedText}${suffix}` : `${prefix}${placeholder}${suffix}`;
+    const newVal = currentVal.substring(0, start) + replacement + currentVal.substring(end);
+    setForm({ ...form, longDescription: newVal, description: newVal });
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + (selectedText ? selectedText.length : placeholder.length)
+      );
+    }, 0);
+  };
 
   const filteredProjects = projects.filter(p => {
     const matchesSearch =
@@ -83,6 +110,9 @@ export const PropertyCMSView: React.FC = () => {
       placements: ['homepage', 'featured', 'buy'],
       features: ['Podium Swimming Pool', 'Gymnasium'],
       highlights: 'Prime location near Palm Beach Road.',
+      shortDescription: 'Prime location near Palm Beach Road.',
+      longDescription: '',
+      description: '',
       image: '',
       galleryImages: [],
       brochureUrl: '',
@@ -94,15 +124,23 @@ export const PropertyCMSView: React.FC = () => {
       seoDescription: '',
       seoKeywords: ''
     });
+    setLongDescTab('edit');
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (proj: PropertyItem) => {
     setEditingId(proj.id);
+    const shortVal = proj.highlights || proj.shortDescription || '';
+    const longVal = proj.longDescription !== undefined ? proj.longDescription : (proj.description || '');
     setForm({
       ...proj,
+      highlights: shortVal,
+      shortDescription: shortVal,
+      longDescription: longVal,
+      description: longVal,
       galleryImages: proj.galleryImages && proj.galleryImages.length > 0 ? proj.galleryImages : [proj.image]
     });
+    setLongDescTab('edit');
     setIsModalOpen(true);
   };
 
@@ -111,8 +149,15 @@ export const PropertyCMSView: React.FC = () => {
     if (!form.title || !form.location) return;
 
     const finalImage = form.image || (form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages[0] : '');
+    const shortVal = (form.highlights || form.shortDescription || '').trim();
+    const longVal = (form.longDescription !== undefined ? form.longDescription : (form.description || '')).trim();
+
     const payload = {
       ...form,
+      highlights: shortVal,
+      shortDescription: shortVal,
+      longDescription: longVal,
+      description: longVal,
       image: finalImage,
       galleryImages: form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages : (finalImage ? [finalImage] : [])
     };
@@ -628,25 +673,143 @@ export const PropertyCMSView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 mb-1">Highlights / Short Description</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-300 font-semibold text-xs">Highlights / Short Description</label>
+                    <span className="text-[10px] text-amber-400">Card Badge & Quick Summary</span>
+                  </div>
                   <input
                     type="text"
-                    value={form.highlights || ''}
-                    onChange={(e) => setForm({ ...form, highlights: e.target.value })}
-                    placeholder="Prime luxury development near Metro station..."
-                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
+                    value={form.highlights || form.shortDescription || ''}
+                    onChange={(e) => setForm({ ...form, highlights: e.target.value, shortDescription: e.target.value })}
+                    placeholder="e.g. Prime location near Palm Beach Road & Seawoods Station..."
+                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#c5a059]"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">Short highlighted line displayed prominently on property cards & full details.</p>
                 </div>
 
-                <div>
-                  <label className="block text-slate-300 mb-1 font-semibold text-xs text-[#c5a059]">Full Detailed Property Overview / Long Description</label>
-                  <textarea
-                    rows={4}
-                    value={form.longDescription !== undefined ? form.longDescription : (form.description || '')}
-                    onChange={(e) => setForm({ ...form, longDescription: e.target.value, description: e.target.value })}
-                    placeholder="Write complete property specifications, floor plan highlights, RERA number, and CIDCO plot details..."
-                    className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
-                  />
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="block text-slate-200 font-semibold text-xs text-[#c5a059]">
+                      Full Detailed Property Overview / Long Description
+                    </label>
+
+                    {/* Edit / Preview Tabs */}
+                    <div className="flex items-center bg-[#070b19] p-0.5 rounded-lg border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => setLongDescTab('edit')}
+                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                          longDescTab === 'edit'
+                            ? 'bg-[#c5a059] text-[#070b19]'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        ✏️ Edit Text
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLongDescTab('preview')}
+                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                          longDescTab === 'preview'
+                            ? 'bg-[#c5a059] text-[#070b19]'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        👁️ Live Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Rich Text Quick Formatting Toolbar */}
+                  {longDescTab === 'edit' && (
+                    <div className="p-2 bg-[#070b19] border border-slate-700/80 rounded-xl flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mr-1">Style Tools:</span>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('**', '**', 'Bold Text')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold border border-slate-700 flex items-center gap-1 transition-colors"
+                        title="Bold Text (**text**)"
+                      >
+                        <Bold className="w-3 h-3 text-[#c5a059]" /> Bold
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('# ', '', 'Major Heading')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold border border-slate-700 flex items-center gap-1 transition-colors"
+                        title="Main Heading (# Title)"
+                      >
+                        <Heading className="w-3 h-3 text-[#c5a059]" /> H1 Title
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('### ', '', 'Section Highlights')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold border border-slate-700 flex items-center gap-1 transition-colors"
+                        title="Sub-heading (### Section)"
+                      >
+                        <Heading className="w-3 h-3 text-amber-300" /> H2 Section
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('• ', '', 'Premium amenity or key specification')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold border border-slate-700 flex items-center gap-1 transition-colors"
+                        title="Bullet List Item (• Point)"
+                      >
+                        <List className="w-3 h-3 text-[#c5a059]" /> Bullet Point
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('\n\n', '', '')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold border border-slate-700 flex items-center gap-1 transition-colors"
+                        title="Line Break / Enter"
+                      >
+                        <CornerDownLeft className="w-3 h-3 text-emerald-400" /> Enter / Line Break
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => insertLongDescFormat('Rera-PMI', '', '270002500457')}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[#e5c178] rounded text-xs font-mono font-bold border border-[#c5a059]/40 flex items-center gap-1 transition-colors"
+                        title="RERA Registration Tag"
+                      >
+                        <ShieldCheck className="w-3 h-3 text-[#c5a059]" /> RERA Badge
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Textarea for Editing */}
+                  {longDescTab === 'edit' ? (
+                    <textarea
+                      ref={longDescRef}
+                      rows={6}
+                      value={form.longDescription !== undefined ? form.longDescription : (form.description || '')}
+                      onChange={(e) => setForm({ ...form, longDescription: e.target.value, description: e.target.value })}
+                      placeholder={"Write complete property overview, RERA details, and project highlights...\n\nExample:\nRera-PMI270002500457\n\n### Exclusive Highlights:\n• Prime 30m Coastal Road frontage\n• State-of-the-art Italian marble flooring\n• Grand double-height entrance lobby"}
+                      className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-3 text-white font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-[#c5a059]"
+                    />
+                  ) : (
+                    /* Live Preview Box */
+                    <div className="bg-[#070b19] border border-[#c5a059]/40 rounded-xl p-4 min-h-[160px] max-h-72 overflow-y-auto">
+                      <div className="text-[10px] uppercase font-mono text-[#c5a059] font-bold pb-2 mb-2 border-b border-slate-800">
+                        Live Preview (Exact Website Rendering):
+                      </div>
+                      <FormattedDescription
+                        text={form.longDescription || form.description || ''}
+                        isLight={false}
+                      />
+                      {!(form.longDescription || form.description) && (
+                        <p className="text-xs text-slate-500 italic">No description entered yet. Switch to "Edit Text" and type your overview.</p>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-slate-400">
+                    💡 <strong>Enter key</strong> press karne par website card aur full view mai automatic new line banegi. Card par text neatly limit hoga aur <em>more...</em> click karne par complete formatted text open hoga.
+                  </p>
                 </div>
 
               </div>

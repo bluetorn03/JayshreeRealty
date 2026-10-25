@@ -1,8 +1,9 @@
 import React from 'react';
-import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2, Play, X, Youtube } from 'lucide-react';
+import { MapPin, Calendar, MessageSquare, Phone, ArrowUpRight, Sparkles, Building2, Play, X, Youtube, Maximize2 } from 'lucide-react';
 import { PropertyItem } from '../types';
 import { useLeads } from '../context/LeadContext';
 import { getYouTubeEmbedUrl } from '../utils/youtube';
+import { PropertyDetailModal } from './PropertyDetailModal';
 
 interface ProjectCardProps {
   property: PropertyItem;
@@ -14,6 +15,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const [isHovered, setIsHovered] = React.useState(false);
   const [showVideoModal, setShowVideoModal] = React.useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false);
 
   const imagesList = React.useMemo(() => {
     if (property.galleryImages && property.galleryImages.length > 0) {
@@ -40,238 +42,289 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
 
   const isLight = theme === 'light';
 
+  const shortDesc = (property.highlights || property.shortDescription || '').trim();
+  const longDesc = (property.longDescription || property.description || '').trim();
+
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setCurrentImageIndex(0);
-      }}
-      className={`rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 flex flex-col group ${
-        isLight
-          ? 'bg-white border border-amber-200/60 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-[#c5a059]'
-          : 'bg-[#0d1527] border border-[#c5a059]/30 shadow-2xl hover:border-[#c5a059]'
-      }`}
-    >
-      {/* Image & Carousel Container */}
-      <div className="relative h-56 w-full overflow-hidden bg-slate-900">
-        {/* Image Carousel with Fade Transition */}
-        {imagesList.map((imgSrc, idx) => (
-          <img
-            key={idx}
-            src={imgSrc}
-            alt={`${property.title} - Image ${idx + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-105 ${
-              idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
-            }`}
-            loading="lazy"
-            onError={(e) => {
-              const target = e.currentTarget;
-              // If local image failed and we're on localhost, try the live server once
-              if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
-                target.dataset.triedLive = 'true';
-                const uploadIdx = target.src.indexOf('/uploads/');
-                target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
-                return;
-              }
-              // Fallback to real architectural photo (never vector badge)
-              if (!target.dataset.triedDefault) {
-                target.dataset.triedDefault = 'true';
-                target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
-              }
-            }}
-          />
-        ))}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/90 via-black/20 to-black/30 pointer-events-none z-[2]"></div>
-
-        {/* Gallery Dots Indicator on Hover */}
-        {imagesList.length > 1 && (
-          <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            {imagesList.map((_, idx) => (
-              <span
-                key={idx}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentImageIndex ? 'w-4 bg-[#c5a059]' : 'w-1.5 bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Top Badges (Responsive, dynamic width, no overlap) */}
-        <div className="absolute top-3 left-3 right-16 flex flex-wrap items-center gap-1.5 z-10 max-w-[calc(100%-4.5rem)] pointer-events-none" style={{zIndex: 3}}>
-          {/* Category Badge */}
-          <span className="badge-gold font-outfit shadow-md backdrop-blur-md text-[10px] font-bold truncate max-w-[120px] pointer-events-auto">
-            {property.category}
-          </span>
-          
-          {/* Property Type Badge */}
-          <span className="bg-[#0b132b]/90 border border-[#c5a059]/40 text-[#e5c178] px-2 py-0.5 rounded-full text-[10px] font-outfit font-semibold shadow-md backdrop-blur-md truncate max-w-[100px] pointer-events-auto">
-            {property.type}
-          </span>
-
-          {/* Brokerage Badge ONLY if explicitly enabled */}
-          {property.brokerageFree === true && (
-            <span className="badge-emerald font-outfit shadow-md backdrop-blur-md text-[10px] whitespace-nowrap pointer-events-auto">
-              0% Brokerage
-            </span>
-          )}
-        </div>
-
-        {/* Property Code Badge if present */}
-        {property.code !== undefined && property.code !== '' && (
-          <div className="absolute top-3 right-3 bg-[#070b19]/90 border border-[#c5a059]/40 text-[#e5c178] px-2 py-0.5 rounded-md text-[11px] font-mono font-bold z-10">
-            {property.code}
-          </div>
-        )}
-
-        {/* Price Overlay on Image */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between" style={{zIndex: 3}}>
-          <div>
-            <span className="text-[10px] text-slate-300 uppercase tracking-widest block font-outfit font-medium">Starting Price</span>
-            <span className="font-serif text-xl font-bold text-white tracking-wide">{property.price}</span>
-          </div>
-          {/* YouTube Video Button */}
-          {property.youtubeUrl && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setShowVideoModal(true);
+    <>
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setCurrentImageIndex(0);
+        }}
+        className={`rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 flex flex-col group ${
+          isLight
+            ? 'bg-white border border-amber-200/60 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-[#c5a059]'
+            : 'bg-[#0d1527] border border-[#c5a059]/30 shadow-2xl hover:border-[#c5a059]'
+        }`}
+      >
+        {/* Image & Carousel Container - Clickable to open Big Screen Modal */}
+        <div
+          onClick={() => setIsDetailModalOpen(true)}
+          className="relative h-56 w-full overflow-hidden bg-slate-900 cursor-pointer"
+          title="Click to view full property photos & details"
+        >
+          {/* Image Carousel with Fade Transition */}
+          {imagesList.map((imgSrc, idx) => (
+            <img
+              key={idx}
+              src={imgSrc}
+              alt={`${property.title} - Image ${idx + 1}`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-105 ${
+                idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
+              }`}
+              loading="lazy"
+              onError={(e) => {
+                const target = e.currentTarget;
+                // If local image failed and we're on localhost, try the live server once
+                if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
+                  target.dataset.triedLive = 'true';
+                  const uploadIdx = target.src.indexOf('/uploads/');
+                  target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
+                  return;
+                }
+                // Fallback to real architectural photo (never vector badge)
+                if (!target.dataset.triedDefault) {
+                  target.dataset.triedDefault = 'true';
+                  target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+                }
               }}
-              className="text-[11px] bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-full font-bold flex items-center gap-1 font-outfit shadow-lg transition-transform hover:scale-105 z-20"
-              title="Watch Property Walkthrough Video"
-            >
-              <Play className="w-3 h-3 fill-white" /> Watch Video
-            </button>
+            />
+          ))}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/90 via-black/20 to-black/30 pointer-events-none z-[2]"></div>
+
+          {/* Quick View Floating Hint on Hover */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/75 backdrop-blur-md border border-[#c5a059]/60 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl z-10 scale-90 group-hover:scale-100">
+            <Maximize2 className="w-3.5 h-3.5 text-[#c5a059]" /> Quick View
+          </div>
+
+          {/* Gallery Dots Indicator on Hover */}
+          {imagesList.length > 1 && (
+            <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              {imagesList.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentImageIndex ? 'w-4 bg-[#c5a059]' : 'w-1.5 bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
           )}
+
+          {/* Top Badges (Responsive, dynamic width, no overlap) */}
+          <div className="absolute top-3 left-3 right-16 flex flex-wrap items-center gap-1.5 z-10 max-w-[calc(100%-4.5rem)] pointer-events-none" style={{zIndex: 3}}>
+            {/* Category Badge */}
+            <span className="badge-gold font-outfit shadow-md backdrop-blur-md text-[10px] font-bold truncate max-w-[120px] pointer-events-auto">
+              {property.category}
+            </span>
+            
+            {/* Property Type Badge */}
+            <span className="bg-[#0b132b]/90 border border-[#c5a059]/40 text-[#e5c178] px-2 py-0.5 rounded-full text-[10px] font-outfit font-semibold shadow-md backdrop-blur-md truncate max-w-[100px] pointer-events-auto">
+              {property.type}
+            </span>
+
+            {/* Brokerage Badge ONLY if explicitly enabled */}
+            {property.brokerageFree === true && (
+              <span className="badge-emerald font-outfit shadow-md backdrop-blur-md text-[10px] whitespace-nowrap pointer-events-auto">
+                0% Brokerage
+              </span>
+            )}
+          </div>
+
+          {/* Property Code Badge if present */}
+          {property.code !== undefined && property.code !== '' && (
+            <div className="absolute top-3 right-3 bg-[#070b19]/90 border border-[#c5a059]/40 text-[#e5c178] px-2 py-0.5 rounded-md text-[11px] font-mono font-bold z-10">
+              {property.code}
+            </div>
+          )}
+
+          {/* Price Overlay on Image */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between" style={{zIndex: 3}}>
+            <div>
+              <span className="text-[10px] text-slate-300 uppercase tracking-widest block font-outfit font-medium">Starting Price</span>
+              <span className="font-serif text-xl font-bold text-white tracking-wide">{property.price}</span>
+            </div>
+            {/* YouTube Video Button */}
+            {property.youtubeUrl && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setShowVideoModal(true);
+                }}
+                className="text-[11px] bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-full font-bold flex items-center gap-1 font-outfit shadow-lg transition-transform hover:scale-105 z-20 pointer-events-auto"
+                title="Watch Property Walkthrough Video"
+              >
+                <Play className="w-3 h-3 fill-white" /> Watch Video
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Content Section */}
-      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-        <div>
-          <h3
-            className={`font-serif text-lg font-bold leading-snug mb-1.5 transition-colors ${
-              isLight
-                ? 'text-slate-900 group-hover:text-[#99732b]'
-                : 'text-white group-hover:text-[#e5c178]'
-            }`}
-          >
-            {property.title}
-          </h3>
-          
-          <p
-            className={`text-xs flex items-center gap-1.5 font-outfit mb-3 font-medium ${
-              isLight ? 'text-slate-600' : 'text-slate-400'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
-            {property.location}
-          </p>
+        {/* Content Section */}
+        <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-3.5">
+          <div>
+            {/* Title - Clickable to open Big Screen Modal */}
+            <h3
+              onClick={() => setIsDetailModalOpen(true)}
+              className={`font-serif text-lg font-bold leading-snug mb-1.5 transition-colors cursor-pointer ${
+                isLight
+                  ? 'text-slate-900 group-hover:text-[#99732b]'
+                  : 'text-white group-hover:text-[#e5c178]'
+              }`}
+              title="Click to view full property overview"
+            >
+              {property.title}
+            </h3>
+            
+            <p
+              className={`text-xs flex items-center gap-1.5 font-outfit mb-3 font-medium ${
+                isLight ? 'text-slate-600' : 'text-slate-400'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
+              {property.location}
+            </p>
 
-          {/* Quick Specs Grid */}
-          <div
-            className={`grid grid-cols-2 gap-2 p-3 rounded-xl border text-xs font-outfit ${
-              isLight
-                ? 'bg-slate-50 border-slate-200/80 text-slate-700'
-                : 'bg-[#070b19]/60 border-slate-800 text-slate-200'
-            }`}
-          >
-            <div>
-              <span className={`text-[10px] uppercase block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Config</span>
-              <span className="font-bold">{property.configuration}</span>
+            {/* Quick Specs Grid */}
+            <div
+              className={`grid grid-cols-2 gap-2 p-3 rounded-xl border text-xs font-outfit ${
+                isLight
+                  ? 'bg-slate-50 border-slate-200/80 text-slate-700'
+                  : 'bg-[#070b19]/60 border-slate-800 text-slate-200'
+              }`}
+            >
+              <div>
+                <span className={`text-[10px] uppercase block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Config</span>
+                <span className="font-bold">{property.configuration}</span>
+              </div>
+              <div>
+                <span className={`text-[10px] uppercase block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Carpet Area</span>
+                <span className="font-bold">{property.area}</span>
+              </div>
+              {property.possession && (
+                <div className={`col-span-2 pt-1.5 mt-1 border-t flex items-center gap-1.5 ${isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800 text-slate-300'}`}>
+                  <Calendar className="w-3.5 h-3.5 text-[#c5a059]" />
+                  <span className="text-[11px] font-medium">{property.possession}</span>
+                </div>
+              )}
             </div>
-            <div>
-              <span className={`text-[10px] uppercase block font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Carpet Area</span>
-              <span className="font-bold">{property.area}</span>
-            </div>
-            {property.possession && (
-              <div className={`col-span-2 pt-1.5 mt-1 border-t flex items-center gap-1.5 ${isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800 text-slate-300'}`}>
-                <Calendar className="w-3.5 h-3.5 text-[#c5a059]" />
-                <span className="text-[11px] font-medium">{property.possession}</span>
+
+            {/* 1. Highlights / Short Description (Shows properly if present) */}
+            {shortDesc && (
+              <div
+                className={`mt-3 text-xs font-outfit flex items-start gap-1.5 p-2 rounded-lg border font-medium ${
+                  isLight
+                    ? 'bg-amber-50/70 border-amber-200/80 text-amber-900'
+                    : 'bg-[#c5a059]/10 border-[#c5a059]/30 text-[#e5c178]'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#c5a059] shrink-0 mt-0.5" />
+                <span className="line-clamp-2 leading-relaxed">{shortDesc}</span>
+              </div>
+            )}
+
+            {/* 2. Full Detailed Property Overview / Long Description (Shows properly if present, with enters & more...) */}
+            {longDesc && (
+              <div className={`text-xs font-outfit pt-2.5 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                <div className="line-clamp-2 whitespace-pre-line">
+                  {longDesc}
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDetailModalOpen(true);
+                  }}
+                  className="text-[11px] font-bold text-[#c5a059] hover:text-[#99732b] dark:hover:text-[#e5c178] inline-flex items-center gap-0.5 mt-1 transition-colors hover:underline cursor-pointer"
+                >
+                  more...
+                </button>
               </div>
             )}
           </div>
 
-          {/* Property Description / Long Description Overview */}
-          {(property.longDescription || property.description || property.shortDescription || property.highlights) && (
-            <p className={`text-xs font-outfit pt-3 line-clamp-2 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-              {property.longDescription || property.description || property.shortDescription || property.highlights}
-            </p>
-          )}
-        </div>
+          {/* Action Buttons */}
+          <div className={`pt-3 border-t flex items-center gap-2 ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
+            <button
+              onClick={() => openModal(`Project Card (${property.title})`, property.configuration)}
+              className="btn-gold flex-1 text-xs py-2.5 font-bold shadow-md"
+            >
+              Get Best Offer <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+            </button>
+            
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2.5 rounded-lg bg-[#25d366]/15 text-[#25d366] hover:bg-[#25d366] hover:text-white transition-colors border border-[#25d366]/30"
+              title="WhatsApp Inquiry"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </a>
 
-        {/* Action Buttons */}
-        <div className={`pt-3 border-t flex items-center gap-2 ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
-          <button
-            onClick={() => openModal(`Project Card (${property.title})`, property.configuration)}
-            className="btn-gold flex-1 text-xs py-2.5 font-bold shadow-md"
-          >
-            Get Best Offer <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
-          </button>
-          
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2.5 rounded-lg bg-[#25d366]/15 text-[#25d366] hover:bg-[#25d366] hover:text-white transition-colors border border-[#25d366]/30"
-            title="WhatsApp Inquiry"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </a>
-
-          <a
-            href="tel:+918169005579"
-            className={`p-2.5 rounded-lg transition-colors border ${
-              isLight
-                ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-[#0b132b] hover:text-white'
-                : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-[#c5a059]'
-            }`}
-            title="Call Jayshree Realty"
-          >
-            <Phone className="w-4 h-4" />
-          </a>
-        </div>
-      </div>
-
-      {/* YOUTUBE VIDEO MODAL */}
-      {showVideoModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4"
-          onClick={() => setShowVideoModal(false)}
-        >
-          <div
-            className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-4 w-full max-w-3xl shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 px-2">
-              <div className="flex items-center gap-2 font-outfit text-sm font-bold text-white">
-                <Youtube className="w-5 h-5 text-red-500" />
-                {property.title} - Official Video Tour
-              </div>
-              <button
-                onClick={() => setShowVideoModal(false)}
-                className="p-1.5 rounded-full bg-slate-800 hover:bg-[#c5a059] text-slate-300 hover:text-[#070b19] transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black">
-              <iframe
-                src={getYouTubeEmbedUrl(property.youtubeUrl, true)}
-                title={`${property.title} YouTube Video`}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <a
+              href="tel:+918169005579"
+              className={`p-2.5 rounded-lg transition-colors border ${
+                isLight
+                  ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-[#0b132b] hover:text-white'
+                  : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-[#c5a059]'
+              }`}
+              title="Call Jayshree Realty"
+            >
+              <Phone className="w-4 h-4" />
+            </a>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* YOUTUBE VIDEO MODAL */}
+        {showVideoModal && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4"
+            onClick={() => setShowVideoModal(false)}
+          >
+            <div
+              className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-4 w-full max-w-3xl shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 px-2">
+                <div className="flex items-center gap-2 font-outfit text-sm font-bold text-white">
+                  <Youtube className="w-5 h-5 text-red-500" />
+                  {property.title} - Official Video Tour
+                </div>
+                <button
+                  onClick={() => setShowVideoModal(false)}
+                  className="p-1.5 rounded-full bg-slate-800 hover:bg-[#c5a059] text-slate-300 hover:text-[#070b19] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="relative pt-[56.25%] rounded-2xl overflow-hidden bg-black">
+                <iframe
+                  src={getYouTubeEmbedUrl(property.youtubeUrl, true)}
+                  title={`${property.title} YouTube Video`}
+                  className="absolute inset-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* FULL SCREEN PROPERTY DETAILS & GALLERY MODAL */}
+      <PropertyDetailModal
+        property={property}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onOpenLeadModal={openModal}
+      />
+    </>
   );
 };

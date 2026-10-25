@@ -144,7 +144,7 @@ router.post('/', authenticateToken, async (req, res) => {
       gallery_images_json: JSON.stringify(p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages : (p.image ? [p.image] : [])),
       is_featured: p.isFeatured ? 1 : 0,
       code: p.code || `JR-${Math.floor(1000 + Math.random() * 9000)}`,
-      highlights: p.highlights || '',
+      highlights: p.highlights || p.shortDescription || '',
       brokerage: p.brokerage || '0% Brokerage',
       brokerage_free: p.brokerageFree ? 1 : 0,
       published: p.published !== undefined ? (p.published ? 1 : 0) : 1,
@@ -159,9 +159,9 @@ router.post('/', authenticateToken, async (req, res) => {
       seo_description: p.seoDescription || p.highlights,
       seo_keywords: p.seoKeywords || '',
       youtube_url: formatYouTubeUrl(p.youtubeUrl),
-      description: p.description || '',
-      short_description: p.shortDescription || '',
-      long_description: p.longDescription || '',
+      description: p.description || p.longDescription || '',
+      short_description: p.shortDescription || p.highlights || '',
+      long_description: p.longDescription || p.description || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -211,7 +211,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
     if (p.isFeatured !== undefined) updates.is_featured = p.isFeatured ? 1 : 0;
     if (p.code !== undefined) updates.code = p.code;
-    if (p.highlights !== undefined) updates.highlights = p.highlights;
+    if (p.highlights !== undefined) {
+      updates.highlights = p.highlights;
+      if (p.shortDescription === undefined) updates.short_description = p.highlights;
+    }
+    if (p.shortDescription !== undefined) {
+      updates.short_description = p.shortDescription;
+      if (p.highlights === undefined) updates.highlights = p.shortDescription;
+    }
     if (p.brokerage !== undefined) updates.brokerage = p.brokerage;
     if (p.brokerageFree !== undefined) updates.brokerage_free = p.brokerageFree ? 1 : 0;
     if (p.published !== undefined) updates.published = p.published ? 1 : 0;
@@ -226,9 +233,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (p.seoDescription !== undefined) updates.seo_description = p.seoDescription;
     if (p.seoKeywords !== undefined) updates.seo_keywords = p.seoKeywords;
     if (p.youtubeUrl !== undefined) updates.youtube_url = formatYouTubeUrl(p.youtubeUrl);
-    if (p.description !== undefined) updates.description = p.description;
-    if (p.shortDescription !== undefined) updates.short_description = p.shortDescription;
-    if (p.longDescription !== undefined) updates.long_description = p.longDescription;
+    if (p.description !== undefined) {
+      updates.description = p.description;
+      if (p.longDescription === undefined) updates.long_description = p.description;
+    }
+    if (p.longDescription !== undefined) {
+      updates.long_description = p.longDescription;
+      if (p.description === undefined) updates.description = p.longDescription;
+    }
     updates.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
