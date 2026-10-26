@@ -3,13 +3,13 @@ import nodemailer from 'nodemailer';
 
 dotenv.config();
 
-const host = (process.env.SMTP_HOST || 'smtp.gmail.com').replace(/["']/g, '').trim();
+const host = (process.env.SMTP_HOST || 'smtp.hostinger.com').replace(/["']/g, '').trim();
 const port = parseInt((process.env.SMTP_PORT || '465').replace(/["']/g, '').trim(), 10);
-const user = (process.env.SMTP_USER || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
+const user = (process.env.SMTP_USER || 'info@jayshreerealty.com').replace(/["']/g, '').trim();
 const rawPass = process.env.SMTP_PASS || '';
 const pass = rawPass.replace(/["']/g, '').replace(/\s+/g, '').trim();
 const fromEmail = (process.env.SMTP_FROM || user).replace(/["']/g, '').trim();
-const receiver = (process.env.RECEIVER_EMAIL || 'jayshreerealty16@gmail.com').replace(/["']/g, '').trim();
+const receiver = (process.env.RECEIVER_EMAIL || 'info@jayshreerealty.com').replace(/["']/g, '').trim();
 
 console.log('--- SMTP Audit Credentials ---');
 console.log('SMTP_HOST:', host);

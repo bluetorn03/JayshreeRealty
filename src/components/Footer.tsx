@@ -129,8 +129,8 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4 text-[#c5a059] shrink-0" />
-                <a href={`mailto:${siteSettings.email || 'Jayshreerealty16@gmail.com'}`} className="hover:text-[#e5c178]">
-                  {siteSettings.email || 'Jayshreerealty16@gmail.com'}
+                <a href={`mailto:${siteSettings.email || 'info@jayshreerealty.com'}`} className="hover:text-[#e5c178]">
+                  {siteSettings.email || 'info@jayshreerealty.com'}
                 </a>
               </div>
               <div className="flex items-center gap-2.5">

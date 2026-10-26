@@ -113,10 +113,10 @@ export const initSupabaseDb = async () => {
         gsc_verification_meta: 'gsc-verification-token',
         robots_txt_content: "User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml",
         sitemap_auto_generate: 1,
-        smtp_host: 'smtp.gmail.com',
+        smtp_host: 'smtp.hostinger.com',
         smtp_port: '465',
-        smtp_user: 'jayshreerealty16@gmail.com',
-        smtp_from_email: 'jayshreerealty16@gmail.com',
+        smtp_user: 'info@jayshreerealty.com',
+        smtp_from_email: 'info@jayshreerealty.com',
         maintenance_mode: 0,
         maintenance_message: 'System undergoes scheduled maintenance. We will be back shortly.'
       }]);

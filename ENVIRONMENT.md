@@ -20,6 +20,7 @@ This document explains every environment variable used in the Jayshree Realty En
 - **`SMTP_PORT`**: Port for SMTP connection (`465` for SSL).
 - **`SMTP_USER`**: Sender email address (`info@jayshreerealty.com`).
 - **`SMTP_PASS`**: Hostinger webmail account password.
+- **`SMTP_FROM`**: From header address (`info@jayshreerealty.com`).
 - **`RECEIVER_EMAIL`**: Recipient email address for all incoming lead notifications (`info@jayshreerealty.com`).
 
 ## 4. Application & Server Settings

@@ -507,16 +507,20 @@ app.get('/api/forensic-audit', async (req, res) => {
 app.all('/api/test-email', async (req, res) => {
   try {
     const { executeTestEmailAudit } = await import('./services/email.js');
-    const recipient = req.body?.recipient || req.query?.recipient || 'jayshreerealty16@gmail.com';
+    const recipient = req.body?.recipient || req.query?.recipient || 'info@jayshreerealty.com';
     const result = await executeTestEmailAudit(recipient);
-    console.log(`[SMTP Test Route] Audit result for ${recipient}:`, result);
+    console.log(`[SMTP Test Route] Audit completed for ${recipient}:`, {
+      success: result.success,
+      status_code: result.status_code,
+      message_id: result.message_id
+    });
     return res.status(result.status_code || 200).json(result);
   } catch (error) {
-    console.error('[SMTP Test Route Error]', error);
+    console.error('[SMTP Test Route Error]', error.message);
     return res.status(500).json({
       success: false,
       status_code: 500,
-      failure_reason: error.message
+      failure_reason: 'Hostinger SMTP test execution failed'
     });
   }
 });
@@ -790,6 +794,19 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('✅ Supabase DB ready.');
       startSupabaseKeepAliveJob();
       startPassengerKeepAlive();
+
+      // Check Hostinger SMTP connectivity in background
+      import('./services/email.js').then(({ verifySmtpConnection }) => {
+        verifySmtpConnection().then(status => {
+          if (status.verified) {
+            console.log(`✅ Hostinger SMTP connected & verified (${status.host}:${status.port})`);
+          } else {
+            console.warn(`⚠️ Hostinger SMTP check: ${status.message}`);
+          }
+        }).catch(err => {
+          console.warn('[SMTP Startup Check Warning]', err.message);
+        });
+      });
     })
     .catch(err => {
       console.warn('[DB Init Warning]', err.message);

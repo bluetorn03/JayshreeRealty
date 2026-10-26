@@ -174,7 +174,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   companyName: 'Jayshree Realty',
   phone: '+91 81690 05579',
   phoneRaw: '+918169005579',
-  email: 'Jayshreerealty16@gmail.com',
+  email: 'info@jayshreerealty.com',
   whatsapp: '+91 81690 05579',
   whatsappRaw: '918169005579',
   address: 'Shop No. 12, Prime Plaza, Sector 19, Nerul West, Navi Mumbai, Maharashtra 400706',
@@ -193,10 +193,10 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   gscVerificationMeta: 'gsc-verification-token',
   robotsTxtContent: "User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: https://jayshreerealty.com/sitemap.xml",
   sitemapAutoGenerate: true,
-  smtpHost: 'smtp.gmail.com',
+  smtpHost: 'smtp.hostinger.com',
   smtpPort: '465',
-  smtpUser: 'Jayshreerealty16@gmail.com',
-  smtpFromEmail: 'Jayshreerealty16@gmail.com',
+  smtpUser: 'info@jayshreerealty.com',
+  smtpFromEmail: 'info@jayshreerealty.com',
   maintenanceMode: false,
   maintenanceMessage: 'System undergoes scheduled maintenance. We will be back shortly.'
 };

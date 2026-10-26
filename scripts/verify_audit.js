@@ -50,7 +50,7 @@ async function runVerification() {
     const emailRes = await fetch(`${baseUrl}/api/test-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipient: 'jayshreerealty16@gmail.com' })
+      body: JSON.stringify({ recipient: 'info@jayshreerealty.com' })
     });
     const emailData = await emailRes.json();
     console.log('Test Email Status Code:', emailRes.status);
@@ -61,7 +61,7 @@ async function runVerification() {
     const leadPayload = {
       name: 'Production Audit Prospect',
       phone: testPhone,
-      email: 'jayshreerealty16@gmail.com',
+      email: 'info@jayshreerealty.com',
       requirement: '3 BHK Luxury Apartment in Nerul',
       budget: '₹2.5 Cr',
       preferredArea: 'Nerul Palm Beach Road',

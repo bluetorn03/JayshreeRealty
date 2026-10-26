@@ -100,12 +100,12 @@ SESSION_SECRET=jayshree_realty_session_secret_2026_super_secure_key
 ADMIN_USER=admin@jayshreerealty
 ADMIN_PASS=jayshreerealty@8989
 
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp.hostinger.com
 SMTP_PORT=465
-SMTP_USER=jayshreerealty16@gmail.com
-SMTP_PASS="Yvyvg gmil bskd vxdv"
-SMTP_FROM=jayshreerealty16@gmail.com
-RECEIVER_EMAIL=jayshreerealty16@gmail.com
+SMTP_USER=info@jayshreerealty.com
+SMTP_PASS=your_hostinger_email_password
+SMTP_FROM=info@jayshreerealty.com
+RECEIVER_EMAIL=info@jayshreerealty.com
 ```
 
 ---

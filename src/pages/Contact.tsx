@@ -142,8 +142,8 @@ export const Contact: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">Official Email</h4>
-                      <a href={`mailto:${siteSettings.email || 'Jayshreerealty16@gmail.com'}`} className="text-xs font-bold text-[#99732b] hover:underline">
-                        {siteSettings.email || 'Jayshreerealty16@gmail.com'}
+                      <a href={`mailto:${siteSettings.email || 'info@jayshreerealty.com'}`} className="text-xs font-bold text-[#99732b] hover:underline">
+                        {siteSettings.email || 'info@jayshreerealty.com'}
                       </a>
                     </div>
                   </div>
