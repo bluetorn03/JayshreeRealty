@@ -10,8 +10,9 @@ import {
   Building2, MapPin, ShieldCheck, Award, ArrowRight,
   Sparkles, Star, Phone, MessageSquare, Users
 } from 'lucide-react';
+import heroDesktopBg from '../assets/hero-dekstop-view.webp';
+import heroMobileBg from '../assets/hero-mobie-view.webp';
 
-const HERO_DEFAULT_BG = "https://images.unsplash.com/photo-1462396240927-52058a6a84ec?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8aHVnZSUyMHRvd2VyJTIwb2YlMjBnbGFzcyUyMGZhY2FkZXxlbnwwfHwwfHx8MA%3D%3D";
 const DEFAULT_KEYWORDS = ["Premium Projects", "Buy Property", "Sell Property", "Verified Properties", "Navi Mumbai", "Luxury Homes"];
 
 export const Home: React.FC = () => {
@@ -72,9 +73,13 @@ export const Home: React.FC = () => {
     }).slice(0, 6);
   }, [projects, selectedCategory]);
 
-  const heroBgUrl = heroSettings.backgroundImage && heroSettings.backgroundImage !== 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000'
+  const desktopHeroBg = (heroSettings.backgroundImage && !heroSettings.backgroundImage.includes('unsplash.com'))
     ? heroSettings.backgroundImage
-    : HERO_DEFAULT_BG;
+    : heroDesktopBg;
+
+  const mobileHeroBg = (heroSettings.backgroundImage && !heroSettings.backgroundImage.includes('unsplash.com'))
+    ? heroSettings.backgroundImage
+    : heroMobileBg;
 
   return (
     <div className="min-h-screen bg-[#070b19] font-sans">
@@ -85,11 +90,23 @@ export const Home: React.FC = () => {
 
       {/* 1. HERO SECTION (Dark Navy Background) */}
       <section className="relative min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden border-b border-[#c5a059]/20 section-navy">
-        {/* Background Image with Lighter Overlay & Smooth Upward Parallax */}
+        {/* Desktop View Background Image (>= md) */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
+          className="hidden md:block absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
           style={{
-            backgroundImage: `url("${heroBgUrl}")`
+            backgroundImage: `url("${desktopHeroBg}")`
+          }}
+        >
+          {/* Lighter Gradient Overlay so background image is vibrant and visible */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070b19]/30 via-[#070b19]/25 to-[#070b19]/8"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070b19] via-transparent to-[#070b19]/10"></div>
+        </div>
+
+        {/* Mobile View Background Image (< md) */}
+        <div
+          className="block md:hidden absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
+          style={{
+            backgroundImage: `url("${mobileHeroBg}")`
           }}
         >
           {/* Lighter Gradient Overlay so background image is vibrant and visible */}

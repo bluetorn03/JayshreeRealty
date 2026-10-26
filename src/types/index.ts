@@ -80,6 +80,14 @@ export interface LeadSubmission {
   followUpDate?: string;
   createdAt?: string;
   created_at?: string;
+  resumeUrl?: string;
+  resume_url?: string;
+  resumeFilename?: string;
+  resume_filename?: string;
+  resumeMimeType?: string;
+  resume_mimetype?: string;
+  resumeSize?: number;
+  resume_size?: number;
 }
 
 export interface SiteSettings {

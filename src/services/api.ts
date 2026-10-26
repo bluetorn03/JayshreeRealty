@@ -101,6 +101,36 @@ export const api = {
     return res.json();
   },
 
+  // Upload APIs
+  async uploadResume(file: File) {
+    const formData = new FormData();
+    formData.append('resume', file);
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/upload/resume`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  },
+
+  async uploadFile(file: File) {
+    const isDoc = file.name.match(/\.(pdf|doc|docx)$/i);
+    const endpoint = isDoc ? `${API_BASE}/upload/resume` : `${API_BASE}/upload`;
+    const formData = new FormData();
+    formData.append(isDoc ? 'resume' : 'file', file);
+    formData.append('file', file);
+    const token = localStorage.getItem('jayshree_admin_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    return res.json();
+  },
+
   // Leads API
   async getLeads() {
     const res = await fetchWithAuth(`${API_BASE}/leads`);
@@ -263,18 +293,6 @@ export const api = {
   async deleteLocation(id: string) {
     const res = await fetchWithAuth(`${API_BASE}/cms/locations/${id}`, {
       method: 'DELETE',
-    });
-    return res.json();
-  },
-
-  // File Upload API
-  async uploadFile(file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetchWithAuth(`${API_BASE}/upload`, {
-      method: 'POST',
-      body: formData,
     });
     return res.json();
   },

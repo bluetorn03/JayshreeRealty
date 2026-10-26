@@ -42,7 +42,11 @@ router.get('/', authenticateToken, async (req, res) => {
       notes: row.notes || '',
       assignedTo: row.assigned_to || 'Unassigned',
       followUpDate: row.follow_up_date || '',
-      createdAt: row.created_at
+      createdAt: row.created_at,
+      resumeUrl: row.resume_url || '',
+      resumeFilename: row.resume_filename || '',
+      resumeMimeType: row.resume_mimetype || '',
+      resumeSize: row.resume_size || 0
     }));
 
     return res.json({ success: true, leads });
@@ -81,6 +85,12 @@ router.post('/', async (req, res) => {
     const utmTerm = body.utm_term || body.utmTerm || '';
     const utmContent = body.utm_content || body.utmContent || '';
 
+    // Resume attachments (for career applications)
+    const resumeUrl = body.resumeUrl || body.resume_url || '';
+    const resumeFilename = body.resumeFilename || body.resume_filename || '';
+    const resumeMimeType = body.resumeMimeType || body.resume_mimetype || '';
+    const resumeSize = body.resumeSize || body.resume_size || 0;
+
     if (!name || !phone) {
       return res.status(400).json({ success: false, message: 'Name and phone number are required.' });
     }
@@ -115,16 +125,20 @@ router.post('/', async (req, res) => {
       status: 'New',
       notes: '',
       assigned_to: 'Unassigned',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      resume_url: resumeUrl,
+      resume_filename: resumeFilename,
+      resume_mimetype: resumeMimeType,
+      resume_size: resumeSize
     };
 
-    // 0. Duplicate submission check (In-memory cache + DB query)
-    const dedupKey = `${phone.trim()}:${requirement.trim() || 'general'}`;
+    // 0. Rapid duplicate retry check (15-second debounce window scoped to phone + formSource)
+    const dedupKey = `${phone.trim()}:${formSource}:${ctaSource}:${requirement.trim()}`;
     const now = Date.now();
     const lastSeen = recentSubmissionsCache.get(dedupKey);
 
-    if (lastSeen && (now - lastSeen) < 120000) { // 2 minutes window
-      console.warn(`[Leads API] In-memory duplicate submission prevented for phone: ${phone.trim()}`);
+    if (lastSeen && (now - lastSeen) < 15000) { // 15 seconds debounce window for accidental double-clicks
+      console.warn(`[Leads API] Duplicate retry debounced for: ${dedupKey}`);
       return res.json({
         success: true,
         duplicatePrevented: true,
@@ -134,16 +148,17 @@ router.post('/', async (req, res) => {
     }
 
     try {
-      const twoMinsAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const fifteenSecsAgo = new Date(Date.now() - 15 * 1000).toISOString();
       const { data: recentDuplicates } = await supabase
         .from('leads')
-        .select('id, name, phone, created_at')
+        .select('id, name, phone, form_source, created_at')
         .eq('phone', phone.trim())
-        .gt('created_at', twoMinsAgo)
+        .eq('form_source', formSource)
+        .gt('created_at', fifteenSecsAgo)
         .limit(1);
 
       if (recentDuplicates && recentDuplicates.length > 0) {
-        console.warn(`[Leads API] DB duplicate submission prevented for phone: ${phone.trim()} (Recent ID: ${recentDuplicates[0].id})`);
+        console.warn(`[Leads API] DB rapid duplicate prevented for phone: ${phone.trim()} on form: ${formSource}`);
         recentSubmissionsCache.set(dedupKey, now);
         return res.json({
           success: true,
@@ -195,7 +210,11 @@ router.post('/', async (req, res) => {
       status: 'New',
       notes: '',
       assignedTo: 'Unassigned',
-      createdAt: newLeadRecord.created_at
+      createdAt: newLeadRecord.created_at,
+      resumeUrl: newLeadRecord.resume_url,
+      resumeFilename: newLeadRecord.resume_filename,
+      resumeMimeType: newLeadRecord.resume_mimetype,
+      resumeSize: newLeadRecord.resume_size
     };
 
     return res.json({

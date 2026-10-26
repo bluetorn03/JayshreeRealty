@@ -6,6 +6,8 @@ import { CheckCircle2, Phone, ShieldCheck } from 'lucide-react';
 export const SellProperty: React.FC = () => {
   const { addLead } = useLeads();
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -17,25 +19,38 @@ export const SellProperty: React.FC = () => {
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone) return;
+    if (!formData.name || !formData.phone || isSubmitting) return;
 
-    addLead({
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email,
-      requirement: 'Sell',
-      budget: formData.expectedPrice ? `Expected ₹ ${formData.expectedPrice}` : 'Market Price Evaluation',
-      preferredArea: formData.location,
-      propertyType: formData.propertyType,
-      message: `Carpet Area: ${formData.carpetArea || 'N/A'}. Details: ${formData.message}`,
-      lead_source: 'Sell Property Evaluation Form',
-      cta_source: 'Sell Page Direct Form',
-      page_name: 'Sell Property'
-    });
+    setIsSubmitting(true);
+    setFormError('');
 
-    setSubmitted(true);
+    try {
+      const res = await addLead({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        requirement: 'Sell',
+        budget: formData.expectedPrice ? `Expected ₹ ${formData.expectedPrice}` : 'Market Price Evaluation',
+        preferredArea: formData.location,
+        propertyType: formData.propertyType,
+        message: `Carpet Area: ${formData.carpetArea || 'N/A'}. Details: ${formData.message}`,
+        lead_source: 'Sell Property Evaluation Form',
+        cta_source: 'Sell Page Direct Form',
+        page_name: 'Sell Property'
+      });
+
+      if (res && res.success === false) {
+        setFormError(res.message || 'Failed to submit evaluation request. Please try again.');
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error submitting request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -215,8 +230,18 @@ export const SellProperty: React.FC = () => {
                     ></textarea>
                   </div>
 
-                  <button type="submit" className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase">
-                    SUBMIT FOR FREE VALUATION
+                  {formError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                      {formError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? 'SUBMITTING VALUATION...' : 'SUBMIT FOR FREE VALUATION'}
                   </button>
 
                   <p className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 pt-1">

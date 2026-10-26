@@ -2,6 +2,10 @@ import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Sanitizes header text to prevent SMTP header injection attacks (CRLF injection).
@@ -126,8 +130,35 @@ export const verifySmtpConnection = async () => {
 };
 
 /**
- * Sends a rich, branded email notification for incoming property leads, contact forms, and inquiries.
- * Guarantees that inquiries are not lost if sending fails.
+ * Resolves a local or persistent disk path for an uploaded resume
+ */
+function resolveResumeDiskPath(rawUrl) {
+  if (!rawUrl) return null;
+  const filename = path.basename(rawUrl.split('?')[0]);
+  const candidates = [
+    path.join(process.cwd(), 'public', 'uploads', filename),
+    path.join(__dirname, '..', '..', 'public', 'uploads', filename),
+    path.join(process.cwd(), 'public_html', 'uploads', filename),
+    path.join(process.cwd(), 'dist', 'uploads', filename),
+    path.join(process.cwd(), 'uploads', filename),
+    `/home/u168098130/public_html/uploads/${filename}`,
+    `/home/u168098130/domains/jayshreerealty.com/public_html/uploads/${filename}`,
+    `/home/u168098130/persistent_uploads/${filename}`
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
+/**
+ * Sends a rich, branded email notification for incoming property leads, contact forms, and career applications.
+ * Guarantees that inquiries/applications are preserved even if email sending fails.
  */
 export const sendLeadEmailNotification = async (leadData) => {
   const { host, port, user, pass, fromEmail, receiver } = getMailConfig();
@@ -138,7 +169,7 @@ export const sendLeadEmailNotification = async (leadData) => {
     return {
       success: true,
       emailSent: false,
-      note: 'Lead preserved in database; SMTP_PASS is not configured in .env'
+      note: 'Record preserved in database; SMTP_PASS is not configured in .env'
     };
   }
 
@@ -162,6 +193,25 @@ export const sendLeadEmailNotification = async (leadData) => {
   const preferredArea = leadData.preferred_area || 'N/A';
   const message = leadData.message || 'No additional notes provided.';
   const timestampStr = leadData.timestamp || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+  // Resume metadata
+  const resumeUrl = leadData.resume_url || leadData.resumeUrl || '';
+  const resumeFilename = leadData.resume_filename || leadData.resumeFilename || (resumeUrl ? path.basename(resumeUrl) : '');
+  const resumeMimeType = leadData.resume_mimetype || leadData.resumeMimeType || 'application/pdf';
+  const resumeSize = leadData.resume_size || leadData.resumeSize || 0;
+
+  // Detect whether this is a career application
+  const isCareer = leadData.property_type === 'Career Application' ||
+                   leadData.lead_source === 'Career Form Application' ||
+                   (leadData.cta_source && leadData.cta_source.includes('Career')) ||
+                   Boolean(resumeUrl);
+
+  const careerPosition = sanitizeHeader(
+    leadData.requirement ? leadData.requirement.replace(/^Career:\s*/i, '') : 'Real Estate Executive'
+  );
+  const careerExperience = sanitizeHeader(
+    leadData.budget ? leadData.budget.replace(/^Experience:\s*/i, '') : 'Not Specified'
+  );
 
   // Safe UTM attribution formatting
   const utmSource = sanitizeHeader(leadData.utm_source || '');
@@ -190,7 +240,124 @@ export const sendLeadEmailNotification = async (leadData) => {
   const safeUtm = escapeHtml(utmString);
   const safeTimestamp = escapeHtml(timestampStr);
 
-  const htmlContent = `
+  const safePosition = escapeHtml(careerPosition);
+  const safeExperience = escapeHtml(careerExperience);
+  const safeResumeFilename = escapeHtml(resumeFilename);
+
+  const baseUrl = (process.env.FRONTEND_URL || 'https://jayshreerealty.com').replace(/\/+$/, '');
+  const fullResumeUrl = resumeUrl.startsWith('http') ? resumeUrl : `${baseUrl}${resumeUrl}`;
+
+  // Subject line
+  const emailSubject = isCareer
+    ? `💼 New Career Application: ${visitorName} - ${careerPosition}`
+    : `🚨 New Lead: ${visitorName} (${visitorPhone}) - ${formName}`;
+
+  // HTML Content
+  const htmlContent = isCareer ? `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Career Application - Jayshree Realty</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #070b19; color: #e2e8f0; margin: 0; padding: 20px; }
+      .container { max-width: 620px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      .header { background: linear-gradient(135deg, #0b1120 0%, #1e293b 100%); padding: 28px 24px; text-align: center; border-bottom: 2px solid #c5a059; }
+      .brand-title { color: #c5a059; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+      .brand-subtitle { color: #94a3b8; margin: 6px 0 0 0; font-size: 13px; font-weight: 500; }
+      .badge { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 12px; letter-spacing: 0.5px; }
+      .content { padding: 28px 24px; }
+      .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #c5a059; font-weight: 700; margin: 0 0 14px 0; border-bottom: 1px solid #1e293b; padding-bottom: 6px; }
+      .field-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      .field-table td { padding: 8px 0; vertical-align: top; }
+      .field-label { width: 35%; font-size: 12px; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; font-weight: 600; }
+      .field-value { width: 65%; font-size: 14px; color: #f8fafc; font-weight: 500; }
+      .field-value a { color: #c5a059; text-decoration: none; font-weight: 600; }
+      .field-value a:hover { text-decoration: underline; }
+      .highlight-box { background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b; border-left: 4px solid #10b981; padding: 14px 16px; border-radius: 8px; margin: 18px 0; }
+      .highlight-label { font-size: 11px; text-transform: uppercase; color: #34d399; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+      .highlight-text { font-size: 14px; color: #f1f5f9; line-height: 1.6; }
+      .resume-card { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 16px; margin: 18px 0; text-align: center; }
+      .btn { display: inline-block; background: #c5a059; color: #070b19 !important; font-weight: 700; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; letter-spacing: 0.5px; margin: 6px; }
+      .btn-resume { display: inline-block; background: #10b981; color: #ffffff !important; font-weight: 700; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; letter-spacing: 0.5px; margin: 6px; }
+      .meta-box { background: #070b19; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; margin-top: 20px; }
+      .footer { background: #070b19; text-align: center; padding: 18px 24px; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1 class="brand-title">Jayshree Realty</h1>
+        <p class="brand-subtitle">Careers & Talent Acquisition</p>
+        <div class="badge">Role: ${safePosition}</div>
+      </div>
+      <div class="content">
+        <div class="section-title">Candidate Information</div>
+        <table class="field-table">
+          <tr>
+            <td class="field-label">Candidate Name:</td>
+            <td class="field-value">${safeName}</td>
+          </tr>
+          <tr>
+            <td class="field-label">Phone:</td>
+            <td class="field-value"><a href="tel:${safePhone}">${safePhone}</a></td>
+          </tr>
+          <tr>
+            <td class="field-label">Email:</td>
+            <td class="field-value">${visitorEmail ? `<a href="mailto:${safeEmail}">${safeEmail}</a>` : safeEmail}</td>
+          </tr>
+          <tr>
+            <td class="field-label">Position Applied:</td>
+            <td class="field-value" style="color:#e5c178; font-weight:600;">${safePosition}</td>
+          </tr>
+          <tr>
+            <td class="field-label">Experience:</td>
+            <td class="field-value">${safeExperience}</td>
+          </tr>
+        </table>
+
+        ${resumeUrl ? `
+        <div class="resume-card">
+          <p style="margin: 0 0 10px 0; font-size: 13px; color: #e2e8f0;">
+            📄 <strong>Candidate Resume Attached:</strong> ${safeResumeFilename}
+            ${resumeSize ? `<span style="color:#94a3b8; font-size:11px;">(${(resumeSize / 1024).toFixed(1)} KB)</span>` : ''}
+          </p>
+          <a href="${fullResumeUrl}" class="btn-resume" target="_blank">View / Download Resume</a>
+        </div>
+        ` : `
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0; font-size: 12px; color: #f87171;">
+          ⚠️ No resume file was uploaded with this submission.
+        </div>
+        `}
+
+        <div class="highlight-box">
+          <div class="highlight-label">Cover Letter / Experience Summary</div>
+          <div class="highlight-text">${safeMessage}</div>
+        </div>
+
+        <div class="section-title">Submission Attribution</div>
+        <div class="meta-box">
+          <strong>Page:</strong> ${safePageName} | <strong>Form:</strong> ${safeFormName}<br/>
+          <strong>Device:</strong> ${safeDeviceInfo} | <strong>Traffic Source:</strong> ${safeTrafficSource}<br/>
+          <strong>Date & Time:</strong> ${safeTimestamp}
+        </div>
+
+        ${
+          visitorEmail
+            ? `<div style="text-align: center; margin-top: 24px;">
+                <a href="mailto:${safeEmail}?subject=Application%20for%20${encodeURIComponent(careerPosition)}%20-%20Jayshree%20Realty" class="btn">Reply to Candidate Directly</a>
+               </div>`
+            : ''
+        }
+      </div>
+      <div class="footer">
+        <p>© ${new Date().getFullYear()} Jayshree Realty Career Application System.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  ` : `
   <!DOCTYPE html>
   <html>
   <head>
@@ -287,14 +454,38 @@ export const sendLeadEmailNotification = async (leadData) => {
   </html>
   `;
 
+  // Attachments setup
+  const attachments = [];
+  if (isCareer && resumeUrl) {
+    const diskPath = resolveResumeDiskPath(resumeUrl);
+    if (diskPath) {
+      attachments.push({
+        filename: resumeFilename || path.basename(diskPath),
+        path: diskPath,
+        contentType: resumeMimeType || 'application/pdf'
+      });
+      console.log(`[Hostinger SMTP] Attached local resume file: ${diskPath}`);
+    } else if (resumeUrl.startsWith('http')) {
+      attachments.push({
+        filename: resumeFilename || 'Candidate_Resume.pdf',
+        path: resumeUrl,
+        contentType: resumeMimeType || 'application/pdf'
+      });
+      console.log(`[Hostinger SMTP] Attached remote resume file: ${resumeUrl}`);
+    }
+  }
+
   // Header injection safe mail options
   const mailOptions = {
-    from: `"Jayshree Realty Leads" <${fromEmail}>`,
+    from: isCareer ? `"Jayshree Realty Careers" <${fromEmail}>` : `"Jayshree Realty Leads" <${fromEmail}>`,
     to: receiver,
     replyTo: visitorEmail ? visitorEmail : fromEmail,
-    subject: `🚨 New Lead: ${visitorName} (${visitorPhone}) - ${formName}`,
-    text: `New Lead: ${visitorName} (${visitorPhone}) | Requirement: ${requirement} (${budget}) - ${preferredArea} | Message: ${message}`,
+    subject: emailSubject,
+    text: isCareer
+      ? `Career Application: ${visitorName} | Position: ${careerPosition} | Experience: ${careerExperience} | Phone: ${visitorPhone} | Resume: ${fullResumeUrl}`
+      : `New Lead: ${visitorName} (${visitorPhone}) | Requirement: ${requirement} (${budget}) - ${preferredArea} | Message: ${message}`,
     html: htmlContent,
+    attachments
   };
 
   let attempts = 0;

@@ -3,11 +3,13 @@ import { UploadCloud, FileText, CheckCircle2, AlertCircle, X, Loader2 } from 'lu
 import { api } from '../services/api';
 
 interface ResumeUploaderProps {
-  onUploadSuccess: (fileUrl: string, fileName: string) => void;
+  onUploadSuccess: (fileUrl: string, fileName: string, extra?: { size?: number; mimetype?: string }) => void;
   currentFileUrl?: string;
+  currentFileName?: string;
+  onClear?: () => void;
 }
 
-export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess, currentFileUrl }) => {
+export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess, currentFileUrl, currentFileName, onClear }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -47,19 +49,22 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess,
         setUploadProgress(prev => (prev < 85 ? prev + 15 : prev));
       }, 150);
 
-      const res = await api.uploadFile(fileToUpload);
+      const res = await api.uploadResume(fileToUpload);
       clearInterval(timer);
 
       const targetUrl = res.url || res.fileUrl;
       if (res.success && targetUrl) {
         setUploadProgress(100);
         setUploadedUrl(targetUrl);
-        onUploadSuccess(targetUrl, fileToUpload.name);
+        onUploadSuccess(targetUrl, res.originalName || fileToUpload.name, {
+          size: res.size || fileToUpload.size,
+          mimetype: res.mimetype || fileToUpload.type
+        });
       } else {
-        setError('Upload failed. Please try again.');
+        setError(res.message || 'Upload failed. Please try again.');
       }
-    } catch (err) {
-      setError('Network error uploading file. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Network error uploading file. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -95,6 +100,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess,
     setUploadProgress(0);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (onClear) onClear();
   };
 
   return (
@@ -112,7 +118,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({ onUploadSuccess,
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-[280px]">
-                {file ? file.name : 'Resume Attached'}
+                {file ? file.name : (currentFileName || 'Resume Attached')}
               </p>
               <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Ready for submission

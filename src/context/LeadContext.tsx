@@ -6,7 +6,7 @@ import { analyticsTracker } from '../services/analyticsTracker';
 
 interface LeadContextType {
   leads: LeadSubmission[];
-  addLead: (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => Promise<void>;
+  addLead: (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => Promise<{ success: boolean; leadId?: string; message?: string }>;
   updateLeadStatus: (id: string, status: LeadSubmission['status']) => Promise<void>;
   updateLeadDetails: (id: string, updated: Partial<LeadSubmission>) => Promise<void>;
   deleteLead: (id: string) => Promise<void>;
@@ -96,25 +96,27 @@ export const LeadProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsModalOpen(false);
   };
 
-  const addLead = async (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>) => {
-    const attribution = getLeadAttribution();
-    const enrichedData = {
-      ...attribution,
-      ...leadData,
-    };
-    const res = await api.submitLead(enrichedData);
-    if (res.success && res.lead) {
-      setLeads((prev) => [res.lead, ...prev]);
-      // Track form submission analytics event
-      analyticsTracker.trackFormSubmit('Lead Form', enrichedData.page_name || 'Website');
-    } else {
-      const fallback: LeadSubmission = {
-        ...enrichedData,
-        id: `lead-${Date.now()}`,
-        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-        status: 'New'
+  const addLead = async (leadData: Omit<LeadSubmission, 'id' | 'timestamp' | 'status'>): Promise<{ success: boolean; leadId?: string; message?: string }> => {
+    try {
+      const attribution = getLeadAttribution();
+      const enrichedData = {
+        ...attribution,
+        ...leadData,
       };
-      setLeads((prev) => [fallback, ...prev]);
+      const res = await api.submitLead(enrichedData);
+      if (res.success && res.lead) {
+        setLeads((prev) => [res.lead, ...prev.filter(l => l.id !== res.lead.id)]);
+        // Track form submission analytics event
+        analyticsTracker.trackFormSubmit('Lead Form', enrichedData.page_name || 'Website');
+        return { success: true, leadId: res.lead.id, message: res.message };
+      } else if (res.duplicatePrevented) {
+        return { success: true, leadId: res.leadId, message: res.message || 'Your inquiry was already received and is being processed.' };
+      } else {
+        return { success: false, message: res.message || 'Failed to submit inquiry. Please try again.' };
+      }
+    } catch (err: any) {
+      console.error('[LeadContext] Error submitting lead:', err);
+      return { success: false, message: err?.message || 'Network error submitting inquiry. Please check your connection.' };
     }
   };
 

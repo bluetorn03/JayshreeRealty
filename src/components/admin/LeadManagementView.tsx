@@ -4,8 +4,66 @@ import { LeadSubmission } from '../../types';
 import { ConfirmModal } from './ConfirmModal';
 import {
   Users, Search, Download, Trash2, Phone, Mail, Plus, Filter,
-  CheckCircle2, Clock, Calendar, FileText, CheckSquare, Square, RefreshCw, UserCheck
+  CheckCircle2, Clock, Calendar, FileText, CheckSquare, Square, RefreshCw, UserCheck,
+  Paperclip, ExternalLink
 } from 'lucide-react';
+
+export function formatLeadDate(timestampStr?: string, createdAtStr?: string): string {
+  // If we have createdAt ISO string, format DD/MM/YYYY
+  if (createdAtStr) {
+    const d = new Date(createdAtStr);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  }
+  if (timestampStr) {
+    if (timestampStr.includes('/')) {
+      const parts = timestampStr.split(',');
+      return parts[0]?.trim() || timestampStr;
+    }
+    const d = new Date(timestampStr);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  }
+  return '-';
+}
+
+export function formatLeadTime(timestampStr?: string, createdAtStr?: string): string {
+  // If we have createdAt ISO string, format 12-hour AM/PM
+  if (createdAtStr) {
+    const d = new Date(createdAtStr);
+    if (!isNaN(d.getTime())) {
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  if (timestampStr) {
+    if (timestampStr.includes(',')) {
+      const parts = timestampStr.split(',');
+      const timePart = parts[1]?.trim() || '';
+      return timePart.replace(/:(\d{2}):\d{2}/, ':$1').toUpperCase();
+    }
+    const d = new Date(timestampStr);
+    if (!isNaN(d.getTime())) {
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  return '';
+}
 
 export const LeadManagementView: React.FC = () => {
   const {
@@ -302,18 +360,62 @@ export const LeadManagementView: React.FC = () => {
                     )}
                   </td>
                   <td className="p-4 font-semibold text-amber-200">{lead.requirement || 'Buy'}</td>
-                  <td className="p-4 text-slate-300 font-medium">{lead.propertyType || '-'}</td>
+                  <td className="p-4 text-slate-300 font-medium">
+                    <div>{lead.propertyType || '-'}</div>
+                    {lead.resumeUrl && (
+                      <div className="mt-1">
+                        <a
+                          href={lead.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={lead.resumeFilename || undefined}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#c5a059]/15 text-[#c5a059] border border-[#c5a059]/40 hover:bg-[#c5a059]/25 text-[11px] font-medium transition-colors"
+                          title={lead.resumeFilename ? `Download ${lead.resumeFilename}` : 'Download Resume'}
+                        >
+                          <Paperclip className="w-3 h-3" />
+                          <span className="truncate max-w-[120px]">{lead.resumeFilename || 'Resume'}</span>
+                          <Download className="w-2.5 h-2.5 ml-0.5" />
+                        </a>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-4 text-slate-300 font-semibold">{lead.budget || '-'}</td>
                   <td className="p-4 text-slate-300">{lead.preferredArea || '-'}</td>
-                  <td className="p-4 text-[11px] text-slate-400 font-mono">{lead.timestamp ? lead.timestamp.slice(0, 16).replace('T', ' ') : '-'}</td>
+                  <td className="p-4 text-[11px] text-slate-300 font-mono whitespace-nowrap">
+                    <div className="flex flex-col min-w-[110px]">
+                      <span className="font-semibold text-slate-200">{formatLeadDate(lead.timestamp, lead.createdAt)}</span>
+                      <span className="text-slate-400 text-[10px]">{formatLeadTime(lead.timestamp, lead.createdAt)}</span>
+                    </div>
+                  </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => setConfirmDeleteId(lead.id)}
-                      className="p-2 rounded-lg bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/30 transition-colors"
-                      title="Delete Lead"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      {lead.resumeUrl && (
+                        <a
+                          href={lead.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={lead.resumeFilename || undefined}
+                          className="p-2 rounded-lg bg-[#c5a059]/20 text-[#c5a059] hover:bg-[#c5a059]/30 border border-[#c5a059]/40 transition-colors"
+                          title={`Download Resume (${lead.resumeFilename || 'File'})`}
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setEditingLead(lead)}
+                        className="p-2 rounded-lg bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-colors"
+                        title="View / Edit Lead Details"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(lead.id)}
+                        className="p-2 rounded-lg bg-red-950/40 text-red-400 hover:bg-red-900/60 border border-red-500/30 transition-colors"
+                        title="Delete Lead"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -424,8 +526,58 @@ export const LeadManagementView: React.FC = () => {
       {/* Edit Lead & Notes Modal */}
       {editingLead && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4">
-            <h3 className="font-serif font-bold text-xl text-white">Edit Lead: {editingLead.name}</h3>
+          <div className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="font-serif font-bold text-xl text-white">Lead Details: {editingLead.name}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Submitted on {formatLeadDate(editingLead.timestamp, editingLead.createdAt)} at {formatLeadTime(editingLead.timestamp, editingLead.createdAt)}
+                {editingLead.lead_source ? ` • ${editingLead.lead_source}` : ''}
+              </p>
+            </div>
+
+            {/* Applicant Resume Card (if present) */}
+            {editingLead.resumeUrl && (
+              <div className="bg-[#070b19] border border-[#c5a059]/40 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-200 text-xs font-semibold flex items-center gap-1.5">
+                    <Paperclip className="w-4 h-4 text-[#c5a059]" />
+                    Uploaded Resume / CV
+                  </span>
+                  {editingLead.resumeSize ? (
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {(editingLead.resumeSize / (1024 * 1024)).toFixed(2)} MB
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <div className="min-w-0">
+                    <p className="text-xs text-white font-mono truncate" title={editingLead.resumeFilename}>
+                      {editingLead.resumeFilename || 'candidate-resume.pdf'}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{editingLead.resumeMimeType || 'Application Document'}</p>
+                  </div>
+                  <a
+                    href={editingLead.resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={editingLead.resumeFilename || undefined}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#c5a059] text-slate-950 font-bold hover:bg-[#d4af37] text-xs transition-colors shrink-0"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Resume
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Inquiry Message / Cover Letter */}
+            {editingLead.message && (
+              <div className="bg-[#070b19] border border-slate-800 rounded-xl p-3 space-y-1">
+                <span className="text-slate-400 text-[11px] block font-semibold">Message / Cover Letter:</span>
+                <p className="text-slate-200 text-xs whitespace-pre-wrap leading-relaxed">{editingLead.message}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSaveLeadEdit} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -455,7 +607,7 @@ export const LeadManagementView: React.FC = () => {
               <div>
                 <label className="block text-slate-300 mb-1">Lead Notes & Communication Log</label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={editingLead.notes || ''}
                   onChange={(e) => setEditingLead({ ...editingLead, notes: e.target.value })}
                   placeholder="Record client discussions, site visit schedules, price negotiation notes..."

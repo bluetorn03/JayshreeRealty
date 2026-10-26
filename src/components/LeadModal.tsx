@@ -22,6 +22,8 @@ export const LeadModal: React.FC = () => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     if (modalRequirement) {
@@ -31,39 +33,52 @@ export const LeadModal: React.FC = () => {
 
   if (!isModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone) return;
+    if (!formData.name || !formData.phone || isSubmitting) return;
 
-    addLead({
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email,
-      requirement: formData.requirement,
-      budget: formData.budget,
-      preferredArea: formData.preferredArea,
-      propertyType: formData.propertyType,
-      message: formData.message,
-      lead_source: 'Interactive Lead Popup',
-      cta_source: modalCtaSource || 'Website CTA',
-      page_name: location.pathname || 'Home'
-    });
+    setIsSubmitting(true);
+    setFormError('');
 
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      closeModal();
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        requirement: 'Buy',
-        budget: '₹ 40 Lakhs - ₹ 70 Lakhs',
-        preferredArea: 'Nerul & Seawoods',
-        propertyType: '2 BHK',
-        message: ''
+    try {
+      const res = await addLead({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        requirement: formData.requirement,
+        budget: formData.budget,
+        preferredArea: formData.preferredArea,
+        propertyType: formData.propertyType,
+        message: formData.message,
+        lead_source: 'Interactive Lead Popup',
+        cta_source: modalCtaSource || 'Website CTA',
+        page_name: location.pathname || 'Home'
       });
-    }, 2500);
+
+      if (res && res.success === false) {
+        setFormError(res.message || 'Failed to submit inquiry. Please try again.');
+      } else {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          closeModal();
+          setFormData({
+            name: '',
+            phone: '',
+            email: '',
+            requirement: 'Buy',
+            budget: '₹ 40 Lakhs - ₹ 70 Lakhs',
+            preferredArea: 'Nerul & Seawoods',
+            propertyType: '2 BHK',
+            message: ''
+          });
+        }, 2500);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error submitting inquiry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -239,11 +254,18 @@ export const LeadModal: React.FC = () => {
                   </select>
                 </div>
 
+                {formError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                    {formError}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl tracking-wider uppercase"
+                  disabled={isSubmitting}
+                  className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl tracking-wider uppercase disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  GET BEST OFFER NOW
+                  {isSubmitting ? 'PROCESSING REQUEST...' : 'GET BEST OFFER NOW'}
                 </button>
 
                 <p className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 pt-1.5 font-medium">

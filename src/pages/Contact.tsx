@@ -13,6 +13,8 @@ export const Contact: React.FC = () => {
   const { siteSettings } = useData();
   const [activeFormTab, setActiveFormTab] = useState<'contact' | 'career'>('contact');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
   // Contact Form state
   const [contactData, setContactData] = useState({
@@ -31,49 +33,82 @@ export const Contact: React.FC = () => {
     position: 'Real Estate Sales Executive',
     experience: '1-3 Years',
     resumeUrl: '',
+    resumeFilename: '',
+    resumeMimeType: '',
+    resumeSize: 0,
     message: ''
   });
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactData.name || !contactData.phone) return;
+    if (!contactData.name || !contactData.phone || isSubmitting) return;
 
-    addLead({
-      name: contactData.name,
-      phone: contactData.phone,
-      email: contactData.email,
-      requirement: contactData.requirement,
-      budget: 'General Inquiry',
-      preferredArea: 'Nerul Head Office',
-      propertyType: 'All',
-      message: contactData.message,
-      lead_source: 'Contact Us Form',
-      cta_source: 'Contact Page Direct Form',
-      page_name: 'Contact Us'
-    });
+    setIsSubmitting(true);
+    setFormError('');
 
-    setSubmitted(true);
+    try {
+      const res = await addLead({
+        name: contactData.name,
+        phone: contactData.phone,
+        email: contactData.email,
+        requirement: contactData.requirement,
+        budget: 'General Inquiry',
+        preferredArea: 'Nerul Head Office',
+        propertyType: 'All',
+        message: contactData.message,
+        lead_source: 'Contact Us Form',
+        cta_source: 'Contact Page Direct Form',
+        page_name: 'Contact Us'
+      });
+
+      if (res && res.success === false) {
+        setFormError(res.message || 'Failed to submit inquiry. Please try again.');
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error submitting inquiry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleCareerSubmit = (e: React.FormEvent) => {
+  const handleCareerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!careerData.name || !careerData.phone) return;
+    if (!careerData.name || !careerData.phone || isSubmitting) return;
 
-    addLead({
-      name: careerData.name,
-      phone: careerData.phone,
-      email: careerData.email,
-      requirement: `Career: ${careerData.position}`,
-      budget: `Experience: ${careerData.experience}`,
-      preferredArea: 'Head Office Nerul',
-      propertyType: 'Career Application',
-      message: `Resume Link/Details: ${careerData.resumeUrl || 'N/A'}. Cover Letter: ${careerData.message}`,
-      lead_source: 'Career Form Application',
-      cta_source: 'Contact Page Career Switcher',
-      page_name: 'Contact Us / Careers'
-    });
+    setIsSubmitting(true);
+    setFormError('');
 
-    setSubmitted(true);
+    try {
+      const res = await addLead({
+        name: careerData.name,
+        phone: careerData.phone,
+        email: careerData.email,
+        requirement: `Career: ${careerData.position}`,
+        budget: `Experience: ${careerData.experience}`,
+        preferredArea: 'Head Office Nerul',
+        propertyType: 'Career Application',
+        message: careerData.message || `Applicant for ${careerData.position} (${careerData.experience})`,
+        lead_source: 'Career Form Application',
+        cta_source: 'Contact Page Career Switcher',
+        page_name: 'Contact Us / Careers',
+        resumeUrl: careerData.resumeUrl,
+        resumeFilename: careerData.resumeFilename,
+        resumeMimeType: careerData.resumeMimeType,
+        resumeSize: careerData.resumeSize
+      });
+
+      if (res && res.success === false) {
+        setFormError(res.message || 'Failed to submit application. Please try again.');
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error submitting application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -324,8 +359,19 @@ export const Contact: React.FC = () => {
                       ></textarea>
                     </div>
 
-                    <button type="submit" className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase">
-                      SEND INQUIRY NOW <Send className="w-4 h-4 ml-1" />
+                    {formError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                        {formError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? 'SENDING INQUIRY...' : 'SEND INQUIRY NOW'}
+                      <Send className="w-4 h-4" />
                     </button>
                   </form>
                 ) : (
@@ -336,6 +382,12 @@ export const Contact: React.FC = () => {
                       <h3 className="font-serif text-2xl font-bold text-slate-900">Career Application</h3>
                       <p className="text-xs text-slate-500">Apply for high-growth real estate consultancy positions at Jayshree Realty.</p>
                     </div>
+
+                    {formError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                        {formError}
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name *</label>
@@ -407,7 +459,25 @@ export const Contact: React.FC = () => {
 
                     <ResumeUploader
                       currentFileUrl={careerData.resumeUrl}
-                      onUploadSuccess={(fileUrl) => setCareerData({ ...careerData, resumeUrl: fileUrl })}
+                      currentFileName={careerData.resumeFilename}
+                      onUploadSuccess={(fileUrl, fileName, metadata) => {
+                        setCareerData(prev => ({
+                          ...prev,
+                          resumeUrl: fileUrl,
+                          resumeFilename: fileName || '',
+                          resumeMimeType: metadata?.mimetype || '',
+                          resumeSize: metadata?.size || 0
+                        }));
+                      }}
+                      onClear={() => {
+                        setCareerData(prev => ({
+                          ...prev,
+                          resumeUrl: '',
+                          resumeFilename: '',
+                          resumeMimeType: '',
+                          resumeSize: 0
+                        }));
+                      }}
                     />
 
                     <div>
@@ -421,8 +491,13 @@ export const Contact: React.FC = () => {
                       ></textarea>
                     </div>
 
-                    <button type="submit" className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase">
-                      SUBMIT CAREER APPLICATION <UserCheck className="w-4 h-4 ml-1" />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="btn-gold w-full py-3.5 text-sm font-bold shadow-xl uppercase disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? 'SUBMITTING APPLICATION...' : 'SUBMIT CAREER APPLICATION'}
+                      <UserCheck className="w-4 h-4" />
                     </button>
                   </form>
                 )}

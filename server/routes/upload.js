@@ -25,26 +25,44 @@ const storage = multer.diskStorage({
   }
 });
 
+// Admin upload filter (images & documents)
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.svg'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.svg', '.doc', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('File format not supported. Upload JPG, PNG, WEBP, GIF, SVG or PDF files.'), false);
+    cb(new Error('File format not supported. Upload JPG, PNG, WEBP, GIF, SVG, PDF, DOC, or DOCX files.'), false);
   }
 };
 
 const upload = multer({
   storage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB max file size
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB max
   fileFilter
+});
+
+// Career Resume upload filter (Strict: PDF, DOC, DOCX up to 10MB)
+const resumeFilter = (req, file, cb) => {
+  const allowedExtensions = ['.pdf', '.doc', '.docx'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (allowedExtensions.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid resume format. Only PDF, DOC, and DOCX files are allowed.'), false);
+  }
+};
+
+const resumeUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB strict limit
+  fileFilter: resumeFilter
 });
 
 const router = express.Router();
 
 // Helper to sync uploaded file across all potential directories & Supabase Storage
-const syncUploadedFile = async (filePath, filename, mimetype) => {
+export const syncUploadedFile = async (filePath, filename, mimetype) => {
   const targetDirs = [
     '/home/u168098130/public_html/uploads',
     '/home/u168098130/domains/jayshreerealty.com/public_html/uploads',
@@ -55,6 +73,7 @@ const syncUploadedFile = async (filePath, filename, mimetype) => {
     path.resolve(process.cwd(), 'uploads'),
     path.join(__dirname, '..', '..', 'public', 'uploads')
   ];
+
   for (const targetDir of targetDirs) {
     try {
       if (!fs.existsSync(targetDir)) {
@@ -77,7 +96,53 @@ const syncUploadedFile = async (filePath, filename, mimetype) => {
   }
 };
 
-// POST /api/upload (Single File Upload)
+// POST /api/upload/resume (Public Career Resume Upload)
+// Accepts field name 'resume' or 'file'
+const resumeUploadMiddleware = (req, res, next) => {
+  const handler = resumeUpload.fields([
+    { name: 'resume', maxCount: 1 },
+    { name: 'file', maxCount: 1 }
+  ]);
+
+  handler(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: 'File size exceeds 10MB limit.' });
+      }
+      return res.status(400).json({ success: false, message: err.message });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next();
+  });
+};
+
+router.post('/resume', resumeUploadMiddleware, async (req, res) => {
+  try {
+    const uploadedFile = req.files?.resume?.[0] || req.files?.file?.[0] || req.file;
+    if (!uploadedFile) {
+      return res.status(400).json({ success: false, message: 'No resume file uploaded.' });
+    }
+
+    await syncUploadedFile(uploadedFile.path, uploadedFile.filename, uploadedFile.mimetype);
+    const publicUrl = `/uploads/${uploadedFile.filename}`;
+
+    return res.json({
+      success: true,
+      url: publicUrl,
+      fileUrl: publicUrl,
+      filename: uploadedFile.filename,
+      originalName: uploadedFile.originalname,
+      size: uploadedFile.size,
+      mimetype: uploadedFile.mimetype
+    });
+  } catch (error) {
+    console.error('[Resume Upload Error]', error);
+    return res.status(500).json({ success: false, message: 'Resume upload failed. Please try again.' });
+  }
+});
+
+// POST /api/upload (Protected Single File Upload for Admin CMS)
 router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -91,14 +156,15 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
       fileUrl: publicUrl,
       filename: req.file.filename,
       originalName: req.file.originalname,
-      size: req.file.size
+      size: req.file.size,
+      mimetype: req.file.mimetype
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'File upload failed.' });
   }
 });
 
-// POST /api/upload/multiple (Multiple Files Upload)
+// POST /api/upload/multiple (Protected Multiple Files Upload for Admin CMS)
 router.post('/multiple', authenticateToken, upload.array('files', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
