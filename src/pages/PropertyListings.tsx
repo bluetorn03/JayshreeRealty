@@ -9,6 +9,7 @@ export const PropertyListings: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('All');
 
   const resaleCategories = [
+    'Resale',
     '1 BHK Nerul East',
     '1 BHK Nerul West',
     '1 BHK Seawoods East',
@@ -23,9 +24,22 @@ export const PropertyListings: React.FC = () => {
     'Row House'
   ];
 
-  const filteredListings = projects.filter((p) => {
-    if (p.published === false) return false;
+  const resaleListings = projects.filter((p) => {
+    if (p.published === false || p.archived === true) return false;
+    // Check if property is marked as Resale or in a resale category
+    const isResale =
+      p.type === 'Resale' ||
+      p.category === 'Resale' ||
+      (p.placements && p.placements.includes('resale')) ||
+      resaleCategories.includes(p.category);
+    return isResale;
+  });
+
+  const filteredListings = resaleListings.filter((p) => {
     if (activeCategory === 'All') return true;
+    if (activeCategory === 'Resale') {
+      return p.type === 'Resale' || p.category === 'Resale';
+    }
     return p.category === activeCategory;
   });
 
@@ -69,7 +83,7 @@ export const PropertyListings: React.FC = () => {
                   : 'bg-white text-slate-700 border-slate-200 hover:border-[#c5a059]'
               }`}
             >
-              All Listings ({projects.length})
+              All Listings ({resaleListings.length})
             </button>
 
             {resaleCategories.map((cat) => (
@@ -88,16 +102,36 @@ export const PropertyListings: React.FC = () => {
           </div>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredListings.map((property, idx) => {
-              const isEvenRow = Math.floor(idx / 3) % 2 === 0;
-              return (
-                <div key={property.id} className={`${isEvenRow ? 'reveal-left' : 'reveal-right'} stagger-${(idx % 3) + 1}`}>
-                  <ProjectCard property={property} theme="light" />
-                </div>
-              );
-            })}
-          </div>
+          {filteredListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredListings.map((property, idx) => {
+                const isEvenRow = Math.floor(idx / 3) % 2 === 0;
+                return (
+                  <div key={property.id} className={`${isEvenRow ? 'reveal-left' : 'reveal-right'} stagger-${(idx % 3) + 1}`}>
+                    <ProjectCard property={property} theme="light" />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-16 max-w-md mx-auto space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[#c5a059] flex items-center justify-center mx-auto text-2xl font-bold">
+                🏠
+              </div>
+              <h3 className="font-serif text-xl font-bold text-slate-800">
+                No Resale Listings In This Node Currently
+              </h3>
+              <p className="text-sm text-slate-600 font-outfit">
+                We have verified off-market and upcoming CIDCO transfer flats matching this criteria. Connect with our Nerul Station team directly.
+              </p>
+              <button
+                onClick={() => setActiveCategory('All')}
+                className="btn-gold px-6 py-2.5 rounded-xl text-xs font-bold"
+              >
+                View All Resale Listings ({resaleListings.length})
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

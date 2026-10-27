@@ -12,9 +12,8 @@ export function useScrollReveal(deps: any[] = []): void {
 
     const SELECTOR = '.reveal, .reveal-left, .reveal-right, .reveal-fade';
 
-    // If user prefers reduced motion or browser lacks IntersectionObserver, reveal immediately
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+    // Fallback if browser lacks IntersectionObserver
+    if (!('IntersectionObserver' in window)) {
       document.querySelectorAll(SELECTOR).forEach((el) => {
         el.classList.add('is-revealed');
       });
@@ -52,8 +51,8 @@ export function useScrollReveal(deps: any[] = []): void {
         });
       },
       {
-        rootMargin: '50px 0px 50px 0px',
-        threshold: [0, 0.1]
+        rootMargin: '100px 0px 100px 0px',
+        threshold: [0, 0.05]
       }
     );
 
@@ -64,19 +63,31 @@ export function useScrollReveal(deps: any[] = []): void {
       observer.observe(el);
     });
 
-    // Secondary scan for newly rendered dynamic items (e.g. category filters, tab switches)
-    const scanTimeoutId = setTimeout(() => {
-      const pending = document.querySelectorAll(SELECTOR);
-      pending.forEach((el) => {
+    // Multi-stage scan for dynamic async database loads and tab transitions
+    const t1 = setTimeout(() => {
+      document.querySelectorAll(SELECTOR).forEach((el) => {
         revealIfVisible(el);
         observer.observe(el);
       });
-    }, 150);
+    }, 100);
+
+    const t2 = setTimeout(() => {
+      document.querySelectorAll(SELECTOR).forEach((el) => {
+        revealIfVisible(el);
+        observer.observe(el);
+      });
+    }, 400);
+
+    const t3 = setTimeout(() => {
+      document.querySelectorAll(SELECTOR).forEach((el) => {
+        revealIfVisible(el);
+        observer.observe(el);
+      });
+    }, 1000);
 
     // Fail-safe: ensure elements in viewport are revealed during active fast scroll
     const onScrollOrResize = () => {
-      const all = document.querySelectorAll(SELECTOR);
-      all.forEach((el) => {
+      document.querySelectorAll(SELECTOR).forEach((el) => {
         revealIfVisible(el);
       });
     };
@@ -85,7 +96,9 @@ export function useScrollReveal(deps: any[] = []): void {
     window.addEventListener('resize', onScrollOrResize, { passive: true });
 
     return () => {
-      clearTimeout(scanTimeoutId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('scroll', onScrollOrResize);
       window.removeEventListener('resize', onScrollOrResize);
       observer.disconnect();

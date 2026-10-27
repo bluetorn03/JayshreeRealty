@@ -204,7 +204,38 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
         {/* Scrollable Modal Body */}
         <div className="overflow-y-auto flex-1 p-4 md:p-6 space-y-6 custom-scrollbar bg-[#faf8f5]">
           
-          {/* 1. FULL SIZE IMAGE GALLERY SECTION */}
+          {/* 1. MAIN TITLE & PRICE HEADER BANNER */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] sm:text-xs text-[#99732b] font-bold uppercase tracking-wider bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                  Verified Exclusive Listing
+                </span>
+                {property.code && (
+                  <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    ID: {property.code}
+                  </span>
+                )}
+              </div>
+              <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-tight">
+                {property.title}
+              </h2>
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium mt-1">
+                <MapPin className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
+                <span>{property.location}</span>
+              </div>
+            </div>
+            <div className="sm:text-right shrink-0 bg-amber-50/80 border border-amber-200/70 rounded-xl p-3 sm:p-3.5">
+              <span className="text-[10px] text-amber-900/80 uppercase tracking-widest block font-outfit font-semibold">
+                Starting Price
+              </span>
+              <span className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#b38a36] block">
+                {property.price}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. FULL SIZE IMAGE GALLERY SECTION */}
           <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 shadow-md">
             {/* Main Active Image Viewport */}
             <div
@@ -218,14 +249,15 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 src={currentDisplayImage}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-50 brightness-75 select-none pointer-events-none"
+                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-60 brightness-90 select-none pointer-events-none"
               />
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-xs pointer-events-none z-[1]" />
 
               {/* Layer 2: Full-Visibility Foreground (Shows 100% of vertical architectural or landscape photos without cropping) */}
               <img
                 src={currentDisplayImage}
                 alt={`${property.title} - Full View ${currentImageIndex + 1}`}
-                className="relative z-[2] w-full h-full object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.6)] transition-all duration-300"
+                className="relative z-[2] w-full h-full object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.7)] transition-all duration-300"
                 onError={(e) => {
                   const target = e.currentTarget;
                   if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
@@ -241,12 +273,9 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                 }}
               />
 
-              {/* Gradient Scrim for crisp text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none z-[3]" />
-
               {/* Photo Counter Badge */}
               {imagesList.length > 0 && (
-                <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-md border border-[#c5a059]/40 text-[#e5c178] px-3 py-1 rounded-full text-xs font-mono font-bold shadow-lg">
+                <div className="absolute top-3 left-3 z-[3] bg-black/75 backdrop-blur-md border border-[#c5a059]/40 text-[#e5c178] px-3 py-1 rounded-full text-xs font-mono font-bold shadow-lg">
                   {currentImageIndex + 1} / {imagesList.length} Photos
                 </div>
               )}
@@ -274,26 +303,6 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
                   <ChevronRight className="w-6 h-6" />
                 </button>
               )}
-
-              {/* Price & Title overlay on photo */}
-              <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
-                <div>
-                  <span className="text-[11px] text-[#e5c178] font-bold uppercase tracking-wider block">
-                    Verified Exclusive Listing
-                  </span>
-                  <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-md">
-                    {property.title}
-                  </h2>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-200 uppercase tracking-widest block font-outfit">
-                    Starting Price
-                  </span>
-                  <span className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#e5c178] drop-shadow-md">
-                    {property.price}
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Thumbnail Navigation Strip */}

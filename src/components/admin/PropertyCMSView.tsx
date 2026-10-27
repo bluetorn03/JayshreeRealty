@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { PropertyItem, ProjectCategory } from '../../types';
 import { api } from '../../services/api';
@@ -7,13 +7,13 @@ import { FormattedDescription } from '../FormattedDescription';
 import {
   Building2, Plus, Edit3, Trash2, Eye, EyeOff, Sparkles, Upload,
   Image as ImageIcon, FileText, Check, X, Layers, MapPin, Search, ArrowUpRight,
-  Bold, Heading, List, CornerDownLeft, ShieldCheck, Tag
+  Bold, Heading, List, CornerDownLeft, ShieldCheck, Tag, ChevronDown
 } from 'lucide-react';
 
 export const PropertyCMSView: React.FC = () => {
   const {
     projects, addProject, updateProject, deleteProject,
-    toggleProjectFeatured, toggleProjectPublished, toggleProjectArchive, categories
+    toggleProjectFeatured, toggleProjectPublished, toggleProjectArchive, categories, addCategory
   } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +28,24 @@ export const PropertyCMSView: React.FC = () => {
   const longDescRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [newAmenityInput, setNewAmenityInput] = useState('');
+
+  // Project Category Combobox & Autosuggestions state
+  const [categoryInput, setCategoryInput] = useState('');
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const categorySuggestionsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        categorySuggestionsRef.current &&
+        !categorySuggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowCategorySuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const POPULAR_AMENITIES = [
     'Swimming Pool', 'Gymnasium', 'Clubhouse', '24/7 Security', 'Podium Swimming Pool',
@@ -117,12 +135,34 @@ export const PropertyCMSView: React.FC = () => {
     return true;
   });
 
+  const handleTypeChange = (newType: PropertyItem['type']) => {
+    let newPlacements = form.placements || [];
+    if (newType === 'Resale') {
+      newPlacements = Array.from(new Set([...newPlacements, 'resale', 'homepage']));
+    } else if (newType === 'Commercial') {
+      newPlacements = Array.from(new Set([...newPlacements, 'commercial']));
+    } else if (newType === 'Featured') {
+      newPlacements = Array.from(new Set([...newPlacements, 'featured', 'homepage']));
+    } else if (newType === 'New Launch' || newType === 'Township' || newType === 'Luxury') {
+      newPlacements = Array.from(new Set([...newPlacements, 'featured', 'homepage', 'buy']));
+    }
+    setForm(prev => ({
+      ...prev,
+      type: newType,
+      placements: newPlacements,
+      isFeatured: newType === 'Featured' ? true : prev.isFeatured
+    }));
+  };
+
   const handleOpenAdd = () => {
     setEditingId(null);
+    const initialCategory = categories[0] || 'Kharghar New Projects';
+    setCategoryInput(initialCategory);
+    setShowCategorySuggestions(false);
     setForm({
       title: '',
       slug: '',
-      category: categories[0] || 'Kharghar New Projects',
+      category: initialCategory,
       location: 'Nerul West, Navi Mumbai',
       type: 'New Launch',
       configuration: '2 BHK',
@@ -159,8 +199,12 @@ export const PropertyCMSView: React.FC = () => {
     const shortVal = proj.highlights || proj.shortDescription || '';
     const longVal = proj.longDescription !== undefined ? proj.longDescription : (proj.description || '');
     const currentAmenities = proj.amenities && proj.amenities.length > 0 ? proj.amenities : (proj.features || []);
+    setCategoryInput(proj.category || '');
+    setShowCategorySuggestions(false);
     setForm({
       ...proj,
+      category: proj.category || '',
+      type: proj.type || 'New Launch',
       highlights: shortVal,
       shortDescription: shortVal,
       longDescription: longVal,
@@ -178,6 +222,15 @@ export const PropertyCMSView: React.FC = () => {
     e.preventDefault();
     if (!form.title || !form.location) return;
 
+    const finalCategory = (categoryInput || form.category || 'Kharghar New Projects').trim();
+    if (finalCategory && !categories.includes(finalCategory)) {
+      try {
+        await addCategory(finalCategory);
+      } catch (err) {
+        console.error('Error adding new category:', err);
+      }
+    }
+
     const finalImage = form.image || (form.galleryImages && form.galleryImages.length > 0 ? form.galleryImages[0] : '');
     const shortVal = (form.highlights || form.shortDescription || '').trim();
     const longVal = (form.longDescription !== undefined ? form.longDescription : (form.description || '')).trim();
@@ -185,6 +238,8 @@ export const PropertyCMSView: React.FC = () => {
 
     const payload = {
       ...form,
+      category: finalCategory,
+      type: form.type || 'New Launch',
       highlights: shortVal,
       shortDescription: shortVal,
       longDescription: longVal,
@@ -470,50 +525,139 @@ export const PropertyCMSView: React.FC = () => {
 
       {/* Comprehensive Property CMS Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl p-6 sm:p-8 w-full max-w-3xl shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <h3 className="font-serif font-bold text-xl text-white">
-                {editingId ? 'Edit Property Listing' : 'Create New Property Listing'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="relative bg-[#0d1527] border border-[#c5a059]/40 rounded-3xl w-full max-w-4xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden my-auto">
+            {/* Pinned Sticky Header with Fixed Close Button */}
+            <div className="sticky top-0 z-40 bg-[#0d1527] border-b border-slate-800 px-6 sm:px-8 py-4 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#c5a059] animate-pulse"></div>
+                <h3 className="font-serif font-bold text-lg sm:text-xl text-white">
+                  {editingId ? 'Edit Property Listing' : 'Create New Property Listing'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all shadow-md border border-slate-700/60"
+                title="Close Form"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6 text-xs">
-              {/* Basic Details */}
-              <div className="space-y-3">
-                <div className="font-serif font-bold text-slate-300 uppercase text-[11px] tracking-wider text-[#c5a059]">
-                  1. General Information
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-300 mb-1">Property Title *</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.title || ''}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      placeholder="e.g. Jayshree Heights"
-                      className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#c5a059]"
-                    />
+            {/* Scrollable Form Body */}
+            <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-6">
+              <form onSubmit={handleSave} className="space-y-6 text-xs">
+                {/* Basic Details */}
+                <div className="space-y-3">
+                  <div className="font-serif font-bold text-slate-300 uppercase text-[11px] tracking-wider text-[#c5a059]">
+                    1. General Information
                   </div>
 
-                  <div>
-                    <label className="block text-slate-300 mb-1">Project Category *</label>
-                    <select
-                      value={form.category}
-                      onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-                      className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-slate-300 mb-1">Property Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={form.title || ''}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        placeholder="e.g. Jayshree Heights"
+                        className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#c5a059]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 mb-1">Property Type *</label>
+                      <select
+                        value={form.type || 'New Launch'}
+                        onChange={(e) => handleTypeChange(e.target.value as any)}
+                        className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#c5a059]"
+                      >
+                        <option value="New Launch">New Launch (New Projects)</option>
+                        <option value="Resale">Resale (CIDCO / Ready Resale)</option>
+                        <option value="Commercial">Commercial (Office / Shop / Workspace)</option>
+                        <option value="Township">Township (Integrated 4-10 Acre)</option>
+                        <option value="Featured">Featured (Prime Spotlight)</option>
+                        <option value="Luxury">Luxury (Ultra Premium)</option>
+                      </select>
+                    </div>
+
+                    {/* Project Category Combobox */}
+                    <div className="relative" ref={categorySuggestionsRef}>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-slate-300">Project Category *</label>
+                        <span className="text-[10px] text-[#c5a059]">Type or select</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          value={categoryInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCategoryInput(val);
+                            setForm(prev => ({ ...prev, category: val }));
+                            setShowCategorySuggestions(true);
+                          }}
+                          onFocus={() => setShowCategorySuggestions(true)}
+                          placeholder="Type or select category..."
+                          className="w-full bg-[#070b19] border border-slate-700 rounded-xl p-2.5 pr-8 text-white focus:outline-none focus:border-[#c5a059]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCategorySuggestions(prev => !prev)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#c5a059]"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Suggestions list */}
+                      {showCategorySuggestions && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 max-h-56 overflow-y-auto bg-[#070b19] border border-[#c5a059]/50 rounded-xl shadow-2xl z-50 divide-y divide-slate-800">
+                          {categoryInput.trim() && !categories.some(c => c.toLowerCase() === categoryInput.trim().toLowerCase()) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const custom = categoryInput.trim();
+                                setCategoryInput(custom);
+                                setForm(prev => ({ ...prev, category: custom }));
+                                setShowCategorySuggestions(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2.5 text-xs text-[#c5a059] bg-[#c5a059]/10 hover:bg-[#c5a059]/20 font-semibold flex items-center justify-between"
+                            >
+                              <span>+ Use custom: &quot;{categoryInput.trim()}&quot;</span>
+                              <span className="text-[10px] uppercase font-bold tracking-wider">New</span>
+                            </button>
+                          )}
+                          {categories.filter(c => c.toLowerCase().includes(categoryInput.toLowerCase().trim())).length > 0 ? (
+                            categories.filter(c => c.toLowerCase().includes(categoryInput.toLowerCase().trim())).map((cat) => (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => {
+                                  setCategoryInput(cat);
+                                  setForm(prev => ({ ...prev, category: cat }));
+                                  setShowCategorySuggestions(false);
+                                }}
+                                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
+                                  categoryInput === cat ? 'bg-[#c5a059]/15 text-[#c5a059] font-bold' : 'text-slate-200'
+                                }`}
+                              >
+                                <span>{cat}</span>
+                                {categoryInput === cat && <Check className="w-3.5 h-3.5 text-[#c5a059]" />}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-3 text-center text-[11px] text-slate-400">
+                              No matching preset categories. Typing custom category allowed!
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -1060,6 +1204,7 @@ export const PropertyCMSView: React.FC = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

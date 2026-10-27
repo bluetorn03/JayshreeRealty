@@ -24,6 +24,7 @@ export const Home: React.FC = () => {
 
   // Smooth infinite marquee reference (continuous linear motion without scroll resets)
   const marqueeTrackRef = useRef<HTMLDivElement | null>(null);
+  const [isMarqueePaused, setIsMarqueePaused] = useState(false);
 
   // Guarantee sufficient review cards for an infinite continuous seamless track
   const marqueeReviewsList = useMemo(() => {
@@ -82,9 +83,11 @@ export const Home: React.FC = () => {
   const featuredProjects = useMemo(() => {
     return projects.filter((p) => {
       if (p.published === false || p.archived === true) return false;
+      if (selectedCategory === 'Resale') {
+        return p.type === 'Resale' || p.category === 'Resale' || (p.placements && p.placements.includes('resale'));
+      }
       if (p.placements && p.placements.length > 0 && !p.placements.includes('homepage') && !p.placements.includes('featured') && !p.isFeatured) return false;
       if (selectedCategory === 'All') return true;
-      if (selectedCategory === 'Resale') return p.type === 'Resale';
       return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
     }).slice(0, 6);
   }, [projects, selectedCategory]);
@@ -137,18 +140,18 @@ export const Home: React.FC = () => {
 
               {/* Hero Left Content */}
               <div className="lg:col-span-7 space-y-6 text-left">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#c5a059]/15 border border-[#c5a059]/40 text-[#e5c178] text-xs font-outfit uppercase tracking-widest font-semibold hero-motion-badge shadow-lg">
-                  <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" />
-                  100+ Verified Projects | Nerul, Kharghar, Ulwe, Pushpak Nagar & Panvel
+                <div className="inline-flex max-w-full items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#c5a059]/15 border border-[#c5a059]/40 text-[#e5c178] text-[10px] sm:text-xs font-outfit uppercase tracking-normal sm:tracking-wider font-semibold hero-motion-badge shadow-lg">
+                  <Sparkles className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
+                  <span className="truncate">100+ Verified Projects | Nerul, Kharghar, Ulwe & Panvel</span>
                 </div>
 
-                <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight hero-motion-title">
+                <h1 className="font-serif text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight hero-motion-title">
                   {heroSettings.headingPart1 || "Navi Mumbai’s Most"} <br />
                   <span className="text-gradient-gold">{heroSettings.headingGold || "Trusted Luxury Real Estate"}</span>
                 </h1>
 
                 {/* Typewriter Animation for Rotating Keywords */}
-                <div className="flex flex-wrap items-center gap-2 font-outfit text-base sm:text-xl lg:text-2xl text-slate-200 font-semibold min-h-[52px] sm:min-h-[44px] hero-motion-typewriter">
+                <div className="flex flex-wrap items-center gap-2 font-outfit text-sm sm:text-xl lg:text-2xl text-slate-200 font-semibold min-h-[44px] sm:min-h-[52px] hero-motion-typewriter">
                   <span className="text-slate-400 shrink-0">Specialized In:</span>
                   <span className="text-[#e5c178] font-bold inline-flex items-center min-h-[32px] break-words">
                     <span>{currentText}</span>
@@ -156,39 +159,39 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
 
-                <p className="text-sm sm:text-base text-slate-300 font-outfit leading-relaxed max-w-2xl hero-motion-desc">
+                <p className="text-xs sm:text-base text-slate-300 font-outfit leading-relaxed max-w-2xl hero-motion-desc">
                   {heroSettings.subtext || "Experience transparent property buying with verified CIDCO plots, direct developer launches, and prime resale homes across Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel."}
                 </p>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-4 pt-3 hero-motion-ctas">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2 hero-motion-ctas">
                   <button
                     onClick={() => openModal('Hero Main CTA')}
-                    className="btn-gold px-8 py-4 text-sm font-bold tracking-wider shadow-xl"
+                    className="btn-gold px-6 sm:px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-bold tracking-wider shadow-xl"
                   >
                     GET BEST OFFER NOW <ArrowRight className="w-4 h-4 ml-1" />
                   </button>
 
                   <Link
                     to="/projects"
-                    className="btn-outline-gold px-7 py-4 text-sm font-semibold"
+                    className="btn-outline-gold px-5 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold"
                   >
                     Explore All Projects
                   </Link>
                 </div>
 
                 {/* Trust Badges */}
-                <div className="pt-6 grid grid-cols-3 gap-4 border-t border-slate-800/80 font-outfit text-xs text-slate-300 hero-motion-trust">
+                <div className="pt-5 sm:pt-6 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 border-t border-slate-800/80 font-outfit text-xs text-slate-300 hero-motion-trust">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#c5a059] shrink-0" />
+                    <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
                     <span>100% Legal Title Search</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-[#c5a059] shrink-0" />
+                    <Award className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
                     <span>Direct Developer Launch</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Star className="w-5 h-5 text-[#c5a059] fill-[#c5a059] shrink-0" />
+                    <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] fill-[#c5a059] shrink-0" />
                     <span>4.8/5 Rated on Google</span>
                   </div>
                 </div>
@@ -495,7 +498,11 @@ export const Home: React.FC = () => {
 
           <div
             ref={marqueeTrackRef}
-            className="marquee-track flex"
+            className={`marquee-track flex ${isMarqueePaused ? 'is-paused' : ''}`}
+            onMouseEnter={() => setIsMarqueePaused(true)}
+            onMouseLeave={() => setIsMarqueePaused(false)}
+            onTouchStart={() => setIsMarqueePaused(true)}
+            onTouchEnd={() => setIsMarqueePaused(false)}
           >
             {/* Track 1 */}
             <div className="flex gap-6 pr-6 shrink-0">

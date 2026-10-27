@@ -38,6 +38,8 @@ html {
   background-color: var(--bg-dark);
   color: var(--text-main);
   overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 body {
@@ -46,6 +48,17 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  min-height: 100vh;
 }
 
 img {
@@ -498,57 +511,8 @@ textarea:focus-visible {
   animation-name: marqueeScrollRight;
 }
 
-/* Only pause on hover on desktop devices where hover is actual pointer interaction */
-@media (hover: hover) and (pointer: fine) {
-  .marquee-track:hover {
-    animation-play-state: paused !important;
-  }
-}
-
-/* Prefers Reduced Motion Safety Guard */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  .reveal,
-  .reveal-left,
-  .reveal-right,
-  .reveal-fade {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-
-  .hero-motion-badge,
-  .hero-motion-title,
-  .hero-motion-typewriter,
-  .hero-motion-desc,
-  .hero-motion-ctas,
-  .hero-motion-trust,
-  .hero-motion-card,
-  .modal-backdrop-motion,
-  .modal-content-motion,
-  .dropdown-motion,
-  .mobile-drawer-motion,
-  .animate-hero-parallax,
-  .animate-fade-in,
-  .pulse-gold,
-  .view-all-highlight {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .marquee-track {
-    animation: none !important;
-    overflow-x: auto;
-  }
+.marquee-track.is-paused {
+  animation-play-state: paused !important;
 }
 
 /* Container */

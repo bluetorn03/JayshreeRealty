@@ -135,44 +135,39 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
           className="relative h-60 sm:h-64 w-full overflow-hidden bg-slate-950 cursor-pointer select-none"
           title="Click to view full property photos & details"
         >
-          {/* Dual-Layer Carousel: Ambient Color-Matched Backdrop + Crisp Full Aspect-Ratio Contain */}
-          {imagesList.map((imgSrc, idx) => (
-            <div
-              key={idx}
-              className={`absolute inset-0 w-full h-full overflow-hidden transition-opacity duration-700 ease-in-out ${
-                idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none'
-              }`}
-            >
-              {/* Layer 1: Ambient Blurred Backdrop (Matches image colors, fills entire horizontal card width) */}
-              <img
-                src={imgSrc}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-50 brightness-75 select-none pointer-events-none"
-                loading="lazy"
-              />
-              {/* Layer 2: Full-Visibility Foreground (Guarantees vertical and horizontal images show 100% full height/width without cropping top or bottom) */}
-              <img
-                src={imgSrc}
-                alt={`${property.title} - Image ${idx + 1}`}
-                className="relative z-[2] w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-104 drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
-                loading="lazy"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
-                    target.dataset.triedLive = 'true';
-                    const uploadIdx = target.src.indexOf('/uploads/');
-                    target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
-                    return;
-                  }
-                  if (!target.dataset.triedDefault) {
-                    target.dataset.triedDefault = 'true';
-                    target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
-                  }
-                }}
-              />
-            </div>
-          ))}
+          {/* Dual-Layer Active Image Presentation: Fast Single-Image Render + Ambient Color Backdrop */}
+          <div className="absolute inset-0 w-full h-full overflow-hidden">
+            {/* Layer 1: Ambient Blurred Backdrop (Matches image colors, fills entire horizontal card width) */}
+            <img
+              key={`blur-${currentImageIndex}-${imagesList[currentImageIndex]}`}
+              src={imagesList[currentImageIndex] || property.image}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-55 brightness-75 select-none pointer-events-none transition-opacity duration-300"
+              loading="lazy"
+            />
+            {/* Layer 2: Full-Visibility Foreground (Guarantees vertical and horizontal images show 100% full height/width without cropping top or bottom) */}
+            <img
+              key={`img-${currentImageIndex}-${imagesList[currentImageIndex]}`}
+              src={imagesList[currentImageIndex] || property.image}
+              alt={`${property.title} - Image ${currentImageIndex + 1}`}
+              className="relative z-[2] w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-104 drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
+              loading="lazy"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
+                  target.dataset.triedLive = 'true';
+                  const uploadIdx = target.src.indexOf('/uploads/');
+                  target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
+                  return;
+                }
+                if (!target.dataset.triedDefault) {
+                  target.dataset.triedDefault = 'true';
+                  target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+                }
+              }}
+            />
+          </div>
 
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/85 via-black/10 to-black/25 pointer-events-none z-[3]"></div>
 
