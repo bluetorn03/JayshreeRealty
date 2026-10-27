@@ -2,9 +2,11 @@ import React from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { ShieldCheck, Users, MapPin, CheckCircle2, Building2, ArrowRight } from 'lucide-react';
 import { useLeads } from '../context/LeadContext';
+import { useScrollReveal } from '../utils/useScrollReveal';
 
 export const About: React.FC = () => {
   const { openModal } = useLeads();
+  useScrollReveal();
 
   return (
     <div className="min-h-screen font-sans">
@@ -20,7 +22,7 @@ export const About: React.FC = () => {
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=2000')` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-4 relative z-10">
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-4 relative z-10 reveal">
           <span className="badge-gold">Our Legacy of Trust</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
             About <span className="text-gradient-gold">Jayshree Realty</span>
@@ -34,8 +36,8 @@ export const About: React.FC = () => {
       {/* 2. STORY SECTION (Pure White Background) */}
       <section className="py-24 section-white border-b border-slate-200/80">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-6 space-y-6 text-slate-700 font-outfit">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-6 space-y-6 text-slate-700 font-outfit reveal-left">
               <span className="badge-gold-dark">25+ Years Excellence</span>
               <h2 className="font-serif text-2xl sm:text-4xl font-bold text-slate-900 leading-snug">
                 Building Lifetime Customer Relationships in <span className="text-gradient-gold">Navi Mumbai</span>
@@ -66,7 +68,7 @@ export const About: React.FC = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-6">
+            <div className="lg:col-span-6 lg:sticky lg:top-28 lg:self-start reveal-right">
               <div className="relative rounded-3xl overflow-hidden border border-amber-200/80 shadow-2xl bg-white p-3">
                 <img
                   src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1000"
@@ -90,7 +92,7 @@ export const About: React.FC = () => {
       {/* 3. CORE PILLARS (Warm Beige Background) */}
       <section className="py-24 section-warm-beige border-b border-amber-200/60">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3 reveal">
             <span className="badge-gold-dark">Our Standards</span>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-900">
               The Pillars of Our <span className="text-gradient-gold">Service</span>
@@ -98,7 +100,7 @@ export const About: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left reveal stagger-1">
               <div className="w-12 h-12 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center mb-5">
                 <ShieldCheck className="w-6 h-6" />
               </div>
@@ -108,7 +110,7 @@ export const About: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left reveal stagger-2">
               <div className="w-12 h-12 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center mb-5">
                 <Building2 className="w-6 h-6" />
               </div>
@@ -118,7 +120,7 @@ export const About: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-left reveal stagger-3">
               <div className="w-12 h-12 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center mb-5">
                 <Users className="w-6 h-6" />
               </div>
@@ -133,7 +135,7 @@ export const About: React.FC = () => {
 
       {/* 3.5 YOUTUBE VIDEO SHOWCASE SECTION */}
       <section className="py-20 bg-[#090f20] border-b border-slate-800">
-        <div className="container mx-auto px-4 text-center max-w-4xl space-y-6">
+        <div className="container mx-auto px-4 text-center max-w-4xl space-y-6 reveal">
           <span className="badge-gold">Official YouTube Channel</span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
             Watch Our <span className="text-gradient-gold">Property Walkthroughs</span>
@@ -181,7 +183,7 @@ export const About: React.FC = () => {
 
       {/* 4. CALL TO ACTION (Dark Navy Background) */}
       <section className="py-20 section-navy">
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-6">
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-6 reveal">
           <span className="badge-gold">Get in Touch</span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
             Looking for Your Next <span className="text-gradient-gold">Property Deal?</span>

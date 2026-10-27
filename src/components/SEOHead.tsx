@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useData } from '../context/DataContext';
 
 interface SEOHeadProps {
   title: string;
@@ -15,6 +16,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   canonicalPath = '/',
   image = 'https://jayshreerealty.com/assets/jayshree-realty-logo.png'
 }) => {
+  const { siteSettings } = useData();
   useEffect(() => {
     // Set Page Title
     const pageTitle = title.includes('Jayshree Realty') ? title : `${title} | Jayshree Realty`;
@@ -73,7 +75,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       "image": image,
       "@id": "https://jayshreerealty.com",
       "url": "https://jayshreerealty.com",
-      "telephone": "+918169005579",
+      "telephone": siteSettings?.phoneRaw || "+918169005579",
       "priceRange": "₹40 Lakhs - ₹5 Cr+",
       "address": {
         "@type": "PostalAddress",

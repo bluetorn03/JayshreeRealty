@@ -23,6 +23,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 
 import { useLocation } from 'react-router-dom';
 import { analyticsTracker } from './services/analyticsTracker';
+import { useScrollReveal } from './utils/useScrollReveal';
 
 // Public Layout Wrapper: Ensures Navbar, Footer, LeadModal, FloatingCTA are present ONLY on public pages
 const PublicLayout: React.FC = () => {
@@ -31,6 +32,9 @@ const PublicLayout: React.FC = () => {
   React.useEffect(() => {
     analyticsTracker.trackPageView(location.pathname, document.title || 'Jayshree Realty');
   }, [location.pathname]);
+
+  // Activate scroll reveal globally on route change
+  useScrollReveal([location.pathname]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#070b19] text-slate-100 font-sans selection:bg-[#c5a059] selection:text-white">

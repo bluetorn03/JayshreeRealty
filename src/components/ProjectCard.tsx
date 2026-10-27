@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { PropertyItem } from '../types';
 import { useLeads } from '../context/LeadContext';
+import { useData } from '../context/DataContext';
 import { getYouTubeEmbedUrl } from '../utils/youtube';
 import { PropertyDetailModal } from './PropertyDetailModal';
 
@@ -98,7 +99,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
     }
   };
 
-  const whatsappUrl = `https://wa.me/918169005579?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
+  const { siteSettings } = useData();
+  const whatsappRaw = siteSettings?.whatsappRaw || '918169005579';
+  const phoneRaw = siteSettings?.phoneRaw || '+918169005579';
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
     property.title + ' (' + property.location + ')'
   )}%20from%20Jayshree%20Realty.`;
 
@@ -116,7 +120,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
           setIsHovered(false);
           setCurrentImageIndex(0);
         }}
-        className={`rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-2 flex flex-col group ${
+        className={`rounded-2xl overflow-hidden luxury-card-motion md:hover:-translate-y-1.5 flex flex-col group ${
           isLight
             ? 'bg-white border border-amber-200/60 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:border-[#c5a059]'
             : 'bg-[#0d1527] border border-[#c5a059]/30 shadow-2xl hover:border-[#c5a059]'
@@ -128,36 +132,49 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          className="relative h-56 w-full overflow-hidden bg-slate-900 cursor-pointer select-none"
+          className="relative h-60 sm:h-64 w-full overflow-hidden bg-slate-950 cursor-pointer select-none"
           title="Click to view full property photos & details"
         >
-          {/* Image Carousel with Fade Transition */}
+          {/* Dual-Layer Carousel: Ambient Color-Matched Backdrop + Crisp Full Aspect-Ratio Contain */}
           {imagesList.map((imgSrc, idx) => (
-            <img
+            <div
               key={idx}
-              src={imgSrc}
-              alt={`${property.title} - Image ${idx + 1}`}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out group-hover:scale-105 ${
-                idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
+              className={`absolute inset-0 w-full h-full overflow-hidden transition-opacity duration-700 ease-in-out ${
+                idx === currentImageIndex ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none'
               }`}
-              loading="lazy"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
-                  target.dataset.triedLive = 'true';
-                  const uploadIdx = target.src.indexOf('/uploads/');
-                  target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
-                  return;
-                }
-                if (!target.dataset.triedDefault) {
-                  target.dataset.triedDefault = 'true';
-                  target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
-                }
-              }}
-            />
+            >
+              {/* Layer 1: Ambient Blurred Backdrop (Matches image colors, fills entire horizontal card width) */}
+              <img
+                src={imgSrc}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-50 brightness-75 select-none pointer-events-none"
+                loading="lazy"
+              />
+              {/* Layer 2: Full-Visibility Foreground (Guarantees vertical and horizontal images show 100% full height/width without cropping top or bottom) */}
+              <img
+                src={imgSrc}
+                alt={`${property.title} - Image ${idx + 1}`}
+                className="relative z-[2] w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-104 drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
+                    target.dataset.triedLive = 'true';
+                    const uploadIdx = target.src.indexOf('/uploads/');
+                    target.src = `https://jayshreerealty.com${target.src.substring(uploadIdx)}`;
+                    return;
+                  }
+                  if (!target.dataset.triedDefault) {
+                    target.dataset.triedDefault = 'true';
+                    target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+                  }
+                }}
+              />
+            </div>
           ))}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/90 via-black/20 to-black/30 pointer-events-none z-[2]"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b132b]/85 via-black/10 to-black/25 pointer-events-none z-[3]"></div>
 
           {/* Quick View Floating Hint on Desktop Hover */}
           <div className="hidden sm:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/75 backdrop-blur-md border border-[#c5a059]/60 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-2xl z-10 scale-90 group-hover:scale-100">
@@ -355,13 +372,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ property, theme = 'lig
             </a>
 
             <a
-              href="tel:+918169005579"
+              href={`tel:${phoneRaw}`}
               className={`p-2.5 rounded-lg transition-colors border ${
                 isLight
                   ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-[#0b132b] hover:text-white'
                   : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-[#c5a059]'
               }`}
-              title="Call Jayshree Realty"
+              title={`Call Jayshree Realty (${siteSettings?.phone || '+91 81690 05579'})`}
             >
               <Phone className="w-4 h-4" />
             </a>

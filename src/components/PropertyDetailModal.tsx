@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   ChevronLeft,
@@ -20,6 +21,7 @@ import {
 import { PropertyItem } from '../types';
 import { FormattedDescription } from './FormattedDescription';
 import { getYouTubeEmbedUrl } from '../utils/youtube';
+import { useData } from '../context/DataContext';
 
 interface PropertyDetailModalProps {
   property: PropertyItem | null;
@@ -34,13 +36,14 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
   onClose,
   onOpenLeadModal
 }) => {
+  const { siteSettings } = useData();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [copiedShare, setCopiedShare] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const thumbnailsRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset image index when modal opens or property changes
+  // Reset image index and lock body scroll when modal opens
   useEffect(() => {
     if (isOpen) {
       setCurrentImageIndex(0);
@@ -79,7 +82,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, imagesList, onClose]);
 
-  // Scroll thumbnail into view
+  // Scroll active thumbnail into view
   useEffect(() => {
     if (!thumbnailsRef.current) return;
     const activeThumb = thumbnailsRef.current.children[currentImageIndex] as HTMLElement;
@@ -88,6 +91,7 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
     }
   }, [currentImageIndex]);
 
+  // ALL HOOKS ARE COMPLETE - Safe single early return guard
   if (!isOpen || !property) return null;
 
   const currentDisplayImage = imagesList[currentImageIndex] || property.image;
@@ -139,20 +143,23 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
     }
   };
 
-  const whatsappUrl = `https://wa.me/918169005579?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
+  const whatsappRaw = siteSettings?.whatsappRaw || '918169005579';
+  const phoneRaw = siteSettings?.phoneRaw || '+918169005579';
+
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=Hello,%20I%20am%20interested%20in%20${encodeURIComponent(
     property.title + ' (' + property.location + ')'
   )}%20from%20Jayshree%20Realty.`;
 
   const shortDesc = property.highlights || property.shortDescription || '';
   const longDesc = property.longDescription || property.description || '';
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-slate-950/50 backdrop-blur-[2px] modal-backdrop-motion"
       onClick={onClose}
     >
       <div
-        className="bg-[#faf8f5] text-slate-900 border border-amber-200/90 rounded-2xl md:rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative"
+        className="bg-[#faf8f5] text-slate-900 border border-amber-200/90 rounded-2xl md:rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative modal-content-motion"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar - Luxury Light Theme */}
@@ -201,15 +208,24 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 shadow-md">
             {/* Main Active Image Viewport */}
             <div
-              className="relative w-full h-64 sm:h-80 md:h-96 lg:h-[420px] bg-slate-900 flex items-center justify-center select-none"
+              className="relative w-full h-72 sm:h-88 md:h-[420px] lg:h-[460px] bg-slate-950 flex items-center justify-center select-none overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
+              {/* Layer 1: Ambient Blurred Backdrop (Matches image colors, fills entire horizontal viewport) */}
+              <img
+                src={currentDisplayImage}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-50 brightness-75 select-none pointer-events-none"
+              />
+
+              {/* Layer 2: Full-Visibility Foreground (Shows 100% of vertical architectural or landscape photos without cropping) */}
               <img
                 src={currentDisplayImage}
                 alt={`${property.title} - Full View ${currentImageIndex + 1}`}
-                className="w-full h-full object-cover transition-all duration-300"
+                className="relative z-[2] w-full h-full object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.6)] transition-all duration-300"
                 onError={(e) => {
                   const target = e.currentTarget;
                   if (!target.dataset.triedLive && target.src.includes('/uploads/') && !window.location.hostname.includes('jayshreerealty.com')) {
@@ -226,12 +242,12 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
               />
 
               {/* Gradient Scrim for crisp text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none z-[3]" />
 
               {/* Photo Counter Badge */}
               {imagesList.length > 0 && (
                 <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-md border border-[#c5a059]/40 text-[#e5c178] px-3 py-1 rounded-full text-xs font-mono font-bold shadow-lg">
-                  📷 {currentImageIndex + 1} / {imagesList.length} Photos
+                  {currentImageIndex + 1} / {imagesList.length} Photos
                 </div>
               )}
 
@@ -437,15 +453,16 @@ export const PropertyDetailModal: React.FC<PropertyDetailModalProps> = ({
           </a>
 
           <a
-            href="tel:+918169005579"
+            href={`tel:${phoneRaw}`}
             className="px-4 py-3 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-900 hover:text-white transition-colors border border-slate-200 flex items-center gap-2 font-bold text-xs"
-            title="Call Jayshree Realty"
+            title={`Call Jayshree Realty (${siteSettings?.phone || '+91 81690 05579'})`}
           >
             <Phone className="w-4 h-4" />
             <span className="hidden sm:inline">Call Us</span>
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -21,6 +21,9 @@
   --radius-lg: 24px;
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-luxury: 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -235,58 +238,317 @@ h1, h2, h3, .font-serif {
   transform: translateY(-2px);
 }
 
-/* Animations */
+/* ==========================================================================
+   BEYONDARTIST 2.2 LUXURY MOTION SYSTEM
+   Restrained, purposeful, GPU-accelerated motion with zero layout shifts
+   ========================================================================== */
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
-  70% { box-shadow: 0 0 0 15px rgba(197, 160, 89, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.35); }
+  70% { box-shadow: 0 0 0 12px rgba(197, 160, 89, 0); }
   100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
 }
 
-@keyframes heroZoom {
-  0% { transform: scale(1.1) translateY(10px); }
-  100% { transform: scale(1.0) translateY(0); }
+/* Hero bottom-to-top rising & zoom parallax entrance on load/refresh, followed by continuous gentle breath */
+@keyframes heroBgEntrance {
+  0% {
+    opacity: 0.65;
+    transform: translate3d(0, 70px, 0) scale(1.22);
+    filter: brightness(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.05);
+    filter: brightness(1);
+  }
 }
 
-@keyframes heroUpwardParallax {
-  0% { transform: translate3d(0, 45px, 0) scale(1.15); }
-  100% { transform: translate3d(0, -35px, 0) scale(1.05); }
+@keyframes heroBgFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
 }
 
-@keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+@keyframes marqueeScrollLeft {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
+@keyframes marqueeScrollRight {
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* Hero Content Staggered Entrance */
+@keyframes heroFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-motion-badge {
+  animation: heroFadeUp 0.6s var(--ease-luxury) 0.05s both;
+}
+.hero-motion-title {
+  animation: heroFadeUp 0.65s var(--ease-luxury) 0.15s both;
+}
+.hero-motion-typewriter {
+  animation: heroFadeUp 0.65s var(--ease-luxury) 0.25s both;
+}
+.hero-motion-desc {
+  animation: heroFadeUp 0.65s var(--ease-luxury) 0.35s both;
+}
+.hero-motion-ctas {
+  animation: heroFadeUp 0.65s var(--ease-luxury) 0.45s both;
+}
+.hero-motion-trust {
+  animation: heroFadeUp 0.65s var(--ease-luxury) 0.55s both;
+}
+.hero-motion-card {
+  animation: heroFadeUp 0.7s var(--ease-luxury) 0.25s both;
+}
+
+/* Section Scroll Reveal System: Repeatable on bi-directional scroll */
+.reveal,
+.reveal-left,
+.reveal-right {
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal {
+  transform: translate3d(-35px, 0, 0) scale(0.97);
+}
+
+/* First Row / Left-Side Reveal */
+.reveal-left {
+  transform: translate3d(-45px, 0, 0) scale(0.96);
+}
+
+/* Second Row / Right-Side Reveal */
+.reveal-right {
+  transform: translate3d(45px, 0, 0) scale(0.96);
+}
+
+.reveal.is-revealed,
+.reveal-left.is-revealed,
+.reveal-right.is-revealed {
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+}
+
+.reveal-fade {
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-fade.is-revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* One-time subtle luxury highlight for View All Projects CTA */
+@keyframes ctaPremiumHighlight {
+  0% {
+    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(229, 193, 120, 0.65), 0 8px 25px rgba(197, 160, 89, 0.4);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+    transform: translateY(0);
+  }
+}
+
+.view-all-highlight {
+  animation: ctaPremiumHighlight 1.8s var(--ease-luxury) 0.5s 1;
+}
+
+/* Refined Stagger Delays (50ms - 90ms intervals) */
+.stagger-1 { transition-delay: 70ms; }
+.stagger-2 { transition-delay: 140ms; }
+.stagger-3 { transition-delay: 210ms; }
+.stagger-4 { transition-delay: 280ms; }
+.stagger-5 { transition-delay: 350ms; }
+.stagger-6 { transition-delay: 420ms; }
+.stagger-7 { transition-delay: 490ms; }
+.stagger-8 { transition-delay: 560ms; }
+
+/* Navigation & Dropdowns */
+@keyframes dropdownReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dropdown-motion {
+  animation: dropdownReveal 0.22s var(--ease-luxury) forwards;
+  transform-origin: top left;
+}
+
+@keyframes mobileDrawerReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-drawer-motion {
+  animation: mobileDrawerReveal 0.26s var(--ease-luxury) forwards;
+}
+
+/* Modal & Dialog Transitions */
+@keyframes modalBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop-motion {
+  animation: modalBackdropFadeIn 0.24s var(--ease-luxury) forwards;
+}
+
+.modal-content-motion {
+  animation: modalContentEntrance 0.3s var(--ease-luxury) forwards;
+}
+
+/* Card & Desktop Hover Transitions */
+@media (hover: hover) and (pointer: fine) {
+  .luxury-card-motion {
+    transition: transform 0.28s var(--ease-luxury), box-shadow 0.28s var(--ease-luxury), border-color 0.28s var(--ease-luxury);
+  }
+  .luxury-card-motion:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* Button & Link Focus Ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* Legacy Utility Compatibility */
 .animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
-}
-
-.animate-hero-zoom {
-  animation: heroZoom 12s ease-out forwards;
+  animation: fadeIn 0.5s var(--ease-luxury) forwards;
 }
 
 .animate-hero-parallax {
-  animation: heroUpwardParallax 14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform;
+  animation: heroBgEntrance 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, heroBgFloat 16s ease-in-out 2.4s infinite alternate;
+  will-change: transform, opacity;
 }
 
 .pulse-gold {
-  animation: pulseGlow 2s infinite;
+  animation: pulseGlow 2.4s infinite;
 }
 
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee 35s linear infinite;
+  animation: marqueeScrollLeft 38s linear infinite;
+  will-change: transform;
 }
 
-.marquee-track:hover {
-  animation-play-state: paused;
+.marquee-track.is-reverse {
+  animation-name: marqueeScrollRight;
+}
+
+/* Only pause on hover on desktop devices where hover is actual pointer interaction */
+@media (hover: hover) and (pointer: fine) {
+  .marquee-track:hover {
+    animation-play-state: paused !important;
+  }
+}
+
+/* Prefers Reduced Motion Safety Guard */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .reveal-fade {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .hero-motion-badge,
+  .hero-motion-title,
+  .hero-motion-typewriter,
+  .hero-motion-desc,
+  .hero-motion-ctas,
+  .hero-motion-trust,
+  .hero-motion-card,
+  .modal-backdrop-motion,
+  .modal-content-motion,
+  .dropdown-motion,
+  .mobile-drawer-motion,
+  .animate-hero-parallax,
+  .animate-fade-in,
+  .pulse-gold,
+  .view-all-highlight {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .marquee-track {
+    animation: none !important;
+    overflow-x: auto;
+  }
 }
 
 /* Container */

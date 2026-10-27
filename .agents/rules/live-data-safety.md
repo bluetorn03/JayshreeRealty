@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Live Data & Deployment Safety Rules
 > Applied to: All workflows, database operations, asset handling, and production deployments for Jayshree Realty.
 
@@ -7,7 +11,7 @@
    - Live images in `public_html/uploads`, `persistent_uploads`, and Supabase bucket `property-images` are production assets and must NEVER be cleaned, purged, or deleted during builds or deployments.
 
 2. **Hostinger Ephemeral Clone Protection:**
-   - Hostinger deploys into `/hbuilds/versions/<uuid>/nodejs` and deletes old versions.
+   - Hostinger deploys into `/hbconfiguilds/versions/<uuid>/nodejs` and deletes old versions.
    - Any uploaded file must live outside the version tree: in Supabase Storage (`property-images`) and Hostinger persistent directories (`/home/u168098130/public_html/uploads` and `/home/u168098130/persistent_uploads`).
    - `scripts/copy-dist-to-public-html.js` must only perform non-destructive incremental copying.
 

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useLeads } from '../context/LeadContext';
+import { useData } from '../context/DataContext';
 import { CheckCircle2, Phone, ShieldCheck } from 'lucide-react';
 
 export const SellProperty: React.FC = () => {
   const { addLead } = useLeads();
+  const { siteSettings } = useData();
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -111,8 +113,8 @@ export const SellProperty: React.FC = () => {
               <div className="p-6 rounded-2xl bg-[#0b132b] text-white text-xs">
                 <span className="text-[#e5c178] font-bold block mb-1">Direct Seller Helpline</span>
                 <p className="text-slate-300">Call our senior seller relation lead directly:</p>
-                <a href="tel:+918169005579" className="text-lg font-bold text-white hover:text-[#c5a059] block pt-1.5 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[#c5a059]" /> +91 81690 05579
+                <a href={`tel:${siteSettings?.phoneRaw || '+918169005579'}`} className="text-lg font-bold text-white hover:text-[#c5a059] block pt-1.5 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-[#c5a059]" /> {siteSettings?.phone || '+91 81690 05579'}
                 </a>
               </div>
             </div>

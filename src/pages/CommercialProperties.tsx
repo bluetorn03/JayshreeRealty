@@ -2,12 +2,13 @@ import React from 'react';
 import { SEOHead } from '../components/SEOHead';
 import { useLeads } from '../context/LeadContext';
 import { MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
-
 import { useData } from '../context/DataContext';
+import { useScrollReveal } from '../utils/useScrollReveal';
 
 export const CommercialProperties: React.FC = () => {
   const { openModal } = useLeads();
   const { projects } = useData();
+  useScrollReveal([projects.length]);
 
   const dynamicCommercials = projects.filter(
     p => p.published !== false && !p.archived && (p.type === 'Commercial' || (p.placements && p.placements.includes('commercial')))
@@ -52,8 +53,13 @@ export const CommercialProperties: React.FC = () => {
       <section className="py-24 section-warm-beige border-b border-amber-200/60">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {commercialList.map((comm) => (
-              <div key={comm.id} className="bg-white rounded-2xl border border-amber-200/80 shadow-xl overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300">
+            {commercialList.map((comm, idx) => (
+              <div
+                key={comm.id}
+                className={`bg-white rounded-2xl border border-amber-200/80 shadow-xl overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 ${
+                  Math.floor(idx / 3) % 2 === 0 ? 'reveal-left' : 'reveal-right'
+                } stagger-${(idx % 3) + 1}`}
+              >
                 <div>
                   <div className="h-52 overflow-hidden relative">
                     <img src={comm.image} alt={comm.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

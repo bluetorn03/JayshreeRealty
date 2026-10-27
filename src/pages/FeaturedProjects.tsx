@@ -3,6 +3,7 @@ import { SEOHead } from '../components/SEOHead';
 import { useData } from '../context/DataContext';
 import { ProjectCard } from '../components/ProjectCard';
 import { ProjectCategory } from '../types';
+import { useScrollReveal } from '../utils/useScrollReveal';
 
 export const FeaturedProjects: React.FC = () => {
   const { projects } = useData();
@@ -26,6 +27,8 @@ export const FeaturedProjects: React.FC = () => {
     return p.category === activeGroup;
   });
 
+  useScrollReveal([activeGroup, displayedProjects.length]);
+
   return (
     <div className="min-h-screen font-sans">
       <SEOHead
@@ -40,7 +43,7 @@ export const FeaturedProjects: React.FC = () => {
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=2000')` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
-        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10">
+        <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10 reveal">
           <span className="badge-gold">Official Developer Directory</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
             Featured New Projects in <span className="text-gradient-gold">Navi Mumbai</span>
@@ -55,7 +58,7 @@ export const FeaturedProjects: React.FC = () => {
       <section className="py-20 section-warm-beige min-h-[60vh]">
         <div className="container mx-auto px-4">
           {/* Group Selector Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 mb-14 font-outfit text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mb-14 font-outfit text-xs reveal">
             <button
               onClick={() => setActiveGroup('All')}
               className={`px-5 py-2.5 rounded-full border transition-all duration-300 font-bold ${
@@ -83,9 +86,14 @@ export const FeaturedProjects: React.FC = () => {
 
           {/* Projects Display */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {displayedProjects.map((property) => (
-              <ProjectCard key={property.id} property={property} theme="light" />
-            ))}
+            {displayedProjects.map((property, idx) => {
+              const isEvenRow = Math.floor(idx / 3) % 2 === 0;
+              return (
+                <div key={property.id} className={`${isEvenRow ? 'reveal-left' : 'reveal-right'} stagger-${(idx % 3) + 1}`}>
+                  <ProjectCard property={property} theme="light" />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

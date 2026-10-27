@@ -12,7 +12,7 @@ import { DEFAULT_LEADERSHIP, DEFAULT_VIDEO_TESTIMONIALS } from '../context/DataC
 import { LeadershipProfile, VideoTestimonialItem } from '../types';
 
 export const Testimonials: React.FC = () => {
-  const { reviews, leadership, videoTestimonials } = useData();
+  const { reviews, leadership, videoTestimonials, siteSettings } = useData();
   const { openModal } = useLeads();
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
@@ -305,10 +305,10 @@ export const Testimonials: React.FC = () => {
               BOOK FREE CONSULTATION <ArrowRight className="w-4 h-4 ml-1" />
             </button>
             <a
-              href="tel:+918169005579"
+              href={`tel:${siteSettings?.phoneRaw || '+918169005579'}`}
               className="px-7 py-4 text-sm font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-lg flex items-center gap-2"
             >
-              <Phone className="w-4 h-4 text-[#c5a059]" /> Call +91 81690 05579
+              <Phone className="w-4 h-4 text-[#c5a059]" /> Call {siteSettings?.phone || '+91 81690 05579'}
             </a>
           </div>
         </div>

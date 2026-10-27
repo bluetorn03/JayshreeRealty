@@ -1,11 +1,17 @@
 import React from 'react';
 import { Phone, MessageSquare, ClipboardList } from 'lucide-react';
 import { useLeads } from '../context/LeadContext';
+import { useData } from '../context/DataContext';
 import { analyticsTracker } from '../services/analyticsTracker';
 
 export const FloatingCTA: React.FC = () => {
   const { openModal } = useLeads();
-  const whatsappUrl = "https://wa.me/918169005579?text=Hello,%20I%20want%20property%20information%20from%20Jayshree%20Realty.";
+  const { siteSettings } = useData();
+
+  const phoneRaw = siteSettings?.phoneRaw || '+918169005579';
+  const phoneDisplay = siteSettings?.phone || '+91 81690 05579';
+  const whatsappRaw = siteSettings?.whatsappRaw || '918169005579';
+  const whatsappUrl = `https://wa.me/${whatsappRaw}?text=Hello,%20I%20want%20property%20information%20from%20Jayshree%20Realty.`;
 
   const handleWhatsAppClick = () => {
     analyticsTracker.trackCTAClick('WhatsApp Click', document.title);
@@ -29,16 +35,16 @@ export const FloatingCTA: React.FC = () => {
           target="_blank"
           rel="noopener noreferrer"
           className="floating-btn floating-wa pulse-gold"
-          title="Chat on WhatsApp (+91 81690 05579)"
+          title={`Chat on WhatsApp (${phoneDisplay})`}
           onClick={handleWhatsAppClick}
         >
           <MessageSquare className="w-6 h-6" />
         </a>
 
         <a
-          href="tel:+918169005579"
+          href={`tel:${phoneRaw}`}
           className="floating-btn floating-call"
-          title="Call Now (+91 81690 05579)"
+          title={`Call Now (${phoneDisplay})`}
           onClick={handleCallClick}
         >
           <Phone className="w-6 h-6" />
@@ -48,7 +54,7 @@ export const FloatingCTA: React.FC = () => {
       {/* Mobile Sticky Bottom Bar (Inspired by design reference image 3) */}
       <div className="mobile-bottom-bar font-outfit text-xs font-semibold uppercase tracking-wider">
         <a
-          href="tel:+918169005579"
+          href={`tel:${phoneRaw}`}
           className="flex flex-col items-center justify-center bg-[#0d1527] text-white hover:text-[#c5a059] border-r border-[#c5a059]/20 transition-colors"
           onClick={handleCallClick}
         >

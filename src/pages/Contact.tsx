@@ -139,10 +139,10 @@ export const Contact: React.FC = () => {
       {/* 2. CONTACT DETAILS & DUAL FORM SWITCHER */}
       <section className="py-20 section-warm-beige">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-6xl mx-auto items-start">
 
-            {/* Left Contact Info & Official Social Links */}
-            <div className="lg:col-span-5 space-y-6 font-outfit">
+            {/* Left Contact Info & Official Social Links (Sticky Shorter Column on Desktop) */}
+            <div className="lg:col-span-5 space-y-6 font-outfit lg:sticky lg:top-28 lg:self-start reveal-left">
               <div className="bg-white p-8 rounded-3xl border border-amber-200/80 shadow-xl space-y-6">
                 <h3 className="font-serif text-xl font-bold text-slate-900 border-b border-slate-100 pb-3">Official Head Office</h3>
 
@@ -154,7 +154,7 @@ export const Contact: React.FC = () => {
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">Office Address</h4>
                       <p className="text-xs leading-relaxed text-slate-600 font-medium">
-                        G-102, First Floor, Nerul Railway Station Complex, above Union Bank of India, Nerul, Navi Mumbai 400706
+                        {siteSettings.address || 'G-102, First Floor, Nerul Railway Station Complex, above Union Bank of India, Nerul, Navi Mumbai 400706'}
                       </p>
                     </div>
                   </div>
@@ -165,8 +165,8 @@ export const Contact: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">Direct Call</h4>
-                      <a href="tel:+918169005579" className="text-sm font-bold text-[#99732b] hover:underline">
-                        +91 81690 05579
+                      <a href={`tel:${siteSettings.phoneRaw || '+918169005579'}`} className="text-sm font-bold text-[#99732b] hover:underline">
+                        {siteSettings.phone || '+91 81690 05579'}
                       </a>
                     </div>
                   </div>
@@ -190,12 +190,12 @@ export const Contact: React.FC = () => {
                     <div>
                       <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-1">WhatsApp Chat</h4>
                       <a
-                        href="https://wa.me/918169005579?text=Hello,%20I%20want%20property%20information%20from%20Jayshree%20Realty."
+                        href={`https://wa.me/${siteSettings.whatsappRaw || '918169005579'}?text=Hello,%20I%20want%20property%20information%20from%20Jayshree%20Realty.`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-[#25d366] font-bold hover:underline"
                       >
-                        +91 81690 05579 (Instant Reply)
+                        {siteSettings.whatsapp || siteSettings.phone || '+91 81690 05579'} (Instant Reply)
                       </a>
                     </div>
                   </div>
@@ -216,7 +216,7 @@ export const Contact: React.FC = () => {
                   <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-3">Connect On Social Media</h4>
                   <div className="flex items-center gap-3">
                     <a
-                      href="https://www.instagram.com/jayshreerealty_navimumbai?igsh=aHlhNW1jdnRybGJs"
+                      href={siteSettings.instagramUrl || "https://www.instagram.com/jayshreerealty_navimumbai?igsh=aHlhNW1jdnRybGJs"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform"
@@ -225,7 +225,7 @@ export const Contact: React.FC = () => {
                       <Instagram className="w-4 h-4" />
                     </a>
                     <a
-                      href="https://www.facebook.com/share/14k1PnjThjZ/"
+                      href={siteSettings.facebookUrl || "https://www.facebook.com/share/14k1PnjThjZ/"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform"
@@ -234,7 +234,7 @@ export const Contact: React.FC = () => {
                       <Facebook className="w-4 h-4" />
                     </a>
                     <a
-                      href="https://youtube.com/@jayshree_realty_navi_mumbai?si=TfK4HesvkWiswOEz"
+                      href={siteSettings.youtubeUrl || "https://youtube.com/@jayshree_realty_navi_mumbai?si=TfK4HesvkWiswOEz"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform"
@@ -248,7 +248,7 @@ export const Contact: React.FC = () => {
             </div>
 
             {/* Right Card with Switcher Tabs (Contact Form / Career Form) */}
-            <div className="lg:col-span-7 bg-white p-8 sm:p-10 rounded-3xl border border-amber-200/80 shadow-2xl flex flex-col justify-between">
+            <div className="lg:col-span-7 bg-white p-8 sm:p-10 rounded-3xl border border-amber-200/80 shadow-2xl flex flex-col justify-between reveal-right">
               <div>
                 {/* Form Switcher Tab Buttons */}
                 <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8 border border-slate-200">

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Phone, Menu, X, ChevronDown, Building2, Home as HomeIcon, MapPin } from 'lucide-react';
 import { useLeads } from '../context/LeadContext';
+import { useData } from '../context/DataContext';
 import logo from '../assets/jayshree-realty-logo.png';
 
 export const Navbar: React.FC = () => {
+  const { siteSettings } = useData();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -69,17 +71,17 @@ export const Navbar: React.FC = () => {
             </button>
 
             {aboutDropdownOpen && (
-              <div className="absolute top-full left-0 w-56 bg-[#0d1527] border border-[#c5a059]/30 rounded-xl shadow-2xl py-2 px-1 backdrop-blur-xl animate-fade-in z-50">
+              <div className="absolute top-full left-0 w-56 bg-[#0d1527] border border-[#c5a059]/30 rounded-xl shadow-2xl py-2 px-1 backdrop-blur-xl dropdown-motion z-50">
                 <Link
                   to="/about"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium transition-all duration-200 hover:translate-x-1"
                 >
                   <Building2 className="w-4 h-4 text-[#c5a059]" />
                   About Jayshree Realty
                 </Link>
                 <Link
                   to="/testimonials"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium transition-all duration-200 hover:translate-x-1"
                 >
                   <HomeIcon className="w-4 h-4 text-[#c5a059]" />
                   Client Reviews & Testimonials
@@ -113,24 +115,24 @@ export const Navbar: React.FC = () => {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute top-full left-0 w-64 bg-[#0d1527] border border-[#c5a059]/30 rounded-xl shadow-2xl py-2 px-1 backdrop-blur-xl animate-fade-in">
+              <div className="absolute top-full left-0 w-64 bg-[#0d1527] border border-[#c5a059]/30 rounded-xl shadow-2xl py-2 px-1 backdrop-blur-xl dropdown-motion">
                 <Link
                   to="/projects"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium transition-all duration-200 hover:translate-x-1"
                 >
                   <Building2 className="w-4 h-4 text-[#c5a059]" />
                   Featured Projects (8 Nodes)
                 </Link>
                 <Link
                   to="/listings"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium transition-all duration-200 hover:translate-x-1"
                 >
                   <HomeIcon className="w-4 h-4 text-[#c5a059]" />
                   Property Listings (1 & 2 BHK, Resale)
                 </Link>
                 <Link
                   to="/commercial"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-200 hover:bg-[#1c2541] hover:text-[#e5c178] text-xs font-medium transition-all duration-200 hover:translate-x-1"
                 >
                   <Building2 className="w-4 h-4 text-[#c5a059]" />
                   Commercial Properties
@@ -152,11 +154,11 @@ export const Navbar: React.FC = () => {
         {/* Action CTAs - Reduced Width Compact Buttons */}
         <div className="hidden sm:flex items-center gap-2.5 shrink-0">
           <a
-            href="tel:+918169005579"
+            href={`tel:${siteSettings?.phoneRaw || '+918169005579'}`}
             className="btn-phone text-xs px-3 py-1.5 flex items-center gap-1.5 rounded-md font-semibold tracking-wide"
           >
             <Phone className="w-3.5 h-3.5 text-[#c5a059]" />
-            +91 81690 05579
+            {siteSettings?.phone || '+91 81690 05579'}
           </a>
           <button
             onClick={() => openModal('Navbar Enquire CTA')}
@@ -178,7 +180,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile & Tablet Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-[#070b19] border-b border-[#c5a059]/30 px-6 py-6 space-y-4 animate-fade-in max-h-[85vh] overflow-y-auto">
+        <div className="xl:hidden bg-[#070b19] border-b border-[#c5a059]/30 px-6 py-6 space-y-4 mobile-drawer-motion max-h-[85vh] overflow-y-auto">
           <div className="flex flex-col space-y-3 font-outfit text-sm">
             <Link to="/" className="text-slate-200 hover:text-[#e5c178] py-1 border-b border-slate-800">
               Home
@@ -211,10 +213,10 @@ export const Navbar: React.FC = () => {
 
           <div className="pt-2 flex flex-col gap-2.5">
             <a
-              href="tel:+918169005579"
+              href={`tel:${siteSettings?.phoneRaw || '+918169005579'}`}
               className="btn-phone w-full text-center py-2 text-xs font-bold"
             >
-              Call +91 81690 05579
+              Call {siteSettings?.phone || '+91 81690 05579'}
             </a>
             <button
               onClick={() => {
