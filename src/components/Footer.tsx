@@ -180,8 +180,19 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Legal Disclaimer & Bottom Bar */}
-        <div className="pt-8 border-t border-slate-800/80 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-outfit">
-          <p>© {new Date().getFullYear()} Jayshree Realty. All Rights Reserved. Luxury Real Estate Consultant in Navi Mumbai.</p>
+        <div className="pt-8 border-t border-slate-800/80 flex flex-col lg:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-outfit">
+          <p className="text-center lg:text-left">© {new Date().getFullYear()} Jayshree Realty. All Rights Reserved. Luxury Real Estate Consultant in Navi Mumbai.</p>
+          <p className="text-center whitespace-nowrap">
+            Designed &amp; Maintained by{' '}
+            <a
+              href="https://bluetorn.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#2dd4bf] hover:text-[#5eead4] hover:underline font-medium transition-colors duration-200"
+            >
+              BLUETORN
+            </a>
+          </p>
           <div className="flex items-center gap-6">
             <Link to="/privacy" className="hover:text-slate-300 transition-colors">
               Privacy Policy
