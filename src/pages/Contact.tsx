@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
+import heroDesktopBg from '../assets/hero-dekstop-view.webp';
+import heroMobileBg from '../assets/hero-mobie-view.webp';
 import { useLeads } from '../context/LeadContext';
 import { useData } from '../context/DataContext';
 import { ResumeUploader } from '../components/ResumeUploader';
 import {
   MapPin, Phone, MessageSquare, Clock, CheckCircle2, Send,
-  Mail, Briefcase, UserCheck, Instagram, Facebook, Youtube
+  Mail, Briefcase, UserCheck, Instagram, Facebook, Youtube,
+  Navigation, ExternalLink, Car, Train
 } from 'lucide-react';
 
 export const Contact: React.FC = () => {
@@ -120,11 +123,18 @@ export const Contact: React.FC = () => {
 
       {/* 1. HEADER */}
       <section className="relative pt-32 pb-20 border-b border-[#c5a059]/20 overflow-hidden bg-[#070b19]">
+                {/* Desktop View Background Image (>= md) */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-35"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=2000')` }}
+          className="hidden md:block absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+          style={{ backgroundImage: `url(${heroDesktopBg})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
+        {/* Mobile View Background Image (< md) */}
+        <div
+          className="block md:hidden absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+          style={{ backgroundImage: `url(${heroMobileBg})` }}
+        />
+        {/* Vibrant Luxury Gradient: Enhanced image visibility with clear text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/65 via-[#070b19]/40 to-[#070b19]/90" />
         <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10">
           <span className="badge-gold">Head Office & Careers</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">
@@ -505,6 +515,141 @@ export const Contact: React.FC = () => {
             </div>
 
           </div>
+
+          {/* 3. GOOGLE MAPS LOCATION & DIRECTIONS SECTION */}
+          <div className="mt-16 sm:mt-24 max-w-6xl mx-auto space-y-8 font-outfit">
+            {/* Section Header */}
+            <div className="text-center max-w-3xl mx-auto space-y-3 reveal">
+              <span className="badge-gold inline-flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#c5a059]" /> Google Verified Location
+              </span>
+              <h2 className="font-serif text-2xl sm:text-4xl font-extrabold text-slate-900">
+                Visit Our Office at <span className="text-gradient-gold">Nerul Station Complex</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
+                Directly connected to Nerul Railway Station (Platform 1) above Union Bank of India. Easily accessible from Palm Beach Road, Sion-Panvel Highway, and across Navi Mumbai &amp; Mumbai.
+              </p>
+            </div>
+
+            {/* Quick Landmark & Accessibility Badges */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 reveal">
+              <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-md flex items-start gap-3.5 hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-0.5">Exact Landmark</h4>
+                  <p className="text-xs text-slate-600 leading-snug font-medium">G-102, 1st Floor, Above Union Bank of India</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-md flex items-start gap-3.5 hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center shrink-0">
+                  <Train className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-0.5">Train Transit</h4>
+                  <p className="text-xs text-slate-600 leading-snug font-medium">1 Min walk from Nerul Station Platform 1</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-md flex items-start gap-3.5 hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center shrink-0">
+                  <Car className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-0.5">Road Access</h4>
+                  <p className="text-xs text-slate-600 leading-snug font-medium">2 Mins from Sion-Panvel Highway &amp; Palm Beach</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-md flex items-start gap-3.5 hover:shadow-lg transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-[#c5a059]/15 text-[#99732b] flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-0.5">Office Timings</h4>
+                  <p className="text-xs text-slate-600 leading-snug font-medium">Tue - Sun: 10:30 AM to 7:00 PM</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Master Google Map Frame Card */}
+            <div className="bg-white p-4 sm:p-7 rounded-3xl border border-amber-200/90 shadow-2xl space-y-5 reveal">
+              {/* Map Top Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                      Jayshree Realty Head Office
+                    </h3>
+                    <p className="text-xs text-slate-500">Live Google Business Profile Location • Navi Mumbai, Maharashtra</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=Jayshree+Realty+Nerul+Navi+Mumbai&destination_place_id=ChIJf847KT_DrzsRj4DjasSStSw"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-gold px-4 py-2 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-md hover:scale-[1.02] transition-transform"
+                    title="Get Turn-by-Turn Driving Directions on Google Maps"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    Get Directions
+                    <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Responsive Map Embed Container */}
+              <div className="relative w-full rounded-2xl overflow-hidden border border-amber-100 shadow-inner bg-slate-100 h-[380px] sm:h-[460px] lg:h-[500px]">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.6923275637237!2d73.01790729999999!3d19.0332746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c33f293bce7f%3A0x2cb592c46be3808f!2sJayshree%20Realty!5e0!3m2!1sen!2sin!4v1793195818224!5m2!1sen!2sin"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  title="Jayshree Realty Head Office Location - Nerul Railway Station Complex"
+                  className="w-full h-full"
+                />
+              </div>
+
+              {/* Map Footer Information */}
+              <div className="pt-2 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs text-slate-600">
+                <div className="flex items-start gap-2 max-w-2xl">
+                  <MapPin className="w-4 h-4 text-[#c5a059] shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-slate-900 font-semibold">Office Address: </strong>
+                    {siteSettings.address || 'G-102, First Floor, Nerul Railway Station Complex, above Union Bank of India, Nerul, Navi Mumbai 400706'}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <a
+                    href={`tel:${siteSettings.phoneRaw || '+918169005579'}`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#c5a059]" />
+                    Call: {siteSettings.phone || '+91 81690 05579'}
+                  </a>
+                  <a
+                    href={`https://wa.me/${siteSettings.whatsappRaw || '918169005579'}?text=Hello%20Jayshree%20Realty,%20I%20am%20visiting%20your%20office%20and%20need%20directions.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25d366]/15 hover:bg-[#25d366]/25 text-[#128c7e] font-bold transition-colors"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-[#25d366]" />
+                    WhatsApp Directions
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
     </div>

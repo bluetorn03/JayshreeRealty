@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { SEOHead } from '../components/SEOHead';
+import heroDesktopBg from '../assets/hero-dekstop-view.webp';
+import heroMobileBg from '../assets/hero-mobie-view.webp';
 import { useData } from '../context/DataContext';
 import { ProjectCard } from '../components/ProjectCard';
 import { useScrollReveal } from '../utils/useScrollReveal';
@@ -54,11 +56,18 @@ export const PropertyListings: React.FC = () => {
 
       {/* 1. HEADER */}
       <section className="relative pt-32 pb-20 border-b border-[#c5a059]/20 overflow-hidden bg-[#070b19]">
+                {/* Desktop View Background Image (>= md) */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-35"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000')` }}
+          className="hidden md:block absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+          style={{ backgroundImage: `url(${heroDesktopBg})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/90 via-[#070b19]/75 to-[#070b19]" />
+        {/* Mobile View Background Image (< md) */}
+        <div
+          className="block md:hidden absolute inset-0 bg-cover bg-center bg-no-repeat opacity-85"
+          style={{ backgroundImage: `url(${heroMobileBg})` }}
+        />
+        {/* Vibrant Luxury Gradient: Enhanced image visibility with clear text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/65 via-[#070b19]/40 to-[#070b19]/90" />
         <div className="container mx-auto px-4 text-center max-w-3xl space-y-3 relative z-10 reveal">
           <span className="badge-gold">Verified CIDCO Resale & Ready Homes</span>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold text-white">

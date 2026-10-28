@@ -79,7 +79,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       "priceRange": "₹40 Lakhs - ₹5 Cr+",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "Sector 19, Nerul West",
+        "streetAddress": "G-102, First Floor, Nerul Railway Station Complex, above Union Bank of India",
         "addressLocality": "Navi Mumbai",
         "addressRegion": "MH",
         "postalCode": "400706",
@@ -87,8 +87,8 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": 19.0416,
-        "longitude": 73.0125
+        "latitude": 19.0332746,
+        "longitude": 73.0179073
       },
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
@@ -98,6 +98,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
         "opens": "09:00",
         "closes": "21:00"
       },
+      "hasMap": "https://maps.google.com/?cid=3221650380962496655",
       "sameAs": [
         "https://facebook.com/jayshreerealty",
         "https://instagram.com/jayshreerealty"
