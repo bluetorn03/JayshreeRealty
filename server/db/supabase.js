@@ -75,7 +75,7 @@ export const initSupabaseDb = async () => {
         title: 'Get Best Offer & Instant Details',
         subtitle: 'Register now for exclusive launch pricing, priority site visits & floor plans.',
         badge: 'Exclusive Launch Pricing',
-        left_image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000',
+        left_image: '/images/hero-mobie-view.webp',
         privacy_text: 'We respect your privacy. No spam, ever.',
         enabled: 1,
         trigger_delay: 3,

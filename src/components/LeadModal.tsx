@@ -4,11 +4,16 @@ import { useLeads } from '../context/LeadContext';
 import { useData } from '../context/DataContext';
 import { useLocation } from 'react-router-dom';
 import logo from '../assets/jayshree-realty-logo.png';
+import heroMobileBg from '../assets/hero-mobie-view.webp';
 
 export const LeadModal: React.FC = () => {
   const { isModalOpen, closeModal, addLead, modalCtaSource, modalRequirement } = useLeads();
   const { popupSettings } = useData();
   const location = useLocation();
+
+  const popupLeftImage = (!popupSettings.leftImage || popupSettings.leftImage.includes('unsplash.com') || popupSettings.leftImage.includes('photo-1545324418'))
+    ? heroMobileBg
+    : popupSettings.leftImage;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -95,12 +100,15 @@ export const LeadModal: React.FC = () => {
         </button>
 
         {/* Left Side Banner (Dark Luxury Branding & Image) */}
-        <div className="hidden md:flex md:col-span-5 bg-gradient-to-b from-[#0b132b] via-[#070b19] to-[#1c2541] p-8 flex-col justify-between relative overflow-hidden text-white border-r border-[#c5a059]/20">
-          {/* Background Decorative Image & Vignette */}
+        <div className="hidden md:flex md:col-span-5 bg-[#070b19] p-8 flex-col justify-between relative overflow-hidden text-white border-r border-[#c5a059]/20">
+          {/* Background Decorative Image (hero-mobie-view.webp) */}
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
-            style={{ backgroundImage: `url('${popupSettings.leftImage || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000'}')` }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url('${popupLeftImage}')` }}
           ></div>
+
+          {/* Luxury Overlay for crystal clear visibility & contrast */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#070b19]/75 via-[#070b19]/35 to-[#070b19]/85 pointer-events-none"></div>
 
           <div className="relative z-10 space-y-6">
             <div className="inline-block">

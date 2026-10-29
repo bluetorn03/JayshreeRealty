@@ -156,7 +156,7 @@ const DEFAULT_POPUP_SETTINGS: PopupSettings = {
   title: "Get Best Offer & Instant Details",
   subtitle: "Register now for exclusive launch pricing, priority site visits & floor plans.",
   badge: "Exclusive Launch Pricing",
-  leftImage: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000",
+  leftImage: "/images/hero-mobie-view.webp",
   privacyText: "We respect your privacy. No spam, ever.",
   enabled: true,
   triggerDelay: 3,
