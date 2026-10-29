@@ -114,21 +114,56 @@ export const api = {
   },
 
   async uploadFile(file: File) {
-    const isDoc = file.name.match(/\.(pdf|doc|docx)$/i);
-    const endpoint = isDoc ? `${API_BASE}/upload/resume` : `${API_BASE}/upload`;
-    const formData = new FormData();
-    formData.append(isDoc ? 'resume' : 'file', file);
-    formData.append('file', file);
-    const token = localStorage.getItem('jayshree_admin_token');
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const isDoc = Boolean(file.name && file.name.match(/\.(pdf|doc|docx)$/i));
+      const endpoint = isDoc ? `${API_BASE}/upload/resume` : `${API_BASE}/upload`;
+      const formData = new FormData();
+      formData.append(isDoc ? 'resume' : 'file', file);
+      const token = localStorage.getItem('jayshree_admin_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    return res.json();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        return { success: false, message: data?.message || `Upload failed with status ${res.status}` };
+      }
+      return data || { success: false, message: 'Invalid response from server' };
+    } catch (err: any) {
+      console.error('[uploadFile error]', err);
+      return { success: false, message: err?.message || 'Network error during upload' };
+    }
+  },
+
+  async uploadFiles(files: File[]) {
+    try {
+      const endpoint = `${API_BASE}/upload/multiple`;
+      const formData = new FormData();
+      for (const f of files) {
+        formData.append('files', f);
+      }
+      const token = localStorage.getItem('jayshree_admin_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        return { success: false, message: data?.message || `Multiple upload failed with status ${res.status}` };
+      }
+      return data || { success: false, message: 'Invalid response from server' };
+    } catch (err: any) {
+      console.error('[uploadFiles error]', err);
+      return { success: false, message: err?.message || 'Network error during multiple upload' };
+    }
   },
 
   // Leads API

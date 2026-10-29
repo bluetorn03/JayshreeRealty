@@ -14,13 +14,35 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const mimeToExt = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'image/svg+xml': '.svg',
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx'
+};
+
+const getExt = (file) => {
+  let ext = path.extname(file.originalname || '').toLowerCase();
+  if (!ext && file.mimetype && mimeToExt[file.mimetype]) {
+    ext = mimeToExt[file.mimetype];
+  }
+  return ext;
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const sanitizedBase = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = getExt(file) || '.jpg';
+    const originalExt = path.extname(file.originalname || '');
+    const rawBase = path.basename(file.originalname || 'image', originalExt);
+    const sanitizedBase = (rawBase || 'upload').replace(/[^a-zA-Z0-9_-]/g, '_') || 'image';
     cb(null, `${sanitizedBase}_${Date.now()}${ext}`);
   }
 });
@@ -28,8 +50,8 @@ const storage = multer.diskStorage({
 // Admin upload filter (images & documents)
 const fileFilter = (req, file, cb) => {
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.svg', '.doc', '.docx'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowedExtensions.includes(ext)) {
+  const ext = getExt(file);
+  if (allowedExtensions.includes(ext) || (file.mimetype && file.mimetype.startsWith('image/'))) {
     cb(null, true);
   } else {
     cb(new Error('File format not supported. Upload JPG, PNG, WEBP, GIF, SVG, PDF, DOC, or DOCX files.'), false);
@@ -142,8 +164,38 @@ router.post('/resume', resumeUploadMiddleware, async (req, res) => {
   }
 });
 
+// Safe single upload middleware for Admin CMS
+const singleUploadMiddleware = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: 'File size exceeds 15MB limit.' });
+      }
+      return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message || 'File upload rejected.' });
+    }
+    next();
+  });
+};
+
+// Safe multiple upload middleware for Admin CMS
+const multipleUploadMiddleware = (req, res, next) => {
+  upload.array('files', 30)(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: 'File size exceeds 15MB limit.' });
+      }
+      return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message || 'Files upload rejected.' });
+    }
+    next();
+  });
+};
+
 // POST /api/upload (Protected Single File Upload for Admin CMS)
-router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
+router.post('/', authenticateToken, singleUploadMiddleware, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
@@ -160,12 +212,13 @@ router.post('/', authenticateToken, upload.single('file'), async (req, res) => {
       mimetype: req.file.mimetype
     });
   } catch (error) {
+    console.error('[Upload Error]', error);
     return res.status(500).json({ success: false, message: 'File upload failed.' });
   }
 });
 
 // POST /api/upload/multiple (Protected Multiple Files Upload for Admin CMS)
-router.post('/multiple', authenticateToken, upload.array('files', 10), async (req, res) => {
+router.post('/multiple', authenticateToken, multipleUploadMiddleware, async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded.' });
@@ -179,6 +232,7 @@ router.post('/multiple', authenticateToken, upload.array('files', 10), async (re
       count: req.files.length
     });
   } catch (error) {
+    console.error('[Multiple Upload Error]', error);
     return res.status(500).json({ success: false, message: 'Multiple files upload failed.' });
   }
 });

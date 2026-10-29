@@ -7,7 +7,8 @@ import { FormattedDescription } from '../FormattedDescription';
 import {
   Building2, Plus, Edit3, Trash2, Eye, EyeOff, Sparkles, Upload,
   Image as ImageIcon, FileText, Check, X, Layers, MapPin, Search, ArrowUpRight,
-  Bold, Heading, List, CornerDownLeft, ShieldCheck, Tag, ChevronDown
+  Bold, Heading, List, CornerDownLeft, ShieldCheck, Tag, ChevronDown,
+  Loader2, Clipboard, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
 export const PropertyCMSView: React.FC = () => {
@@ -102,6 +103,9 @@ export const PropertyCMSView: React.FC = () => {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const dragCounterRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -309,30 +313,93 @@ export const PropertyCMSView: React.FC = () => {
     }
   };
 
+  // Unified Image Processor & Uploader (File picker, Drag & Drop, Clipboard Paste)
+  const processAndUploadFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = files.filter(file => {
+      return file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(file.name);
+    });
+
+    if (validFiles.length === 0) {
+      setUploadMessage({
+        type: 'error',
+        text: 'Please select valid image files (JPG, PNG, WEBP, GIF, SVG).',
+      });
+      setTimeout(() => setUploadMessage(null), 4000);
+      return;
+    }
+
+    setUploading(true);
+    setUploadMessage({
+      type: 'info',
+      text: `Uploading ${validFiles.length} image${validFiles.length > 1 ? 's' : ''}...`,
+    });
+
+    try {
+      let uploadedUrls: string[] = [];
+
+      // 1. Try batch multiple upload if multiple files
+      if (validFiles.length > 1 && api.uploadFiles) {
+        const batchRes = await api.uploadFiles(validFiles);
+        if (batchRes && batchRes.success && (batchRes.urls || batchRes.fileUrls)) {
+          uploadedUrls = batchRes.urls || batchRes.fileUrls || [];
+        }
+      }
+
+      // 2. Fallback to single upload per file if batch not available or failed
+      if (uploadedUrls.length === 0) {
+        for (const file of validFiles) {
+          const res = await api.uploadFile(file);
+          if (res && res.success && res.url) {
+            uploadedUrls.push(res.url);
+          } else {
+            console.warn('[Upload single file issue]', res?.message);
+          }
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        setForm(prev => {
+          const nextGallery = [...(prev.galleryImages || []), ...uploadedUrls];
+          return {
+            ...prev,
+            galleryImages: nextGallery,
+            image: prev.image || nextGallery[0] || uploadedUrls[0],
+          };
+        });
+        setUploadMessage({
+          type: 'success',
+          text: `Successfully uploaded ${uploadedUrls.length} image${uploadedUrls.length > 1 ? 's' : ''}!`,
+        });
+        setTimeout(() => setUploadMessage(null), 3500);
+      } else {
+        setUploadMessage({
+          type: 'error',
+          text: 'Upload failed. Please check file format and network.',
+        });
+        setTimeout(() => setUploadMessage(null), 4000);
+      }
+    } catch (err: any) {
+      console.error('[Upload handler error]', err);
+      setUploadMessage({
+        type: 'error',
+        text: err?.message || 'Upload failed. Please try again.',
+      });
+      setTimeout(() => setUploadMessage(null), 4000);
+    } finally {
+      setUploading(false);
+      if (galleryFileInputRef.current) {
+        galleryFileInputRef.current.value = '';
+      }
+    }
+  };
+
   // Upload Additional Gallery Images File
   const handleGalleryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const res = await api.uploadFile(files[i]);
-        if (res.success && res.url) {
-          setForm(prev => {
-            const nextGallery = [...(prev.galleryImages || []), res.url];
-            return {
-              ...prev,
-              galleryImages: nextGallery,
-              image: prev.image || nextGallery[0] || res.url
-            };
-          });
-        }
-      }
-    } catch (err) {
-      alert('Gallery upload failed.');
-    } finally {
-      setUploading(false);
-    }
+    await processAndUploadFiles(Array.from(files));
   };
 
   // Reorder Gallery Images
@@ -350,32 +417,171 @@ export const PropertyCMSView: React.FC = () => {
     });
   };
 
-  // Drag and Drop File Handler
+  // Drag and Drop Handlers with Visual Feedback & External URL Support
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
   const handleDropFiles = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const files = e.dataTransfer.files;
-    if (!files || files.length === 0) return;
-    setUploading(true);
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+
+    // 1. Files dropped directly from system / explorer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processAndUploadFiles(Array.from(e.dataTransfer.files));
+      return;
+    }
+
+    // 2. Image link dropped from external browser tab
+    const droppedUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (droppedUrl && /^https?:\/\/.+/i.test(droppedUrl.trim())) {
+      const cleanUrl = droppedUrl.trim();
+      setForm(prev => {
+        const nextGallery = [...(prev.galleryImages || []), cleanUrl];
+        return {
+          ...prev,
+          galleryImages: nextGallery,
+          image: prev.image || nextGallery[0] || cleanUrl,
+        };
+      });
+      setUploadMessage({
+        type: 'success',
+        text: 'External image link added to gallery!',
+      });
+      setTimeout(() => setUploadMessage(null), 3000);
+    }
+  };
+
+  // Clipboard Paste Support (Ctrl+V) & Manual Paste Button
+  const handlePasteFromClipboard = async () => {
     try {
-      for (let i = 0; i < files.length; i++) {
-        const res = await api.uploadFile(files[i]);
-        if (res.success && res.url) {
+      if (!navigator.clipboard) {
+        setUploadMessage({ type: 'info', text: 'Press Ctrl+V on your keyboard to paste copied images directly.' });
+        setTimeout(() => setUploadMessage(null), 3500);
+        return;
+      }
+      if (navigator.clipboard.read) {
+        try {
+          const items = await navigator.clipboard.read();
+          const imageFiles: File[] = [];
+          for (const item of items) {
+            for (const type of item.types) {
+              if (type.startsWith('image/')) {
+                const blob = await item.getType(type);
+                const ext = type.split('/')[1]?.replace('+xml', '') || 'png';
+                const file = new File([blob], `clipboard_image_${Date.now()}.${ext}`, { type });
+                imageFiles.push(file);
+              }
+            }
+          }
+          if (imageFiles.length > 0) {
+            await processAndUploadFiles(imageFiles);
+            return;
+          }
+        } catch (_) {}
+      }
+      if (navigator.clipboard.readText) {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (text && /^https?:\/\/.+/i.test(text)) {
           setForm(prev => {
-            const nextGallery = [...(prev.galleryImages || []), res.url];
+            const nextGallery = [...(prev.galleryImages || []), text];
             return {
               ...prev,
               galleryImages: nextGallery,
-              image: prev.image || nextGallery[0] || res.url
+              image: prev.image || nextGallery[0] || text,
             };
           });
+          setUploadMessage({ type: 'success', text: 'Pasted image URL added to gallery!' });
+          setTimeout(() => setUploadMessage(null), 3000);
+          return;
         }
       }
-    } catch (err) {
-      alert('Drop upload failed.');
-    } finally {
-      setUploading(false);
+      setUploadMessage({ type: 'info', text: 'No image found in clipboard. Copy an image or URL and press Ctrl+V.' });
+      setTimeout(() => setUploadMessage(null), 3500);
+    } catch (e: any) {
+      setUploadMessage({ type: 'info', text: 'Press Ctrl+V on your keyboard to paste copied images directly.' });
+      setTimeout(() => setUploadMessage(null), 3500);
     }
   };
+
+  // Global Clipboard paste listener while modal is open
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items || items.length === 0) return;
+
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            const ext = blob.type.split('/')[1]?.replace('+xml', '') || 'png';
+            const file = new File([blob], `pasted_image_${Date.now()}_${i + 1}.${ext}`, { type: blob.type });
+            imageFiles.push(file);
+          }
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        processAndUploadFiles(imageFiles);
+        return;
+      }
+
+      // If pasting text, only auto-add as image if user isn't currently typing in an input/textarea
+      const activeEl = document.activeElement;
+      const isTextInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+      if (!isTextInput) {
+        const text = e.clipboardData?.getData('text/plain')?.trim();
+        if (text && /^https?:\/\/.+/i.test(text)) {
+          if (/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(text) || text.includes('images.pexels.com') || text.includes('unsplash.com')) {
+            e.preventDefault();
+            setForm(prev => {
+              const nextGallery = [...(prev.galleryImages || []), text];
+              return {
+                ...prev,
+                galleryImages: nextGallery,
+                image: prev.image || nextGallery[0] || text,
+              };
+            });
+            setUploadMessage({ type: 'success', text: 'Pasted image URL added to gallery!' });
+            setTimeout(() => setUploadMessage(null), 3000);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => {
+      window.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, [isModalOpen]);
 
   return (
     <div className="space-y-6 font-outfit">
@@ -731,25 +937,45 @@ export const PropertyCMSView: React.FC = () => {
 
               {/* UNLIMITED GALLERY IMAGES & DRAG AND DROP */}
               <div className="space-y-3 pt-4 border-t border-slate-800">
-                <div className="flex justify-between items-center">
-                  <div className="font-serif font-bold text-slate-300 uppercase text-[11px] tracking-wider text-[#c5a059]">
-                    2. Images & Drag & Drop Upload Zone
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <div className="font-serif font-bold text-slate-300 uppercase text-[11px] tracking-wider text-[#c5a059] flex items-center gap-2">
+                    <ImageIcon className="w-3.5 h-3.5" /> 2. Images & Drag & Drop Upload Zone
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddGalleryField}
-                    className="btn-gold px-3 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Another Image Field
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePasteFromClipboard}
+                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold text-[11px] flex items-center gap-1.5 border border-slate-700 transition-colors shadow-sm"
+                      title="Paste copied image or URL from clipboard"
+                    >
+                      <Clipboard className="w-3.5 h-3.5 text-[#c5a059]" /> Paste Image (Ctrl+V)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddGalleryField}
+                      className="btn-gold px-3 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Another Image Field
+                    </button>
+                  </div>
                 </div>
 
                 {/* Drag and Drop Zone */}
                 <div
-                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
                   onDrop={handleDropFiles}
-                  className="border-2 border-dashed border-slate-700 hover:border-[#c5a059] rounded-2xl p-6 text-center bg-[#070b19]/60 transition-colors cursor-pointer"
-                  onClick={() => galleryFileInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
+                    isDragging
+                      ? 'border-[#c5a059] bg-[#c5a059]/15 ring-4 ring-[#c5a059]/30 scale-[1.01]'
+                      : uploading
+                      ? 'border-amber-500/60 bg-amber-500/5'
+                      : 'border-slate-700 hover:border-[#c5a059] bg-[#070b19]/60 hover:bg-[#070b19]/90'
+                  }`}
+                  onClick={() => {
+                    if (!uploading) galleryFileInputRef.current?.click();
+                  }}
                 >
                   <input
                     type="file"
@@ -759,10 +985,47 @@ export const PropertyCMSView: React.FC = () => {
                     multiple
                     className="hidden"
                   />
-                  <Upload className="w-8 h-8 text-[#c5a059] mx-auto mb-2" />
-                  <p className="font-semibold text-slate-200 text-xs">Drag and drop images here or click to browse files</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Supports JPG, PNG, WEBP, SVG file formats</p>
+
+                  {uploading ? (
+                    <div className="flex flex-col items-center justify-center py-2 pointer-events-none">
+                      <Loader2 className="w-8 h-8 text-[#c5a059] animate-spin mb-2" />
+                      <p className="font-semibold text-white text-xs">Uploading images to server...</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Please wait while files are processed and synced</p>
+                    </div>
+                  ) : isDragging ? (
+                    <div className="flex flex-col items-center justify-center py-2 pointer-events-none">
+                      <Upload className="w-9 h-9 text-[#c5a059] animate-bounce mb-2" />
+                      <p className="font-bold text-[#c5a059] text-sm">Release to Drop & Upload Images Now!</p>
+                      <p className="text-[10px] text-slate-300 mt-1">Supports multiple image files or image URLs</p>
+                    </div>
+                  ) : (
+                    <div className="pointer-events-none">
+                      <Upload className="w-8 h-8 text-[#c5a059] mx-auto mb-2 transition-transform group-hover:scale-110" />
+                      <p className="font-semibold text-slate-200 text-xs">
+                        Drag & drop images here, click to browse, or paste with <kbd className="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-[10px] font-mono text-[#c5a059]">Ctrl+V</kbd>
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Supports JPG, PNG, WEBP, SVG • Multi-file selection & direct clipboard paste enabled
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Upload Status Banner */}
+                {uploadMessage && (
+                  <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 border ${
+                    uploadMessage.type === 'success'
+                      ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                      : uploadMessage.type === 'error'
+                      ? 'bg-red-950/60 border-red-500/40 text-red-300'
+                      : 'bg-blue-950/60 border-blue-500/40 text-blue-300'
+                  }`}>
+                    {uploadMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />}
+                    {uploadMessage.type === 'error' && <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />}
+                    {uploadMessage.type === 'info' && <Loader2 className="w-4 h-4 shrink-0 text-blue-400 animate-spin" />}
+                    <span>{uploadMessage.text}</span>
+                  </div>
+                )}
 
                 <div className="p-4 bg-[#070b19] border border-slate-800 rounded-2xl space-y-3">
                   <div className="text-xs font-bold text-slate-300">Property Image Gallery List ({ (form.galleryImages || []).length } Images):</div>
