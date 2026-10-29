@@ -8,7 +8,7 @@ import { useData } from '../context/DataContext';
 import { useLeads } from '../context/LeadContext';
 import { useScrollReveal } from '../utils/useScrollReveal';
 import {
-  Building2, MapPin, ShieldCheck, Award, ArrowRight,
+  Building2, ShieldCheck, Award, ArrowRight,
   Sparkles, Star, Phone, MessageSquare, Users
 } from 'lucide-react';
 import heroDesktopBg from '../assets/hero-dekstop-view.webp';
@@ -20,10 +20,21 @@ export const Home: React.FC = () => {
   const { openModal } = useLeads();
   const { projects, reviews, heroSettings, siteSettings } = useData();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [searchLocation, setSearchLocation] = useState<string>('');
 
   // Smooth infinite marquee reference (continuous linear motion without scroll resets)
   const marqueeTrackRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
+    }
+  }, []);
   const [isMarqueePaused, setIsMarqueePaused] = useState(false);
 
   // Guarantee sufficient review cards for an infinite continuous seamless track
@@ -111,168 +122,80 @@ export const Home: React.FC = () => {
       <div className="relative">
         {/* 1. HERO SECTION (Dark Navy Background, pinned on desktop, releases before subsequent sections) */}
         <section className="relative md:sticky md:top-0 md:z-0 min-h-screen pt-28 pb-16 flex items-center justify-center overflow-hidden border-b border-[#c5a059]/20 section-navy">
-          {/* Desktop View Background Image (>= md) */}
-          <div
-            className="hidden md:block absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
-            style={{
-              backgroundImage: `url("${desktopHeroBg}")`
-            }}
-          >
-            {/* Lighter Gradient Overlay so background image is vibrant and visible */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#070b19]/30 via-[#070b19]/25 to-[#070b19]/8"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#070b19] via-transparent to-[#070b19]/10"></div>
+          {/* Cinematic Hero Video Background - Completely Unobscured & Clean Visibility */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              poster={desktopHeroBg}
+              className="w-full h-full object-cover scale-105"
+            >
+              <source src="/videos/hero-video.mp4" type="video/mp4" />
+            </video>
           </div>
 
-          {/* Mobile View Background Image (< md) */}
-          <div
-            className="block md:hidden absolute inset-0 bg-cover bg-center bg-no-repeat animate-hero-parallax transition-all will-change-transform"
-            style={{
-              backgroundImage: `url("${mobileHeroBg}")`
-            }}
-          >
-            {/* Lighter Gradient Overlay so background image is vibrant and visible */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#070b19]/30 via-[#070b19]/25 to-[#070b19]/8"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#070b19] via-transparent to-[#070b19]/10"></div>
-          </div>
-
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-
-              {/* Hero Left Content */}
-              <div className="lg:col-span-7 space-y-6 text-left">
-                <div className="inline-flex max-w-full items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#c5a059]/15 border border-[#c5a059]/40 text-[#e5c178] text-[10px] sm:text-xs font-outfit uppercase tracking-normal sm:tracking-wider font-semibold hero-motion-badge shadow-lg">
-                  <Sparkles className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
-                  <span className="truncate">100+ Verified Projects | Nerul, Kharghar, Ulwe & Panvel</span>
-                </div>
-
-                <h1 className="font-serif text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight hero-motion-title">
-                  {heroSettings.headingPart1 || "Navi Mumbai’s Most"} <br />
-                  <span className="text-gradient-gold">{heroSettings.headingGold || "Trusted Luxury Real Estate"}</span>
-                </h1>
-
-                {/* Typewriter Animation for Rotating Keywords */}
-                <div className="flex flex-wrap items-center gap-2 font-outfit text-sm sm:text-xl lg:text-2xl text-slate-200 font-semibold min-h-[44px] sm:min-h-[52px] hero-motion-typewriter">
-                  <span className="text-slate-400 shrink-0">Specialized In:</span>
-                  <span className="text-[#e5c178] font-bold inline-flex items-center min-h-[32px] break-words">
-                    <span>{currentText}</span>
-                    <span className="w-0.5 h-6 bg-[#c5a059] ml-1 animate-pulse shrink-0" aria-hidden="true" />
-                  </span>
-                </div>
-
-                <p className="text-xs sm:text-base text-slate-300 font-outfit leading-relaxed max-w-2xl hero-motion-desc">
-                  {heroSettings.subtext || "Experience transparent property buying with verified CIDCO plots, direct developer launches, and prime resale homes across Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel."}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2 hero-motion-ctas">
-                  <button
-                    onClick={() => openModal('Hero Main CTA')}
-                    className="btn-gold px-6 sm:px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-bold tracking-wider shadow-xl"
-                  >
-                    GET BEST OFFER NOW <ArrowRight className="w-4 h-4 ml-1" />
-                  </button>
-
-                  <Link
-                    to="/projects"
-                    className="btn-outline-gold px-5 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold"
-                  >
-                    Explore All Projects
-                  </Link>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="pt-5 sm:pt-6 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 border-t border-slate-800/80 font-outfit text-xs text-slate-300 hero-motion-trust">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
-                    <span>100% Legal Title Search</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
-                    <span>Direct Developer Launch</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] fill-[#c5a059] shrink-0" />
-                    <span>4.8/5 Rated on Google</span>
-                  </div>
-                </div>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Hero Content - Clean Luxury Presentation with Full Video Visibility */}
+            <div className="max-w-3xl lg:max-w-4xl space-y-6 text-left">
+              <div className="inline-flex max-w-full items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-[#070b19]/60 backdrop-blur-md border border-[#c5a059]/50 text-[#e5c178] text-[10px] sm:text-xs font-outfit uppercase tracking-normal sm:tracking-wider font-semibold hero-motion-badge shadow-xl">
+                <Sparkles className="w-3.5 h-3.5 text-[#c5a059] shrink-0" />
+                <span className="truncate">100+ Verified Projects | Nerul, Kharghar, Ulwe & Panvel</span>
               </div>
 
-              {/* Hero Right Quick Search Form */}
-              <div className="lg:col-span-5 hero-motion-card">
-                <div className="bg-glass p-6 sm:p-8 rounded-3xl border border-[#c5a059]/40 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5a059]/10 rounded-full blur-2xl"></div>
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight hero-motion-title drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
+                {heroSettings.headingPart1 || "Navi Mumbai’s Most"} <br />
+                <span className="text-gradient-gold drop-shadow-md">{heroSettings.headingGold || "Trusted Luxury Real Estate"}</span>
+              </h1>
 
-                  <div className="mb-5">
-                    <span className="badge-gold mb-2">Fast Inquiry</span>
-                    <h3 className="font-serif text-xl font-bold text-white">Find Your Luxury Home</h3>
-                    <p className="text-xs text-slate-400 font-outfit">Instant floor plans, prices & site visit bookings.</p>
-                  </div>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      openModal(`Hero Search (${searchLocation || 'General'})`);
-                    }}
-                    className="space-y-4 font-outfit"
-                  >
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Select Location Node</label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-[#c5a059]" />
-                        <select
-                          value={searchLocation}
-                          onChange={(e) => setSearchLocation(e.target.value)}
-                          className="w-full bg-[#070b19] border border-slate-700 focus:border-[#c5a059] rounded-xl pl-10 pr-3 py-2.5 text-xs text-white focus:outline-none"
-                        >
-                          <option value="">All Nodes (Nerul, Seawoods, Kharghar...)</option>
-                          <option value="Nerul & Seawoods">Nerul & Seawoods</option>
-                          <option value="Kharghar">Kharghar & Upper Kharghar</option>
-                          <option value="Ulwe">Ulwe Coastal Node</option>
-                          <option value="Pushpak Nagar">Pushpak Nagar (Near NMIA Airport)</option>
-                          <option value="Juinagar & Sanpada">Juinagar & Sanpada</option>
-                          <option value="Panvel">Panvel Smart City</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Config</label>
-                        <select className="w-full bg-[#070b19] border border-slate-700 focus:border-[#c5a059] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
-                          <option>1 BHK</option>
-                          <option>2 BHK</option>
-                          <option>3/4 BHK</option>
-                          <option>Row House</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Budget</label>
-                        <select className="w-full bg-[#070b19] border border-slate-700 focus:border-[#c5a059] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
-                          <option>₹ 35L - ₹ 60L</option>
-                          <option>₹ 60L - ₹ 1 Cr</option>
-                          <option>₹ 1 Cr - ₹ 2.5 Cr</option>
-                          <option>₹ 2.5 Cr+</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn-gold w-full py-3.5 font-bold text-sm tracking-wider shadow-lg">
-                      SEARCH & GET BEST OFFER
-                    </button>
-
-                    <div className="text-center pt-2">
-                      <a
-                        href={`tel:${siteSettings?.phoneRaw || '+918169005579'}`}
-                        className="text-xs text-slate-300 hover:text-[#e5c178] inline-flex items-center gap-1.5"
-                      >
-                        <Phone className="w-3.5 h-3.5 text-[#c5a059]" /> Direct Call: <strong>{siteSettings?.phone || '+91 81690 05579'}</strong>
-                      </a>
-                    </div>
-                  </form>
-                </div>
+              {/* Typewriter Animation for Rotating Keywords */}
+              <div className="flex flex-wrap items-center gap-2 font-outfit text-base sm:text-xl lg:text-2xl text-slate-100 font-semibold min-h-[44px] sm:min-h-[52px] hero-motion-typewriter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                <span className="text-slate-300 shrink-0">Specialized In:</span>
+                <span className="text-[#e5c178] font-bold inline-flex items-center min-h-[32px] break-words">
+                  <span>{currentText}</span>
+                  <span className="w-0.5 h-6 bg-[#c5a059] ml-1 animate-pulse shrink-0" aria-hidden="true" />
+                </span>
               </div>
 
+              <p className="text-sm sm:text-base text-slate-100 font-outfit leading-relaxed max-w-2xl hero-motion-desc drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                {heroSettings.subtext || "Experience transparent property buying with verified CIDCO plots, direct developer launches, and prime resale homes across Nerul, Seawoods, Kharghar, Ulwe, Pushpak Nagar & Panvel."}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2 hero-motion-ctas">
+                <button
+                  onClick={() => openModal('Hero Main CTA')}
+                  className="btn-gold px-6 sm:px-8 py-3.5 sm:py-4 text-xs sm:text-sm font-bold tracking-wider shadow-2xl"
+                >
+                  GET BEST OFFER NOW <ArrowRight className="w-4 h-4 ml-1" />
+                </button>
+
+                <Link
+                  to="/projects"
+                  className="btn-outline-gold px-5 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold bg-[#070b19]/40 backdrop-blur-sm shadow-xl"
+                >
+                  Explore All Projects
+                </Link>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="pt-5 sm:pt-6 flex flex-wrap items-center gap-4 sm:gap-6 border-t border-white/20 font-outfit text-xs text-slate-100 hero-motion-trust">
+                <div className="flex items-center gap-2 drop-shadow-md">
+                  <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
+                  <span>100% Legal Title Search</span>
+                </div>
+                <div className="flex items-center gap-2 drop-shadow-md">
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] shrink-0" />
+                  <span>Direct Developer Launch</span>
+                </div>
+                <div className="flex items-center gap-2 drop-shadow-md">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#c5a059] fill-[#c5a059] shrink-0" />
+                  <span>4.8/5 Rated on Google</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
